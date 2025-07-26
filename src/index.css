@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -17,7 +17,7 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 220 70% 50%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -37,6 +37,18 @@ All colors MUST be HSL.
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+
+    /* NHL Theme Colors */
+    --ice-blue: 195 100% 85%;
+    --ice-dark: 220 25% 15%;
+    --gold: 45 95% 55%;
+    --hockey-red: 0 85% 60%;
+    
+    /* Game-specific design tokens */
+    --gradient-ice: linear-gradient(135deg, hsl(var(--ice-blue)), hsl(var(--primary)));
+    --gradient-gold: linear-gradient(135deg, hsl(var(--gold)), hsl(45 85% 45%));
+    --shadow-game: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -102,4 +114,92 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer components {
+  /* Game-specific component classes */
+  .ice-surface {
+    @apply bg-gradient-to-br from-background via-ice-blue/10 to-primary/5;
+  }
+
+  .game-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+
+  .btn-gold {
+    @apply bg-gold text-black hover:bg-gold/90 shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+
+  .player-card-elite {
+    @apply border-2 border-gold bg-gradient-to-br from-gold/20 to-gold/5;
+  }
+
+  .player-card-gold {
+    @apply border-2 border-yellow-500 bg-gradient-to-br from-yellow-500/20 to-yellow-500/5;
+  }
+
+  .player-card-silver {
+    @apply border-2 border-gray-400 bg-gradient-to-br from-gray-400/20 to-gray-400/5;
+  }
+
+  .player-card-bronze {
+    @apply border-2 border-amber-600 bg-gradient-to-br from-amber-600/20 to-amber-600/5;
+  }
+}
+
+@layer utilities {
+  .text-ice-blue {
+    color: hsl(var(--ice-blue));
+  }
+
+  .text-gold {
+    color: hsl(var(--gold));
+  }
+
+  .text-hockey-red {
+    color: hsl(var(--hockey-red));
+  }
+
+  .bg-ice-dark {
+    background-color: hsl(var(--ice-dark));
+  }
+
+  .border-gold {
+    border-color: hsl(var(--gold));
+  }
+
+  .animate-pack-open {
+    animation: pack-open 2s ease-in-out;
+  }
+
+  .animate-card-flip {
+    animation: card-flip 0.6s ease-in-out;
+  }
+
+  .animate-ice-glimmer {
+    animation: ice-glimmer 3s ease-in-out infinite;
+  }
+}
+
+@keyframes pack-open {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.1) rotate(5deg); }
+  50% { transform: scale(1.2) rotate(-5deg); }
+  75% { transform: scale(1.1) rotate(2deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes card-flip {
+  0% { transform: rotateY(180deg) scale(0.8); opacity: 0; }
+  50% { transform: rotateY(90deg) scale(0.9); opacity: 0.5; }
+  100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+}
+
+@keyframes ice-glimmer {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 10px hsl(var(--ice-blue) / 0.3)); }
+  50% { filter: brightness(1.2) drop-shadow(0 0 20px hsl(var(--ice-blue) / 0.6)); }
 }
