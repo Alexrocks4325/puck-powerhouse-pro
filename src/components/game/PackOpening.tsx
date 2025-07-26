@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Gift, Star, ArrowRight, Coins, Package } from "lucide-react";
+import { Gift, Star, ArrowRight, Coins, Package, Crown, Gem } from "lucide-react";
 import PlayerCard from "./PlayerCard";
 import GameHeader from "./GameHeader";
+import { nhlPlayerDatabase, PACK_PROBABILITIES, coachDatabase, type Player } from "@/data/nhlPlayerDatabase";
 
 interface PackOpeningProps {
   playerData: {
@@ -20,69 +21,61 @@ const PackOpening = ({ playerData, setPlayerData, onNavigate }: PackOpeningProps
   const [isOpening, setIsOpening] = useState(false);
   const [revealedCards, setRevealedCards] = useState<any[]>([]);
   const [showCards, setShowCards] = useState(false);
-  const [packType, setPackType] = useState<'starter' | 'standard' | 'premium'>('standard');
+  const [packType, setPackType] = useState<'bronze' | 'standard' | 'premium' | 'elite'>('standard');
 
   // Pack costs
+  const BRONZE_PACK_COST = 250;
   const STANDARD_PACK_COST = 500;
   const PREMIUM_PACK_COST = 1000;
+  const ELITE_PACK_COST = 2500;
 
-  // Enhanced player pool with team chemistry data
-  const getRandomPlayers = (type: 'starter' | 'standard' | 'premium' = 'standard') => {
-    const playerPool = [
-      // Elite Players (90+)
-      { id: 1, name: "Connor McDavid", team: "EDM", position: "C", overall: 97, rarity: "elite", chemistry: ["Speedster", "Playmaker"] },
-      { id: 2, name: "Auston Matthews", team: "TOR", position: "C", overall: 94, rarity: "elite", chemistry: ["Sniper", "Power Forward"] },
-      { id: 3, name: "Nathan MacKinnon", team: "COL", position: "C", overall: 93, rarity: "elite", chemistry: ["Speedster", "Clutch"] },
-      { id: 4, name: "Erik Karlsson", team: "PIT", position: "D", overall: 91, rarity: "elite", chemistry: ["Offensive D", "Powerplay"] },
-      { id: 5, name: "Cale Makar", team: "COL", position: "D", overall: 92, rarity: "elite", chemistry: ["Two-Way", "Speedster"] },
-      
-      // Gold Players (85-89)
-      { id: 6, name: "Leon Draisaitl", team: "EDM", position: "C", overall: 89, rarity: "gold", chemistry: ["Power Forward", "Playmaker"] },
-      { id: 7, name: "Artemi Panarin", team: "NYR", position: "LW", overall: 88, rarity: "gold", chemistry: ["Playmaker", "Clutch"] },
-      { id: 8, name: "Victor Hedman", team: "TBL", position: "D", overall: 87, rarity: "gold", chemistry: ["Defensive", "Leader"] },
-      { id: 9, name: "Igor Shesterkin", team: "NYR", position: "G", overall: 89, rarity: "gold", chemistry: ["Brick Wall", "Clutch"] },
-      { id: 10, name: "Mitch Marner", team: "TOR", position: "RW", overall: 86, rarity: "gold", chemistry: ["Playmaker", "Speedster"] },
-      
-      // Silver Players (80-84)
-      { id: 11, name: "Jack Hughes", team: "NJD", position: "C", overall: 84, rarity: "silver", chemistry: ["Speedster", "Young Gun"] },
-      { id: 12, name: "Quinn Hughes", team: "VAN", position: "D", overall: 83, rarity: "silver", chemistry: ["Offensive D", "Speedster"] },
-      { id: 13, name: "Bo Horvat", team: "NYI", position: "C", overall: 82, rarity: "silver", chemistry: ["Two-Way", "Leader"] },
-      { id: 14, name: "Morgan Rielly", team: "TOR", position: "D", overall: 81, rarity: "silver", chemistry: ["Offensive D", "Powerplay"] },
-      { id: 15, name: "Elias Lindholm", team: "BOS", position: "C", overall: 84, rarity: "silver", chemistry: ["Two-Way", "Defensive"] },
-      
-      // Bronze Players (75-79)
-      { id: 16, name: "Connor Bedard", team: "CHI", position: "C", overall: 79, rarity: "bronze", chemistry: ["Young Gun", "Sniper"] },
-      { id: 17, name: "Luke Hughes", team: "NJD", position: "D", overall: 77, rarity: "bronze", chemistry: ["Young Gun", "Offensive D"] },
-      { id: 18, name: "Owen Power", team: "BUF", position: "D", overall: 78, rarity: "bronze", chemistry: ["Young Gun", "Two-Way"] },
-      { id: 19, name: "Tim Stutzle", team: "OTT", position: "C", overall: 79, rarity: "bronze", chemistry: ["Young Gun", "Speedster"] },
-      { id: 20, name: "Moritz Seider", team: "DET", position: "D", overall: 78, rarity: "bronze", chemistry: ["Young Gun", "Defensive"] }
-    ];
-
-    let selectedPlayers = [];
+  // Enhanced player pool using the massive NHL database
+  const getRandomPlayers = (type: 'starter' | 'bronze' | 'standard' | 'premium' | 'elite' = 'standard'): Player[] => {
+    const probabilities = PACK_PROBABILITIES[type as keyof typeof PACK_PROBABILITIES] || PACK_PROBABILITIES.standard;
+    let selectedPlayers: Player[] = [];
     
     if (type === 'starter') {
-      // Guaranteed good starter pack with team chemistry
-      selectedPlayers = [
-        playerPool[0], // McDavid
-        playerPool[6], // Draisaitl (same team as McDavid for chemistry)
-        playerPool[7], // Panarin
-        playerPool[11], // Jack Hughes
-        playerPool[16] // Bedard
+      // Guaranteed starter pack with decent players to get users started
+      const starterPlayers = [
+        nhlPlayerDatabase.find(p => p.name === "Connor Bedard")!,
+        nhlPlayerDatabase.find(p => p.name === "Tim Stutzle")!,
+        nhlPlayerDatabase.find(p => p.name === "Owen Power")!,
+        nhlPlayerDatabase.find(p => p.name === "Lucas Raymond")!,
+        nhlPlayerDatabase.find(p => p.name === "Moritz Seider")!,
       ];
-    } else if (type === 'premium') {
-      // Premium pack - higher chance of elite/gold
-      const elites = playerPool.filter(p => p.rarity === 'elite');
-      const golds = playerPool.filter(p => p.rarity === 'gold');
-      const others = playerPool.filter(p => p.rarity === 'silver' || p.rarity === 'bronze');
+      return starterPlayers;
+    }
+
+    // Generate 5 players based on pack probabilities
+    for (let i = 0; i < 5; i++) {
+      const randomValue = Math.random();
+      let rarity: string;
       
-      selectedPlayers = [
-        ...shuffleArray(elites).slice(0, 2),
-        ...shuffleArray(golds).slice(0, 2),
-        ...shuffleArray(others).slice(0, 1)
-      ];
-    } else {
-      // Standard pack - random distribution
-      selectedPlayers = shuffleArray(playerPool).slice(0, 5);
+      if (randomValue < probabilities.legend) {
+        rarity = 'legend';
+      } else if (randomValue < probabilities.legend + probabilities.elite) {
+        rarity = 'elite';
+      } else if (randomValue < probabilities.legend + probabilities.elite + probabilities.gold) {
+        rarity = 'gold';
+      } else if (randomValue < probabilities.legend + probabilities.elite + probabilities.gold + probabilities.silver) {
+        rarity = 'silver';
+      } else {
+        rarity = 'bronze';
+      }
+      
+      // Get players of the selected rarity
+      const availablePlayers = nhlPlayerDatabase.filter(p => p.rarity === rarity);
+      if (availablePlayers.length > 0) {
+        const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+        // Avoid duplicates in the same pack
+        if (!selectedPlayers.find(p => p.id === randomPlayer.id)) {
+          selectedPlayers.push(randomPlayer);
+        } else {
+          i--; // Try again if duplicate
+        }
+      } else {
+        i--; // Try again if no players available for this rarity
+      }
     }
 
     return selectedPlayers;
@@ -97,8 +90,15 @@ const PackOpening = ({ playerData, setPlayerData, onNavigate }: PackOpeningProps
     return shuffled;
   };
 
-  const handleOpenPack = (type: 'starter' | 'standard' | 'premium' = 'standard') => {
-    const cost = type === 'premium' ? PREMIUM_PACK_COST : type === 'standard' ? STANDARD_PACK_COST : 0;
+  const handleOpenPack = (type: 'starter' | 'bronze' | 'standard' | 'premium' | 'elite' = 'standard') => {
+    let cost = 0;
+    switch (type) {
+      case 'bronze': cost = BRONZE_PACK_COST; break;
+      case 'standard': cost = STANDARD_PACK_COST; break;
+      case 'premium': cost = PREMIUM_PACK_COST; break;
+      case 'elite': cost = ELITE_PACK_COST; break;
+      default: cost = 0;
+    }
     
     if (type !== 'starter' && playerData.coins < cost) {
       alert("Not enough coins! Complete season games or tasks to earn more.");
@@ -111,7 +111,7 @@ const PackOpening = ({ playerData, setPlayerData, onNavigate }: PackOpeningProps
     }
 
     setIsOpening(true);
-    setPackType(type);
+    if (type !== 'starter') setPackType(type as 'bronze' | 'standard' | 'premium' | 'elite');
     
     // Enhanced pack opening animation
     setTimeout(() => {
@@ -130,8 +130,14 @@ const PackOpening = ({ playerData, setPlayerData, onNavigate }: PackOpeningProps
     }, 2000);
   };
 
-  const handleBuyPack = (type: 'standard' | 'premium') => {
-    const cost = type === 'premium' ? PREMIUM_PACK_COST : STANDARD_PACK_COST;
+  const handleBuyPack = (type: 'bronze' | 'standard' | 'premium' | 'elite') => {
+    let cost = 0;
+    switch (type) {
+      case 'bronze': cost = BRONZE_PACK_COST; break;
+      case 'standard': cost = STANDARD_PACK_COST; break;
+      case 'premium': cost = PREMIUM_PACK_COST; break;
+      case 'elite': cost = ELITE_PACK_COST; break;
+    }
     
     if (playerData.coins < cost) {
       alert("Not enough coins! Play season games or complete tasks to earn more.");

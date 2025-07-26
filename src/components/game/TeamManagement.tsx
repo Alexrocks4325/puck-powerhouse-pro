@@ -57,20 +57,56 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
 
   const getLineup = () => {
     const lineup = {
-      LW: null,
-      C: null,
-      RW: null,
-      LD: null,
-      RD: null,
-      G: null
+      // 4 Forward Lines
+      LW1: null, C1: null, RW1: null,  // Line 1
+      LW2: null, C2: null, RW2: null,  // Line 2  
+      LW3: null, C3: null, RW3: null,  // Line 3
+      LW4: null, C4: null, RW4: null,  // Line 4
+      // 3 Defense Pairs
+      LD1: null, RD1: null,  // Pair 1
+      LD2: null, RD2: null,  // Pair 2
+      LD3: null, RD3: null,  // Pair 3
+      // 2 Goalies
+      G1: null,   // Starter
+      G2: null    // Backup
     };
     
     // Auto-fill with best players by position
-    playerData.team.forEach(player => {
-      if (!lineup[player.position] || player.overall > (lineup[player.position]?.overall || 0)) {
-        lineup[player.position] = player;
-      }
-    });
+    const playersByPosition = {
+      C: playerData.team.filter(p => p.position === 'C').sort((a, b) => b.overall - a.overall),
+      LW: playerData.team.filter(p => p.position === 'LW').sort((a, b) => b.overall - a.overall),
+      RW: playerData.team.filter(p => p.position === 'RW').sort((a, b) => b.overall - a.overall),
+      D: playerData.team.filter(p => p.position === 'D').sort((a, b) => b.overall - a.overall),
+      G: playerData.team.filter(p => p.position === 'G').sort((a, b) => b.overall - a.overall)
+    };
+
+    // Fill forward positions
+    lineup.C1 = playersByPosition.C[0] || null;
+    lineup.C2 = playersByPosition.C[1] || null;
+    lineup.C3 = playersByPosition.C[2] || null;
+    lineup.C4 = playersByPosition.C[3] || null;
+    
+    lineup.LW1 = playersByPosition.LW[0] || null;
+    lineup.LW2 = playersByPosition.LW[1] || null;
+    lineup.LW3 = playersByPosition.LW[2] || null;
+    lineup.LW4 = playersByPosition.LW[3] || null;
+    
+    lineup.RW1 = playersByPosition.RW[0] || null;
+    lineup.RW2 = playersByPosition.RW[1] || null;
+    lineup.RW3 = playersByPosition.RW[2] || null;
+    lineup.RW4 = playersByPosition.RW[3] || null;
+    
+    // Fill defense positions
+    lineup.LD1 = playersByPosition.D[0] || null;
+    lineup.RD1 = playersByPosition.D[1] || null;
+    lineup.LD2 = playersByPosition.D[2] || null;
+    lineup.RD2 = playersByPosition.D[3] || null;
+    lineup.LD3 = playersByPosition.D[4] || null;
+    lineup.RD3 = playersByPosition.D[5] || null;
+    
+    // Fill goalie positions
+    lineup.G1 = playersByPosition.G[0] || null;
+    lineup.G2 = playersByPosition.G[1] || null;
     
     return lineup;
   };
@@ -192,33 +228,33 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
                   <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex space-x-8">
                     {/* Left Wing */}
                     <div className="text-center">
-                      {lineup.LW ? (
-                        <PlayerCard player={lineup.LW} size="small" />
+                      {lineup.LW1 ? (
+                        <PlayerCard player={lineup.LW1} size="small" />
                       ) : (
                         <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">LW</span>
+                          <span className="text-xs text-muted-foreground">LW1</span>
                         </div>
                       )}
                     </div>
                     
                     {/* Center */}
                     <div className="text-center">
-                      {lineup.C ? (
-                        <PlayerCard player={lineup.C} size="small" />
+                      {lineup.C1 ? (
+                        <PlayerCard player={lineup.C1} size="small" />
                       ) : (
                         <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">C</span>
+                          <span className="text-xs text-muted-foreground">C1</span>
                         </div>
                       )}
                     </div>
                     
                     {/* Right Wing */}
                     <div className="text-center">
-                      {lineup.RW ? (
-                        <PlayerCard player={lineup.RW} size="small" />
+                      {lineup.RW1 ? (
+                        <PlayerCard player={lineup.RW1} size="small" />
                       ) : (
                         <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">RW</span>
+                          <span className="text-xs text-muted-foreground">RW1</span>
                         </div>
                       )}
                     </div>
@@ -228,22 +264,22 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
                   <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-12">
                     {/* Left Defense */}
                     <div className="text-center">
-                      {lineup.LD ? (
-                        <PlayerCard player={lineup.LD} size="small" />
+                      {lineup.LD1 ? (
+                        <PlayerCard player={lineup.LD1} size="small" />
                       ) : (
                         <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">LD</span>
+                          <span className="text-xs text-muted-foreground">LD1</span>
                         </div>
                       )}
                     </div>
                     
                     {/* Right Defense */}
                     <div className="text-center">
-                      {lineup.RD ? (
-                        <PlayerCard player={lineup.RD} size="small" />
+                      {lineup.RD1 ? (
+                        <PlayerCard player={lineup.RD1} size="small" />
                       ) : (
                         <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">RD</span>
+                          <span className="text-xs text-muted-foreground">RD1</span>
                         </div>
                       )}
                     </div>
@@ -252,11 +288,11 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
                   {/* Goalie */}
                   <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
                     <div className="text-center">
-                      {lineup.G ? (
-                        <PlayerCard player={lineup.G} size="small" />
+                      {lineup.G1 ? (
+                        <PlayerCard player={lineup.G1} size="small" />
                       ) : (
                         <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">G</span>
+                          <span className="text-xs text-muted-foreground">G1</span>
                         </div>
                       )}
                     </div>
