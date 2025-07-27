@@ -8,6 +8,7 @@ export interface Player {
   overall: number;
   rarity: 'bronze' | 'silver' | 'gold' | 'elite' | 'legend';
   chemistry: string[];
+  image?: string;
   stats?: {
     goals?: number;
     assists?: number;
@@ -18,9 +19,9 @@ export interface Player {
 
 export const nhlPlayerDatabase: Player[] = [
   // LEGEND TIER (96-99) - Ultra rare
-  { id: 1, name: "Connor McDavid", team: "EDM", position: "C", overall: 99, rarity: "legend", chemistry: ["Speedster", "Playmaker", "Captain"] },
-  { id: 2, name: "Nathan MacKinnon", team: "COL", position: "C", overall: 97, rarity: "legend", chemistry: ["Speedster", "Clutch", "Power Forward"] },
-  { id: 3, name: "Cale Makar", team: "COL", position: "D", overall: 96, rarity: "legend", chemistry: ["Two-Way", "Speedster", "Offensive D"] },
+  { id: 1, name: "Connor McDavid", team: "EDM", position: "C", overall: 99, rarity: "legend", chemistry: ["Speedster", "Playmaker", "Captain"], image: "/src/assets/players/connor-mcdavid.jpg" },
+  { id: 2, name: "Nathan MacKinnon", team: "COL", position: "C", overall: 97, rarity: "legend", chemistry: ["Speedster", "Clutch", "Power Forward"], image: "/src/assets/players/nathan-mackinnon.jpg" },
+  { id: 3, name: "Cale Makar", team: "COL", position: "D", overall: 96, rarity: "legend", chemistry: ["Two-Way", "Speedster", "Offensive D"], image: "/src/assets/players/cale-makar.jpg" },
   
   // ELITE TIER (90-95) - Very rare
   { id: 4, name: "Auston Matthews", team: "TOR", position: "C", overall: 95, rarity: "elite", chemistry: ["Sniper", "Power Forward"] },
@@ -28,7 +29,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 6, name: "Erik Karlsson", team: "PIT", position: "D", overall: 93, rarity: "elite", chemistry: ["Offensive D", "Powerplay"] },
   { id: 7, name: "David Pastrnak", team: "BOS", position: "RW", overall: 92, rarity: "elite", chemistry: ["Sniper", "Clutch"] },
   { id: 8, name: "Artemi Panarin", team: "NYR", position: "LW", overall: 91, rarity: "elite", chemistry: ["Playmaker", "Clutch"] },
-  { id: 9, name: "Igor Shesterkin", team: "NYR", position: "G", overall: 91, rarity: "elite", chemistry: ["Brick Wall", "Clutch"] },
+  { id: 9, name: "Igor Shesterkin", team: "NYR", position: "G", overall: 91, rarity: "elite", chemistry: ["Brick Wall", "Clutch"], image: "/src/assets/players/igor-shesterkin.jpg" },
   { id: 10, name: "Victor Hedman", team: "TBL", position: "D", overall: 90, rarity: "elite", chemistry: ["Defensive", "Leader"] },
 
   // GOLD TIER (85-89) - Rare
@@ -394,4 +395,43 @@ export const coachDatabase: Coach[] = [
   { id: 6, name: "Craig Berube", team: "STL", overall: 88, specialty: "Physical Play", bonus: "+5% Physical Stats", cost: 2000 },
   { id: 7, name: "Peter DeBoer", team: "DAL", overall: 86, specialty: "Special Teams", bonus: "+10% PP/PK Efficiency", cost: 1500 },
   { id: 8, name: "Dave Hakstol", team: "SEA", overall: 84, specialty: "Team Chemistry", bonus: "+5% Team Chemistry", cost: 1000 },
+];
+
+// Starter team with every position covered
+export const getStarterTeam = (): Player[] => [
+  // Line 1 - Basic forwards
+  { id: 1001, name: "Ryan Strome", team: "ANA", position: "C", overall: 78, rarity: "silver", chemistry: ["Playmaker"] },
+  { id: 1002, name: "Tyler Bertuzzi", team: "TOR", position: "LW", overall: 77, rarity: "silver", chemistry: ["Grinder"] },
+  { id: 1003, name: "Reilly Smith", team: "NYR", position: "RW", overall: 76, rarity: "silver", chemistry: ["Two-Way"] },
+  
+  // Line 2
+  { id: 1004, name: "Jordan Staal", team: "CAR", position: "C", overall: 75, rarity: "bronze", chemistry: ["Defensive"] },
+  { id: 1005, name: "Andrew Copp", team: "DET", position: "LW", overall: 74, rarity: "bronze", chemistry: ["Grinder"] },
+  { id: 1006, name: "Nick Foligno", team: "CHI", position: "RW", overall: 73, rarity: "bronze", chemistry: ["Veteran"] },
+  
+  // Line 3
+  { id: 1007, name: "Sean Couturier", team: "PHI", position: "C", overall: 72, rarity: "bronze", chemistry: ["Defensive"] },
+  { id: 1008, name: "Max Domi", team: "TOR", position: "LW", overall: 71, rarity: "bronze", chemistry: ["Speedster"] },
+  { id: 1009, name: "Patrik Laine", team: "MTL", position: "RW", overall: 70, rarity: "bronze", chemistry: ["Sniper"] },
+  
+  // Line 4
+  { id: 1010, name: "Noel Acciari", team: "PIT", position: "C", overall: 69, rarity: "bronze", chemistry: ["Grinder"] },
+  { id: 1011, name: "Tomas Nosek", team: "FLA", position: "LW", overall: 68, rarity: "bronze", chemistry: ["Grinder"] },
+  { id: 1012, name: "Austin Watson", team: "TBL", position: "RW", overall: 67, rarity: "bronze", chemistry: ["Enforcer"] },
+  
+  // Defense - Pair 1
+  { id: 1013, name: "Matt Dumba", team: "TBL", position: "D", overall: 76, rarity: "silver", chemistry: ["Offensive D"] },
+  { id: 1014, name: "Jacob Trouba", team: "NYR", position: "D", overall: 75, rarity: "silver", chemistry: ["Defensive"] },
+  
+  // Defense - Pair 2
+  { id: 1015, name: "Calvin de Haan", team: "CAR", position: "D", overall: 72, rarity: "bronze", chemistry: ["Defensive"] },
+  { id: 1016, name: "Nick Seeler", team: "PHI", position: "D", overall: 71, rarity: "bronze", chemistry: ["Stay-at-home"] },
+  
+  // Defense - Pair 3
+  { id: 1017, name: "Erik Brannstrom", team: "COL", position: "D", overall: 69, rarity: "bronze", chemistry: ["Speedster"] },
+  { id: 1018, name: "Nick Jensen", team: "TBL", position: "D", overall: 68, rarity: "bronze", chemistry: ["Defensive"] },
+  
+  // Goalies
+  { id: 1019, name: "John Gibson", team: "ANA", position: "G", overall: 79, rarity: "silver", chemistry: ["Brick Wall"] },
+  { id: 1020, name: "Spencer Martin", team: "CAR", position: "G", overall: 72, rarity: "bronze", chemistry: ["Steady"] },
 ];

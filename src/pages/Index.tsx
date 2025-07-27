@@ -10,6 +10,7 @@ import TasksAndChallenges from "@/components/game/TasksAndChallenges";
 import LeaguesMode from "@/components/game/LeaguesMode";
 import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package } from "lucide-react";
 import nhlLogo from "@/assets/nhl-ultimate-logo.png";
+import { getStarterTeam } from "@/data/nhlPlayerDatabase";
 
 const Index = () => {
   const [gameState, setGameState] = useState<'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues'>('menu');
@@ -41,7 +42,8 @@ const Index = () => {
       ...prev, 
       completedTutorial: true,
       coins: prev.coins + 500, // Tutorial bonus
-      packs: prev.packs + 2 // Starter packs
+      packs: prev.packs + 2, // Starter packs
+      team: getStarterTeam() // Give starter team with all positions
     }));
     setGameState('packs');
   };

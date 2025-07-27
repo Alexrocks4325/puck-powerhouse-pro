@@ -8,7 +8,8 @@ interface Player {
   team: string;
   position: string;
   overall: number;
-  rarity: 'elite' | 'gold' | 'silver' | 'bronze';
+  rarity: 'elite' | 'gold' | 'silver' | 'bronze' | 'legend';
+  image?: string;
 }
 
 interface PlayerCardProps {
@@ -32,6 +33,8 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
 
   const getRarityClass = (rarity: string) => {
     switch (rarity) {
+      case 'legend':
+        return 'player-card-legend';
       case 'elite':
         return 'player-card-elite';
       case 'gold':
@@ -47,6 +50,8 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
+      case 'legend':
+        return 'text-purple-400';
       case 'elite':
         return 'text-gold';
       case 'gold':
@@ -69,10 +74,25 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
 
   return (
     <Card 
-      className={`${sizeClasses[size]} ${getRarityClass(player.rarity)} cursor-pointer hover:scale-105 transition-transform duration-200 flex flex-col`}
+      className={`${sizeClasses[size]} ${getRarityClass(player.rarity)} cursor-pointer hover:scale-105 transition-transform duration-200 flex flex-col relative overflow-hidden`}
       onClick={onClick}
     >
-      <div className="flex-1 flex flex-col justify-between">
+      {/* Player Image Background */}
+      {player.image && (
+        <div className="absolute inset-0 opacity-20">
+          <img 
+            src={player.image} 
+            alt={player.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+      
+      {/* Card Content */}
+      <div className="relative z-10 flex-1 flex flex-col justify-between p-1">
         <div className="text-center">
           <div className={`font-bold ${getOverallColor(player.overall)} ${size === 'small' ? 'text-lg' : 'text-2xl'} mb-1`}>
             {player.overall}
@@ -81,6 +101,22 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
             {player.position}
           </Badge>
         </div>
+        
+        {/* Player Image Circle (for main display) */}
+        {player.image && size !== 'small' && (
+          <div className="flex justify-center mb-2">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30">
+              <img 
+                src={player.image} 
+                alt={player.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = '/src/assets/players/default-player.jpg';
+                }}
+              />
+            </div>
+          </div>
+        )}
         
         <div className="text-center flex-1 flex flex-col justify-center">
           <div className={`font-semibold ${textSizeClasses[size]} text-foreground leading-tight mb-1`}>

@@ -134,6 +134,10 @@ All colors MUST be HSL.
     @apply bg-gold text-black hover:bg-gold/90 shadow-lg hover:shadow-xl transition-all duration-300;
   }
 
+  .player-card-legend {
+    @apply border-2 border-purple-400 bg-gradient-to-br from-purple-500/25 to-pink-500/15 shadow-lg shadow-purple-500/20;
+  }
+
   .player-card-elite {
     @apply border-2 border-gold bg-gradient-to-br from-gold/20 to-gold/5;
   }
