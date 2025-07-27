@@ -23,31 +23,37 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
     if (playerData.team.length === 0) return 0;
     
     const teamGroups = {};
-    const chemistryTypes = {};
+    const playStyleGroups = {};
     
     playerData.team.forEach(player => {
       // Count players by team
       teamGroups[player.team] = (teamGroups[player.team] || 0) + 1;
       
-      // Count chemistry types
-      if (player.chemistry) {
-        player.chemistry.forEach(chem => {
-          chemistryTypes[chem] = (chemistryTypes[chem] || 0) + 1;
-        });
+      // Count players by play style
+      if (player.playStyle) {
+        playStyleGroups[player.playStyle] = (playStyleGroups[player.playStyle] || 0) + 1;
       }
     });
     
-    // Calculate chemistry score
+    // Much harder chemistry calculation
     let chemistryScore = 0;
+    
+    // Same team bonuses (much smaller)
     Object.values(teamGroups).forEach((count: number) => {
-      if (count >= 2) chemistryScore += count * 10; // Same team bonus
+      if (count >= 3) chemistryScore += (count - 2) * 3; // Need 3+ for small bonus
+      if (count >= 5) chemistryScore += (count - 4) * 2; // Bigger bonus for 5+
     });
     
-    Object.values(chemistryTypes).forEach((count: number) => {
-      if (count >= 2) chemistryScore += count * 5; // Same chemistry bonus
+    // Play style bonuses (also smaller)
+    Object.values(playStyleGroups).forEach((count: number) => {
+      if (count >= 4) chemistryScore += (count - 3) * 2; // Need 4+ similar styles
     });
     
-    return Math.min(100, chemistryScore);
+    // Base chemistry penalty for mixed teams
+    const uniqueTeams = Object.keys(teamGroups).length;
+    if (uniqueTeams > 8) chemistryScore -= (uniqueTeams - 8) * 3;
+    
+    return Math.max(0, Math.min(75, chemistryScore)); // Max 75 instead of 100
   };
 
   const teamChemistry = calculateTeamChemistry();
@@ -214,88 +220,260 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
                 </Button>
               </div>
               
-              {/* Hockey Formation */}
-              <div className="relative bg-ice-dark/30 rounded-lg p-8 min-h-96">
-                {/* Ice rink outline */}
-                <div className="absolute inset-4 border-2 border-primary/30 rounded-lg">
-                  {/* Center ice */}
-                  <div className="absolute top-1/2 left-1/2 w-16 h-16 border-2 border-primary/30 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
+              {/* Full Roster Layout */}
+              <div className="space-y-8">
+                {/* Forward Lines */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4 text-foreground">Forward Lines</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {/* Line 1 */}
+                    <Card className="game-card p-4">
+                      <h5 className="text-sm font-semibold mb-3 text-center text-primary">Line 1</h5>
+                      <div className="space-y-2">
+                        <div className="text-center">
+                          {lineup.LW1 ? (
+                            <PlayerCard player={lineup.LW1} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">LW</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {lineup.C1 ? (
+                            <PlayerCard player={lineup.C1} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">C</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {lineup.RW1 ? (
+                            <PlayerCard player={lineup.RW1} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">RW</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Line 2 */}
+                    <Card className="game-card p-4">
+                      <h5 className="text-sm font-semibold mb-3 text-center text-primary">Line 2</h5>
+                      <div className="space-y-2">
+                        <div className="text-center">
+                          {lineup.LW2 ? (
+                            <PlayerCard player={lineup.LW2} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">LW</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {lineup.C2 ? (
+                            <PlayerCard player={lineup.C2} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">C</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {lineup.RW2 ? (
+                            <PlayerCard player={lineup.RW2} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">RW</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Line 3 */}
+                    <Card className="game-card p-4">
+                      <h5 className="text-sm font-semibold mb-3 text-center text-primary">Line 3</h5>
+                      <div className="space-y-2">
+                        <div className="text-center">
+                          {lineup.LW3 ? (
+                            <PlayerCard player={lineup.LW3} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">LW</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {lineup.C3 ? (
+                            <PlayerCard player={lineup.C3} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">C</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {lineup.RW3 ? (
+                            <PlayerCard player={lineup.RW3} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">RW</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+
+                    {/* Line 4 */}
+                    <Card className="game-card p-4">
+                      <h5 className="text-sm font-semibold mb-3 text-center text-primary">Line 4</h5>
+                      <div className="space-y-2">
+                        <div className="text-center">
+                          {lineup.LW4 ? (
+                            <PlayerCard player={lineup.LW4} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">LW</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {lineup.C4 ? (
+                            <PlayerCard player={lineup.C4} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">C</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center">
+                          {lineup.RW4 ? (
+                            <PlayerCard player={lineup.RW4} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">RW</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
                 </div>
 
-                {/* Player positions */}
-                <div className="relative h-full">
-                  {/* Forward line */}
-                  <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex space-x-8">
-                    {/* Left Wing */}
-                    <div className="text-center">
-                      {lineup.LW1 ? (
-                        <PlayerCard player={lineup.LW1} size="small" />
-                      ) : (
-                        <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">LW1</span>
+                {/* Defense Pairs */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4 text-foreground">Defense Pairs</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Pair 1 */}
+                    <Card className="game-card p-4">
+                      <h5 className="text-sm font-semibold mb-3 text-center text-primary">Pair 1</h5>
+                      <div className="flex justify-center space-x-4">
+                        <div className="text-center">
+                          {lineup.LD1 ? (
+                            <PlayerCard player={lineup.LD1} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">LD</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Center */}
-                    <div className="text-center">
-                      {lineup.C1 ? (
-                        <PlayerCard player={lineup.C1} size="small" />
-                      ) : (
-                        <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">C1</span>
+                        <div className="text-center">
+                          {lineup.RD1 ? (
+                            <PlayerCard player={lineup.RD1} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">RD</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Right Wing */}
-                    <div className="text-center">
-                      {lineup.RW1 ? (
-                        <PlayerCard player={lineup.RW1} size="small" />
-                      ) : (
-                        <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">RW1</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
+                    </Card>
 
-                  {/* Defense line */}
-                  <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-12">
-                    {/* Left Defense */}
-                    <div className="text-center">
-                      {lineup.LD1 ? (
-                        <PlayerCard player={lineup.LD1} size="small" />
-                      ) : (
-                        <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">LD1</span>
+                    {/* Pair 2 */}
+                    <Card className="game-card p-4">
+                      <h5 className="text-sm font-semibold mb-3 text-center text-primary">Pair 2</h5>
+                      <div className="flex justify-center space-x-4">
+                        <div className="text-center">
+                          {lineup.LD2 ? (
+                            <PlayerCard player={lineup.LD2} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">LD</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Right Defense */}
-                    <div className="text-center">
-                      {lineup.RD1 ? (
-                        <PlayerCard player={lineup.RD1} size="small" />
-                      ) : (
-                        <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">RD1</span>
+                        <div className="text-center">
+                          {lineup.RD2 ? (
+                            <PlayerCard player={lineup.RD2} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">RD</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
+                    </Card>
 
-                  {/* Goalie */}
-                  <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-                    <div className="text-center">
-                      {lineup.G1 ? (
-                        <PlayerCard player={lineup.G1} size="small" />
-                      ) : (
-                        <div className="w-20 h-28 bg-muted/30 rounded border border-dashed border-muted mb-2 flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">G1</span>
+                    {/* Pair 3 */}
+                    <Card className="game-card p-4">
+                      <h5 className="text-sm font-semibold mb-3 text-center text-primary">Pair 3</h5>
+                      <div className="flex justify-center space-x-4">
+                        <div className="text-center">
+                          {lineup.LD3 ? (
+                            <PlayerCard player={lineup.LD3} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">LD</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                        <div className="text-center">
+                          {lineup.RD3 ? (
+                            <PlayerCard player={lineup.RD3} size="small" />
+                          ) : (
+                            <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">RD</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Goalies */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4 text-foreground">Goalies</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-md mx-auto">
+                    <Card className="game-card p-4">
+                      <h5 className="text-sm font-semibold mb-3 text-center text-primary">Starter</h5>
+                      <div className="text-center">
+                        {lineup.G1 ? (
+                          <PlayerCard player={lineup.G1} size="small" />
+                        ) : (
+                          <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground">G</span>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+
+                    <Card className="game-card p-4">
+                      <h5 className="text-sm font-semibold mb-3 text-center text-primary">Backup</h5>
+                      <div className="text-center">
+                        {lineup.G2 ? (
+                          <PlayerCard player={lineup.G2} size="small" />
+                        ) : (
+                          <div className="w-16 h-20 bg-muted/30 rounded border border-dashed border-muted mx-auto flex items-center justify-center">
+                            <span className="text-xs text-muted-foreground">G</span>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
                   </div>
                 </div>
               </div>
@@ -367,42 +545,40 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="text-lg font-semibold mb-3 flex items-center">
-                    <Zap className="w-5 h-5 mr-2 text-gold" />
-                    Chemistry Types
-                  </h4>
-                  <div className="space-y-2">
-                     {Object.entries(
-                       playerData.team.reduce((acc: Record<string, number>, player) => {
-                         if (player.chemistry) {
-                           player.chemistry.forEach((chem: string) => {
-                             acc[chem] = (acc[chem] || 0) + 1;
-                           });
-                         }
-                         return acc;
-                       }, {})
-                     ).map(([chemistry, count]) => (
-                       <div key={chemistry} className="flex items-center justify-between p-2 bg-muted/20 rounded">
-                         <span className="font-medium">{chemistry}</span>
-                         <Badge variant={(count as number) >= 2 ? "default" : "outline"}>
-                           {count as number} player{(count as number) !== 1 ? 's' : ''}
-                         </Badge>
-                       </div>
-                     ))}
-                  </div>
-                </div>
+                 <div>
+                   <h4 className="text-lg font-semibold mb-3 flex items-center">
+                     <Zap className="w-5 h-5 mr-2 text-gold" />
+                     Play Styles
+                   </h4>
+                   <div className="space-y-2">
+                      {Object.entries(
+                        playerData.team.reduce((acc: Record<string, number>, player) => {
+                          if (player.playStyle) {
+                            acc[player.playStyle] = (acc[player.playStyle] || 0) + 1;
+                          }
+                          return acc;
+                        }, {})
+                      ).map(([playStyle, count]) => (
+                        <div key={playStyle} className="flex items-center justify-between p-2 bg-muted/20 rounded">
+                          <span className="font-medium">{playStyle}</span>
+                          <Badge variant={(count as number) >= 4 ? "default" : "outline"}>
+                            {count as number} player{(count as number) !== 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                      ))}
+                   </div>
+                 </div>
               </div>
 
-              <div className="mt-6 p-4 bg-gold/10 border border-gold/30 rounded-lg">
-                <h5 className="font-semibold text-gold mb-2">Chemistry Tips</h5>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Players from the same NHL team get synergy bonuses</li>
-                  <li>• Matching chemistry types boost performance</li>
-                  <li>• Higher chemistry improves win chances in games</li>
-                  <li>• Aim for 2+ players with matching attributes</li>
-                </ul>
-              </div>
+               <div className="mt-6 p-4 bg-gold/10 border border-gold/30 rounded-lg">
+                 <h5 className="font-semibold text-gold mb-2">Chemistry Tips</h5>
+                 <ul className="text-sm text-muted-foreground space-y-1">
+                   <li>• Need 3+ players from same team for synergy bonus</li>
+                   <li>• Matching play styles boost team performance</li>
+                   <li>• Too many different teams hurts chemistry</li>
+                   <li>• Maximum chemistry is now 75 - much harder to achieve!</li>
+                 </ul>
+               </div>
             </Card>
           </TabsContent>
 

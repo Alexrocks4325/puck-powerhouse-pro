@@ -149,6 +149,10 @@ All colors MUST be HSL.
   .player-card-bronze {
     @apply border-2 border-amber-600 bg-gradient-to-br from-amber-600/20 to-amber-600/5;
   }
+
+  .stanley-cup-animation {
+    @apply animate-stanley-cup;
+  }
 }
 
 @layer utilities {
@@ -202,4 +206,15 @@ All colors MUST be HSL.
 @keyframes ice-glimmer {
   0%, 100% { filter: brightness(1) drop-shadow(0 0 10px hsl(var(--ice-blue) / 0.3)); }
   50% { filter: brightness(1.2) drop-shadow(0 0 20px hsl(var(--ice-blue) / 0.6)); }
+}
+
+@keyframes stanley-cup {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+  100% { transform: scale(1) rotate(360deg); opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
