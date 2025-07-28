@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
+import defaultPlayerImg from "@/assets/players/default-player.jpg";
 
 interface Player {
   id: number;
@@ -111,7 +112,7 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
                 alt={player.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = '/src/assets/players/default-player.jpg';
+                  e.currentTarget.src = defaultPlayerImg;
                 }}
               />
             </div>

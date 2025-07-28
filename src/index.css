@@ -38,11 +38,17 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
-    /* NHL Theme Colors */
+    /* NHL Theme Colors - Enhanced */
     --ice-blue: 195 100% 85%;
     --ice-dark: 220 25% 15%;
     --gold: 45 95% 55%;
     --hockey-red: 0 85% 60%;
+    --nhl-navy: 220 70% 25%;
+    --nhl-orange: 25 100% 55%;
+    --pack-bronze: 30 60% 35%;
+    --pack-silver: 210 15% 70%;
+    --pack-gold: 45 95% 55%;
+    --pack-elite: 280 85% 65%;
     
     /* Game-specific design tokens */
     --gradient-ice: linear-gradient(135deg, hsl(var(--ice-blue)), hsl(var(--primary)));
@@ -135,23 +141,43 @@ All colors MUST be HSL.
   }
 
   .player-card-legend {
-    @apply border-2 border-purple-400 bg-gradient-to-br from-purple-500/25 to-pink-500/15 shadow-lg shadow-purple-500/20;
+    @apply border-2 border-purple-400 bg-gradient-to-br from-purple-500/30 to-pink-500/20 shadow-xl shadow-purple-500/30 backdrop-blur-sm;
   }
 
   .player-card-elite {
-    @apply border-2 border-gold bg-gradient-to-br from-gold/20 to-gold/5;
+    @apply border-2 border-gold bg-gradient-to-br from-gold/25 to-orange-500/15 shadow-xl shadow-gold/25 backdrop-blur-sm;
   }
 
   .player-card-gold {
-    @apply border-2 border-yellow-500 bg-gradient-to-br from-yellow-500/20 to-yellow-500/5;
+    @apply border-2 border-yellow-500 bg-gradient-to-br from-yellow-500/25 to-yellow-600/15 shadow-lg shadow-yellow-500/20;
   }
 
   .player-card-silver {
-    @apply border-2 border-gray-400 bg-gradient-to-br from-gray-400/20 to-gray-400/5;
+    @apply border-2 border-gray-400 bg-gradient-to-br from-gray-400/25 to-gray-500/15 shadow-lg shadow-gray-400/20;
   }
 
   .player-card-bronze {
-    @apply border-2 border-amber-600 bg-gradient-to-br from-amber-600/20 to-amber-600/5;
+    @apply border-2 border-amber-600 bg-gradient-to-br from-amber-600/25 to-amber-700/15 shadow-lg shadow-amber-600/20;
+  }
+
+  .pack-bronze {
+    @apply bg-gradient-to-br from-amber-700 to-amber-900 border-amber-600;
+  }
+
+  .pack-silver {
+    @apply bg-gradient-to-br from-gray-500 to-gray-700 border-gray-400;
+  }
+
+  .pack-gold {
+    @apply bg-gradient-to-br from-yellow-500 to-yellow-700 border-yellow-400;
+  }
+
+  .pack-elite {
+    @apply bg-gradient-to-br from-purple-600 to-purple-800 border-purple-500;
+  }
+
+  .nhl-gradient-bg {
+    @apply bg-gradient-to-br from-nhl-navy via-primary to-nhl-navy/80;
   }
 
   .stanley-cup-animation {

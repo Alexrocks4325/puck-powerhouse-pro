@@ -6,6 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GameHeader from "./GameHeader";
 import StanleyCupAnimation from "./StanleyCupAnimation";
+import SeasonStatsTracker from "./SeasonStatsTracker";
+import PlayoffBracket from "./PlayoffBracket";
 import { Trophy, Star, Coins, Calendar, Play, Crown, Target, Zap, ArrowLeft, BarChart3 } from "lucide-react";
 
 interface EnhancedSeasonModeProps {
@@ -22,14 +24,16 @@ interface EnhancedSeasonModeProps {
 }
 
 const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedSeasonModeProps) => {
-  const [seasonProgress, setSeasonProgress] = useState(0);
+  const [seasonProgress, setSeasonProgress] = useState(playerData.seasonData?.progress || 0);
   const [playoffProgress, setPlayoffProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMode, setCurrentMode] = useState<'season' | 'playoffs'>('season');
-  const [stanleyCupWins, setStanleyCupWins] = useState(0);
+  const [stanleyCupWins, setStanleyCupWins] = useState(playerData.seasonData?.cupWins || 0);
   const [showStanleyCupAnimation, setShowStanleyCupAnimation] = useState(false);
   const [playoffSeries, setPlayoffSeries] = useState({ round: 1, wins: 0, losses: 0, games: [] });
   const [gameStats, setGameStats] = useState([]);
+  const [currentGameNumber, setCurrentGameNumber] = useState(Math.floor(seasonProgress / (100 / 16)));
+  const [playoffBracket] = useState(generateInitialBracket());
 
   // Calculate team strength for dynamic difficulty  
   const calculateTeamStrength = () => {
@@ -63,6 +67,30 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
   };
 
   const teamStrength = calculateTeamStrength();
+
+  function generateInitialBracket() {
+    const teams = [
+      "Boston Bruins", "Toronto Maple Leafs", "Tampa Bay Lightning", "Florida Panthers",
+      "New York Rangers", "New Jersey Devils", "Carolina Hurricanes", "New York Islanders",
+      "Vegas Golden Knights", "Edmonton Oilers", "Los Angeles Kings", "Seattle Kraken",
+      "Colorado Avalanche", "Dallas Stars", "Minnesota Wild", "Winnipeg Jets"
+    ];
+    
+    return {
+      round1: teams.reduce((acc, team, index) => {
+        if (index % 2 === 0 && teams[index + 1]) {
+          acc.push([
+            { name: teams[index], seed: index + 1, wins: 0 },
+            { name: teams[index + 1], seed: index + 2, wins: 0 }
+          ]);
+        }
+        return acc;
+      }, [] as any[]),
+      round2: [],
+      round3: [],
+      finals: []
+    };
+  }
 
   // Season teams with progressive difficulty
   const getSeasonTeams = () => {
@@ -201,7 +229,20 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
         packs: prev.packs + packReward
       }));
       
-      setSeasonProgress(prev => Math.min(100, prev + (100 / seasonTeams.length)));
+      const newProgress = Math.min(100, seasonProgress + (100 / 16));
+      setSeasonProgress(newProgress);
+      setCurrentGameNumber(Math.floor(newProgress / (100 / 16)));
+      
+      // Save season data
+      setPlayerData(prev => ({
+        ...prev,
+        seasonData: {
+          ...prev.seasonData,
+          progress: newProgress,
+          cupWins: stanleyCupWins
+        }
+      }));
+      
       setIsPlaying(false);
       
       const resultMessage = `${isWin ? '🏆 WIN' : '💔 LOSS'} vs ${teamName}\n💰 Earned ${coinsEarned} coins${packReward ? '\n🎁 Bonus pack!' : ''}`;
@@ -222,7 +263,7 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
         title="Season & Playoffs"
       />
       
-      <div className="container mx-auto px-4 pt-20 pb-8">
+        <div className="container mx-auto px-4 pt-20 pb-8">
         <div className="flex items-center mb-8">
           <Button 
             variant="outline" 
@@ -236,6 +277,14 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
             <h1 className="text-4xl font-bold text-foreground">Enhanced Season Mode</h1>
             <p className="text-xl text-muted-foreground">Compete for the Stanley Cup with best-of-7 playoffs</p>
           </div>
+        </div>
+
+        {/* League Stats and Bracket */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <SeasonStatsTracker currentGame={currentGameNumber} />
+          {currentMode === 'playoffs' && (
+            <PlayoffBracket currentRound={playoffSeries.round} bracketData={playoffBracket} />
+          )}
         </div>
 
         {/* Team Overview */}
@@ -258,9 +307,9 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
             <div className="text-center">
               <div className="flex items-center justify-center mb-2">
                 <Star className="w-6 h-6 text-ice-blue mr-2" />
-                <span className="text-2xl font-bold text-ice-blue">{Math.round(seasonProgress)}%</span>
+                <span className="text-2xl font-bold text-ice-blue">{currentGameNumber}/16</span>
               </div>
-              <div className="text-sm text-muted-foreground">Season Complete</div>
+              <div className="text-sm text-muted-foreground">Games Played</div>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center mb-2">
@@ -275,27 +324,27 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
         <Tabs value={currentMode} onValueChange={(value) => setCurrentMode(value as 'season' | 'playoffs')} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="season">Regular Season</TabsTrigger>
-            <TabsTrigger value="playoffs" disabled={seasonProgress < 75}>
-              Stanley Cup Playoffs {seasonProgress < 75 && <Badge className="ml-2 text-xs">Locked</Badge>}
+            <TabsTrigger value="playoffs" disabled={currentGameNumber < 16}>
+              Stanley Cup Playoffs {currentGameNumber < 16 && <Badge className="ml-2 text-xs">Locked</Badge>}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="season" className="space-y-6">
             <Card className="game-card p-6">
               <h3 className="text-2xl font-bold mb-4 text-foreground">Regular Season Games</h3>
-              <Progress value={seasonProgress} className="h-3 mb-4" />
+              <Progress value={(currentGameNumber / 16) * 100} className="h-3 mb-4" />
               <p className="text-sm text-muted-foreground mb-6">
-                Complete 75% of season to unlock playoffs. Games get progressively harder!
+                Play all 16 games to unlock playoffs. Games get progressively harder!
               </p>
               
               <div className="grid gap-4">
-                {seasonTeams.slice(Math.floor(seasonProgress / (100 / seasonTeams.length)), Math.floor(seasonProgress / (100 / seasonTeams.length)) + 4).map((team, index) => {
-                  const gameIndex = Math.floor(seasonProgress / (100 / seasonTeams.length)) + index;
-                  const isNext = index === 0;
+                {seasonTeams.slice(currentGameNumber, currentGameNumber + 4).map((team, index) => {
+                  const gameIndex = currentGameNumber + index;
+                  const isNext = index === 0 && currentGameNumber < 16;
                   
                   return (
                     <div
-                      key={team.abbreviation}
+                      key={`${team.abbreviation}-${gameIndex}`}
                       className={`p-4 rounded-lg border transition-all ${
                         isNext ? 'bg-primary/10 border-primary/30' : 'bg-muted/10 border-muted/30'
                       }`}
