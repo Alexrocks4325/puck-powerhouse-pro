@@ -177,7 +177,7 @@ All colors MUST be HSL.
   }
 
   .nhl-gradient-bg {
-    @apply bg-gradient-to-br from-nhl-navy via-primary to-nhl-navy/80;
+    @apply bg-gradient-to-br from-primary via-background to-primary/20;
   }
 
   .stanley-cup-animation {
