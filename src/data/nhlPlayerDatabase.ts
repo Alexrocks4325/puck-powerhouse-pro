@@ -145,11 +145,26 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 90, name: "Mattias Ekholm", team: "EDM", position: "D", overall: 81, rarity: "silver", chemistry: ["Defensive", "Veteran"] },
 
   // FLORIDA PANTHERS
-  { id: 91, name: "Aleksander Barkov", team: "FLA", position: "C", overall: 90, rarity: "elite", chemistry: ["Two-Way", "Leader"] },
-  { id: 92, name: "Matthew Tkachuk", team: "FLA", position: "LW", overall: 88, rarity: "gold", chemistry: ["Power Forward", "Agitator"] },
-  { id: 93, name: "Sam Reinhart", team: "FLA", position: "RW", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Sniper"] },
-  { id: 94, name: "Aaron Ekblad", team: "FLA", position: "D", overall: 83, rarity: "silver", chemistry: ["Two-Way"] },
-  { id: 95, name: "Gustav Forsling", team: "FLA", position: "D", overall: 81, rarity: "silver", chemistry: ["Two-Way"] },
+  { id: 91, name: "Aleksander Barkov", team: "FLA", position: "C", overall: 90, rarity: "elite", chemistry: ["Two-Way", "Leader"], image: "/src/assets/players/aleksander-barkov-realistic.jpg" },
+  { id: 92, name: "Matthew Tkachuk", team: "FLA", position: "LW", overall: 88, rarity: "gold", chemistry: ["Power Forward", "Agitator"], image: "/src/assets/players/matthew-tkachuk-realistic.jpg" },
+  { id: 93, name: "Sam Reinhart", team: "FLA", position: "RW", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Sniper"], image: "/src/assets/players/sam-reinhart-realistic.jpg" },
+  { id: 94, name: "Aaron Ekblad", team: "FLA", position: "D", overall: 83, rarity: "silver", chemistry: ["Two-Way"], image: "/src/assets/players/aaron-ekblad-realistic.jpg" },
+  { id: 95, name: "Gustav Forsling", team: "FLA", position: "D", overall: 81, rarity: "silver", chemistry: ["Two-Way"], image: "/src/assets/players/gustav-forsling-realistic.jpg" },
+  { id: 1050, name: "Sam Bennett", team: "FLA", position: "C", overall: 80, rarity: "silver", chemistry: ["Physical", "Power Forward"], image: "/src/assets/players/sam-bennett-realistic.jpg" },
+  { id: 1051, name: "Jesper Boqvist", team: "FLA", position: "C", overall: 75, rarity: "bronze", chemistry: ["Speedster"], image: "/src/assets/players/jesper-boqvist-realistic.jpg" },
+  { id: 1052, name: "Jonah Gadjovich", team: "FLA", position: "LW", overall: 72, rarity: "bronze", chemistry: ["Physical"], image: "/src/assets/players/jonah-gadjovich-realistic.jpg" },
+  { id: 1053, name: "AJ Greer", team: "FLA", position: "LW", overall: 71, rarity: "bronze", chemistry: ["Physical"], image: "/src/assets/players/aj-greer-realistic.jpg" },
+  { id: 1054, name: "Anton Lundell", team: "FLA", position: "C", overall: 79, rarity: "bronze", chemistry: ["Two-Way", "Young Gun"], image: "/src/assets/players/anton-lundell-realistic.jpg" },
+  { id: 1055, name: "Eetu Luostarinen", team: "FLA", position: "C", overall: 77, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/eetu-luostarinen-realistic.jpg" },
+  { id: 1056, name: "Brad Marchand", team: "FLA", position: "LW", overall: 89, rarity: "gold", chemistry: ["Agitator", "Clutch"], image: "/src/assets/players/brad-marchand-realistic.jpg" },
+  { id: 1057, name: "Evan Rodrigues", team: "FLA", position: "LW", overall: 76, rarity: "bronze", chemistry: ["Speedster"], image: "/src/assets/players/evan-rodrigues-realistic.jpg" },
+  { id: 1058, name: "Mackie Samoskevich", team: "FLA", position: "RW", overall: 73, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/mackie-samoskevich-realistic.jpg" },
+  { id: 1059, name: "Carter Verhaeghe", team: "FLA", position: "C", overall: 83, rarity: "silver", chemistry: ["Speedster", "Clutch"], image: "/src/assets/players/carter-verhaeghe-realistic.jpg" },
+  { id: 1060, name: "Uvis Balinskis", team: "FLA", position: "D", overall: 74, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/uvis-balinskis-realistic.jpg" },
+  { id: 1061, name: "Seth Jones", team: "FLA", position: "D", overall: 82, rarity: "silver", chemistry: ["Two-Way", "Veteran"], image: "/src/assets/players/seth-jones-realistic.jpg" },
+  { id: 1062, name: "Dmitry Kulikov", team: "FLA", position: "D", overall: 76, rarity: "bronze", chemistry: ["Defensive", "Veteran"], image: "/src/assets/players/dmitry-kulikov-realistic.jpg" },
+  { id: 1063, name: "Nikko Mikkola", team: "FLA", position: "D", overall: 75, rarity: "bronze", chemistry: ["Physical", "Defensive"], image: "/src/assets/players/nikko-mikkola-realistic.jpg" },
+  { id: 1064, name: "Sergei Bobrovsky", team: "FLA", position: "G", overall: 85, rarity: "gold", chemistry: ["Clutch", "Veteran"], image: "/src/assets/players/sergei-bobrovsky-realistic.jpg" },
 
   // Continue for all remaining teams and add role players, prospects, etc.
   // Adding more depth players to reach 1000+...
@@ -463,12 +478,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 312, name: "Darnell Nurse", team: "EDM", position: "D", overall: 82, rarity: "silver", chemistry: ["Two-Way"] },
   { id: 313, name: "Evan Bouchard", team: "EDM", position: "D", overall: 81, rarity: "silver", chemistry: ["Offensive D", "Young Gun"] },
 
-  // More FLORIDA PANTHERS depth (already added some above)
-  { id: 314, name: "Aleksander Barkov", team: "FLA", position: "C", overall: 89, rarity: "gold", chemistry: ["Two-Way", "Leader"] },
-  { id: 315, name: "Carter Verhaeghe", team: "FLA", position: "C", overall: 83, rarity: "silver", chemistry: ["Speedster", "Clutch"] },
-  { id: 316, name: "Sam Reinhart", team: "FLA", position: "RW", overall: 84, rarity: "silver", chemistry: ["Two-Way"] },
-  { id: 317, name: "Matthew Tkachuk", team: "FLA", position: "LW", overall: 87, rarity: "gold", chemistry: ["Power Forward", "Agitator"] },
-  { id: 318, name: "Aaron Ekblad", team: "FLA", position: "D", overall: 83, rarity: "silver", chemistry: ["Two-Way"] },
+  // More FLORIDA PANTHERS depth (removed duplicates, using main entries above)
 
   // Continue with more teams and players...
   // LOS ANGELES KINGS (already added some)
@@ -496,10 +506,8 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 333, name: "Ilya Sorokin", team: "NYI", position: "G", overall: 85, rarity: "gold", chemistry: ["Elite Goalie"] },
 
   // More depth forwards from various teams
-  { id: 334, name: "Sam Bennett", team: "FLA", position: "C", overall: 80, rarity: "bronze", chemistry: ["Physical", "Power Forward"] },
-  { id: 335, name: "Evan Rodrigues", team: "FLA", position: "LW", overall: 76, rarity: "bronze", chemistry: ["Speedster"] },
+  // Removed duplicate FLA players (using main entries above)
   { id: 336, name: "Nick Cousins", team: "FLA", position: "C", overall: 73, rarity: "bronze", chemistry: ["Agitator"] },
-  { id: 337, name: "Niko Mikkola", team: "FLA", position: "D", overall: 75, rarity: "bronze", chemistry: ["Physical", "Defensive"] },
   { id: 183, name: "T.J. Oshie", team: "WSH", position: "RW", overall: 80, rarity: "bronze", chemistry: ["Veteran", "Clutch"] },
   { id: 184, name: "Tom Wilson", team: "WSH", position: "RW", overall: 79, rarity: "bronze", chemistry: ["Physical", "Power Forward"] },
   { id: 185, name: "Trevor van Riemsdyk", team: "WSH", position: "D", overall: 74, rarity: "bronze", chemistry: ["Defensive"] },
@@ -618,7 +626,7 @@ export const getStarterTeam = (): Player[] => [
   
   // Line 4
   { id: 1010, name: "Noel Acciari", team: "PIT", position: "C", overall: 69, rarity: "bronze", chemistry: ["Grinder"] },
-  { id: 1011, name: "Tomas Nosek", team: "FLA", position: "LW", overall: 68, rarity: "bronze", chemistry: ["Grinder"] },
+  // Removed duplicate FLA player (using main entries above)
   { id: 1012, name: "Austin Watson", team: "TBL", position: "RW", overall: 67, rarity: "bronze", chemistry: ["Enforcer"] },
   
   // Defense - Pair 1
