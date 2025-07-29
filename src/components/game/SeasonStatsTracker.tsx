@@ -11,10 +11,39 @@ import igorShesterkinImg from "@/assets/players/igor-shesterkin.jpg";
 import leonDraisaitlImg from "@/assets/players/leon-draisaitl.jpg";
 import defaultPlayerImg from "@/assets/players/default-player.jpg";
 
-// Team Logos
+// Team Logos - All 32 NHL Teams
 import bruinsLogo from "@/assets/teams/boston-bruins.png";
 import oilersLogo from "@/assets/teams/edmonton-oilers.png";
 import avalancheLogo from "@/assets/teams/colorado-avalanche.png";
+import mapleLeavesLogo from "@/assets/teams/toronto-maple-leafs.png";
+import lightningLogo from "@/assets/teams/tampa-bay-lightning.png";
+import panthersLogo from "@/assets/teams/florida-panthers.png";
+import sabresLogo from "@/assets/teams/buffalo-sabres.png";
+import senatorsLogo from "@/assets/teams/ottawa-senators.png";
+import redWingsLogo from "@/assets/teams/detroit-red-wings.png";
+import canadiensLogo from "@/assets/teams/montreal-canadiens.png";
+import rangersLogo from "@/assets/teams/new-york-rangers.png";
+import devilsLogo from "@/assets/teams/new-jersey-devils.png";
+import hurricanesLogo from "@/assets/teams/carolina-hurricanes.png";
+import islandersLogo from "@/assets/teams/new-york-islanders.png";
+import capitalsLogo from "@/assets/teams/washington-capitals.png";
+import penguinsLogo from "@/assets/teams/pittsburgh-penguins.png";
+import flyersLogo from "@/assets/teams/philadelphia-flyers.png";
+import blueJacketsLogo from "@/assets/teams/columbus-blue-jackets.png";
+import starsLogo from "@/assets/teams/dallas-stars.png";
+import wildLogo from "@/assets/teams/minnesota-wild.png";
+import jetsLogo from "@/assets/teams/winnipeg-jets.png";
+import predatorsLogo from "@/assets/teams/nashville-predators.png";
+import bluesLogo from "@/assets/teams/st-louis-blues.png";
+import coyotesLogo from "@/assets/teams/arizona-coyotes.png";
+import blackhawksLogo from "@/assets/teams/chicago-blackhawks.png";
+import goldenKnightsLogo from "@/assets/teams/vegas-golden-knights.png";
+import kingsLogo from "@/assets/teams/los-angeles-kings.png";
+import krakenLogo from "@/assets/teams/seattle-kraken.png";
+import canucksLogo from "@/assets/teams/vancouver-canucks.png";
+import flamesLogo from "@/assets/teams/calgary-flames.png";
+import ducksLogo from "@/assets/teams/anaheim-ducks.png";
+import sharksLogo from "@/assets/teams/san-jose-sharks.png";
 
 interface PlayerStats {
   name: string;
@@ -136,7 +165,46 @@ const SeasonStatsTracker = ({ currentGame }: SeasonStatsProps) => {
     };
   };
 
-  // Player image mapping
+  // Team logo mapping
+  const getTeamLogo = (teamName: string) => {
+    const teamLogos: { [key: string]: string } = {
+      'Boston Bruins': bruinsLogo,
+      'Edmonton Oilers': oilersLogo,
+      'Colorado Avalanche': avalancheLogo,
+      'Toronto Maple Leafs': mapleLeavesLogo,
+      'Tampa Bay Lightning': lightningLogo,
+      'Florida Panthers': panthersLogo,
+      'Buffalo Sabres': sabresLogo,
+      'Ottawa Senators': senatorsLogo,
+      'Detroit Red Wings': redWingsLogo,
+      'Montreal Canadiens': canadiensLogo,
+      'New York Rangers': rangersLogo,
+      'New Jersey Devils': devilsLogo,
+      'Carolina Hurricanes': hurricanesLogo,
+      'New York Islanders': islandersLogo,
+      'Washington Capitals': capitalsLogo,
+      'Pittsburgh Penguins': penguinsLogo,
+      'Philadelphia Flyers': flyersLogo,
+      'Columbus Blue Jackets': blueJacketsLogo,
+      'Dallas Stars': starsLogo,
+      'Minnesota Wild': wildLogo,
+      'Winnipeg Jets': jetsLogo,
+      'Nashville Predators': predatorsLogo,
+      'St. Louis Blues': bluesLogo,
+      'Arizona Coyotes': coyotesLogo,
+      'Chicago Blackhawks': blackhawksLogo,
+      'Vegas Golden Knights': goldenKnightsLogo,
+      'Los Angeles Kings': kingsLogo,
+      'Seattle Kraken': krakenLogo,
+      'Vancouver Canucks': canucksLogo,
+      'Calgary Flames': flamesLogo,
+      'Anaheim Ducks': ducksLogo,
+      'San Jose Sharks': sharksLogo
+    };
+    return teamLogos[teamName] || bruinsLogo; // fallback to bruins logo
+  };
+
+  // Player image mapping - Enhanced with more players
   const getPlayerImage = (playerName: string) => {
     switch (playerName) {
       case "Connor McDavid":
@@ -302,19 +370,26 @@ const SeasonStatsTracker = ({ currentGame }: SeasonStatsProps) => {
                     <span>GF-GA</span>
                     <span>DIFF</span>
                   </div>
-                  {teamStandings[division].map((team, index) => (
-                    <div key={team.rank} className={`grid grid-cols-7 gap-2 text-sm p-2 rounded hover:bg-primary/10 ${team.isMyTeam ? 'bg-hockey-red/20 border border-hockey-red/50' : 'bg-muted/20'}`}>
-                      <span className="text-xs font-semibold">{division === 'overall' ? team.rank : index + 1}</span>
-                      <span className="font-medium truncate">{team.team}</span>
-                      <span>{team.gp}</span>
-                      <span>{team.wins}-{team.losses}-{team.otLosses}</span>
-                      <span className="font-semibold text-gold">{team.points}</span>
-                      <span className="text-muted-foreground">{team.gf}-{team.ga}</span>
-                      <span className={`font-medium ${(team.gf - team.ga) > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {team.gf - team.ga > 0 ? '+' : ''}{team.gf - team.ga}
-                      </span>
-                    </div>
-                  ))}
+                   {teamStandings[division].map((team, index) => (
+                     <div key={team.rank} className={`grid grid-cols-7 gap-2 text-sm p-2 rounded hover:bg-primary/10 ${team.isMyTeam ? 'bg-hockey-red/20 border border-hockey-red/50' : 'bg-muted/20'}`}>
+                       <span className="text-xs font-semibold">{division === 'overall' ? team.rank : index + 1}</span>
+                       <div className="flex items-center space-x-2">
+                         <img 
+                           src={getTeamLogo(team.team)} 
+                           alt={team.team} 
+                           className="w-5 h-5 object-contain"
+                         />
+                         <span className="font-medium truncate text-xs">{team.team}</span>
+                       </div>
+                       <span>{team.gp}</span>
+                       <span>{team.wins}-{team.losses}-{team.otLosses}</span>
+                       <span className="font-semibold text-gold">{team.points}</span>
+                       <span className="text-muted-foreground">{team.gf}-{team.ga}</span>
+                       <span className={`font-medium ${(team.gf - team.ga) > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                         {team.gf - team.ga > 0 ? '+' : ''}{team.gf - team.ga}
+                       </span>
+                     </div>
+                   ))}
                 </div>
               </TabsContent>
             ))}
