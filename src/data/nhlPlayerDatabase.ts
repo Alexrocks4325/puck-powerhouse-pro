@@ -197,32 +197,32 @@ export const nhlPlayerDatabase: Player[] = [
   // For the sake of space, I'll add some more key players and then we can expand this further
 
   // NEW YORK ISLANDERS
-  { id: 121, name: "Mathew Barzal", team: "NYI", position: "C", overall: 85, rarity: "gold", chemistry: ["Speedster", "Playmaker"] },
-  { id: 122, name: "Anders Lee", team: "NYI", position: "LW", overall: 81, rarity: "silver", chemistry: ["Power Forward", "Leader"] },
+  { id: 121, name: "Mathew Barzal", team: "NYI", position: "C", overall: 85, rarity: "gold", chemistry: ["Speedster", "Playmaker"], image: "/src/assets/players/mathew-barzal-realistic.jpg" },
+  { id: 122, name: "Anders Lee", team: "NYI", position: "LW", overall: 81, rarity: "silver", chemistry: ["Power Forward", "Leader"], image: "/src/assets/players/anders-lee-realistic.jpg" },
   { id: 123, name: "Brock Nelson", team: "NYI", position: "C", overall: 80, rarity: "bronze", chemistry: ["Two-Way"] },
   { id: 124, name: "Noah Dobson", team: "NYI", position: "D", overall: 82, rarity: "silver", chemistry: ["Offensive D", "Young Gun"] },
   { id: 125, name: "Ryan Pulock", team: "NYI", position: "D", overall: 80, rarity: "bronze", chemistry: ["Defensive"] },
 
   // NEW YORK RANGERS (already added some above)
-  { id: 126, name: "Chris Kreider", team: "NYR", position: "LW", overall: 84, rarity: "silver", chemistry: ["Power Forward", "Veteran"] },
-  { id: 127, name: "Vincent Trocheck", team: "NYR", position: "C", overall: 82, rarity: "silver", chemistry: ["Two-Way"] },
-  { id: 128, name: "Alexis Lafreniere", team: "NYR", position: "LW", overall: 80, rarity: "bronze", chemistry: ["Young Gun"] },
-  { id: 129, name: "Adam Fox", team: "NYR", position: "D", overall: 90, rarity: "elite", chemistry: ["Offensive D", "Powerplay"] },
+  { id: 126, name: "Chris Kreider", team: "NYR", position: "LW", overall: 84, rarity: "silver", chemistry: ["Power Forward", "Veteran"], image: "/src/assets/players/chris-kreider-realistic.jpg" },
+  { id: 127, name: "Vincent Trocheck", team: "NYR", position: "C", overall: 82, rarity: "silver", chemistry: ["Two-Way"], image: "/src/assets/players/vincent-trocheck-realistic.jpg" },
+  { id: 128, name: "Alexis Lafreniere", team: "NYR", position: "LW", overall: 80, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/alexis-lafreniere-realistic.jpg" },
+  { id: 129, name: "Adam Fox", team: "NYR", position: "D", overall: 90, rarity: "elite", chemistry: ["Offensive D", "Powerplay"], image: "/src/assets/players/adam-fox-realistic.jpg" },
   { id: 130, name: "Jacob Trouba", team: "NYR", position: "D", overall: 82, rarity: "silver", chemistry: ["Physical", "Leader"] },
 
   // Continue with more players... Adding sample players to demonstrate the structure
   // In a real implementation, this would include 1000+ players
 
   // OTTAWA SENATORS
-  { id: 131, name: "Brady Tkachuk", team: "OTT", position: "LW", overall: 84, rarity: "silver", chemistry: ["Power Forward", "Leader"] },
-  { id: 132, name: "Drake Batherson", team: "OTT", position: "RW", overall: 81, rarity: "silver", chemistry: ["Sniper"] },
-  { id: 133, name: "Claude Giroux", team: "OTT", position: "RW", overall: 82, rarity: "silver", chemistry: ["Veteran", "Playmaker"] },
-  { id: 134, name: "Thomas Chabot", team: "OTT", position: "D", overall: 83, rarity: "silver", chemistry: ["Offensive D"] },
+  { id: 131, name: "Brady Tkachuk", team: "OTT", position: "LW", overall: 84, rarity: "silver", chemistry: ["Power Forward", "Leader"], image: "/src/assets/players/brady-tkachuk-realistic.jpg" },
+  { id: 132, name: "Drake Batherson", team: "OTT", position: "RW", overall: 81, rarity: "silver", chemistry: ["Sniper"], image: "/src/assets/players/drake-batherson-realistic.jpg" },
+  { id: 133, name: "Claude Giroux", team: "OTT", position: "RW", overall: 82, rarity: "silver", chemistry: ["Veteran", "Playmaker"], image: "/src/assets/players/claude-giroux-realistic.jpg" },
+  { id: 134, name: "Thomas Chabot", team: "OTT", position: "D", overall: 83, rarity: "silver", chemistry: ["Offensive D"], image: "/src/assets/players/thomas-chabot-realistic.jpg" },
   { id: 135, name: "Artem Zub", team: "OTT", position: "D", overall: 77, rarity: "bronze", chemistry: ["Defensive"] },
 
   // PHILADELPHIA FLYERS
-  { id: 136, name: "Travis Konecny", team: "PHI", position: "RW", overall: 82, rarity: "silver", chemistry: ["Speedster", "Agitator"] },
-  { id: 137, name: "Sean Couturier", team: "PHI", position: "C", overall: 81, rarity: "silver", chemistry: ["Two-Way", "Defensive"] },
+  { id: 136, name: "Travis Konecny", team: "PHI", position: "RW", overall: 82, rarity: "silver", chemistry: ["Speedster", "Agitator"], image: "/src/assets/players/travis-konecny-realistic.jpg" },
+  { id: 137, name: "Sean Couturier", team: "PHI", position: "C", overall: 81, rarity: "silver", chemistry: ["Two-Way", "Defensive"], image: "/src/assets/players/sean-couturier-realistic.jpg" },
   { id: 138, name: "Owen Tippett", team: "PHI", position: "RW", overall: 78, rarity: "bronze", chemistry: ["Sniper", "Young Gun"] },
   { id: 139, name: "Travis Sanheim", team: "PHI", position: "D", overall: 80, rarity: "bronze", chemistry: ["Two-Way"] },
   { id: 140, name: "Nick Seeler", team: "PHI", position: "D", overall: 73, rarity: "bronze", chemistry: ["Physical", "Defensive"] },
@@ -231,11 +231,11 @@ export const nhlPlayerDatabase: Player[] = [
   // Adding more sample entries to show the variety...
 
   // PITTSBURGH PENGUINS (already added Karlsson above)
-  { id: 141, name: "Sidney Crosby", team: "PIT", position: "C", overall: 92, rarity: "elite", chemistry: ["Legend", "Playmaker", "Leader"] },
-  { id: 142, name: "Evgeni Malkin", team: "PIT", position: "C", overall: 87, rarity: "gold", chemistry: ["Power Forward", "Veteran"] },
-  { id: 143, name: "Jake Guentzel", team: "PIT", position: "LW", overall: 86, rarity: "gold", chemistry: ["Sniper", "Clutch"] },
-  { id: 144, name: "Bryan Rust", team: "PIT", position: "RW", overall: 81, rarity: "silver", chemistry: ["Two-Way"] },
-  { id: 145, name: "Kris Letang", team: "PIT", position: "D", overall: 84, rarity: "silver", chemistry: ["Offensive D", "Veteran"] },
+  { id: 141, name: "Sidney Crosby", team: "PIT", position: "C", overall: 92, rarity: "elite", chemistry: ["Legend", "Playmaker", "Leader"], image: "/src/assets/players/sidney-crosby-realistic.jpg" },
+  { id: 142, name: "Evgeni Malkin", team: "PIT", position: "C", overall: 87, rarity: "gold", chemistry: ["Power Forward", "Veteran"], image: "/src/assets/players/evgeni-malkin-realistic.jpg" },
+  { id: 143, name: "Jake Guentzel", team: "PIT", position: "LW", overall: 86, rarity: "gold", chemistry: ["Sniper", "Clutch"], image: "/src/assets/players/jake-guentzel-realistic.jpg" },
+  { id: 144, name: "Bryan Rust", team: "PIT", position: "RW", overall: 81, rarity: "silver", chemistry: ["Two-Way"], image: "/src/assets/players/bryan-rust-realistic.jpg" },
+  { id: 145, name: "Kris Letang", team: "PIT", position: "D", overall: 84, rarity: "silver", chemistry: ["Offensive D", "Veteran"], image: "/src/assets/players/kris-letang-realistic.jpg" },
 
   // SAN JOSE SHARKS
   { id: 146, name: "Erik Karlsson", team: "SJS", position: "D", overall: 88, rarity: "gold", chemistry: ["Offensive D", "Powerplay"] },
