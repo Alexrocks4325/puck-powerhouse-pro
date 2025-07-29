@@ -3,7 +3,7 @@ import { nhlPlayerDatabase, Player } from "@/data/nhlPlayerDatabase";
 
 // List of all players who need images generated
 export const getPlayersWithoutImages = (): Player[] => {
-  return nhlPlayerDatabase.filter(player => !player.image || player.image.includes('default-player'));
+  return nhlPlayerDatabase.filter(player => !player.image || !player.image.includes('realistic'));
 };
 
 // Team-based image generation data
@@ -93,7 +93,7 @@ export const getPlayersByPriority = (): Player[] => {
 // Get total count of players needing images
 export const getImageGenerationStats = () => {
   const total = nhlPlayerDatabase.length;
-  const withImages = nhlPlayerDatabase.filter(p => p.image && !p.image.includes('default-player')).length;
+  const withImages = nhlPlayerDatabase.filter(p => p.image && p.image.includes('realistic')).length;
   const needImages = total - withImages;
   
   return {
@@ -102,4 +102,28 @@ export const getImageGenerationStats = () => {
     needImages,
     percentComplete: Math.round((withImages / total) * 100)
   };
+};
+
+// Get next batch to generate (20 players at a time)
+export const getNextGenerationBatch = (): Player[] => {
+  const playersWithoutImages = getPlayersWithoutImages();
+  const prioritized = getPlayersByPriority();
+  return prioritized.slice(0, 20);
+};
+
+// Log generation progress
+export const logGenerationProgress = () => {
+  const stats = getImageGenerationStats();
+  console.log(`NHL Player Images: ${stats.withImages}/${stats.total} (${stats.percentComplete}%)`);
+  
+  if (stats.needImages > 0) {
+    const batched = getPlayersBatchedByTeam();
+    console.log('Teams needing images:');
+    Object.entries(batched)
+      .sort(([,a], [,b]) => b.length - a.length)
+      .slice(0, 10)
+      .forEach(([team, players]) => {
+        console.log(`  ${team}: ${players.length} players`);
+      });
+  }
 };

@@ -40,9 +40,9 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 15, name: "Nikita Kucherov", team: "TBL", position: "RW", overall: 88, rarity: "gold", chemistry: ["Playmaker", "Sniper"], image: "/src/assets/players/nikita-kucherov-realistic.jpg" },
   { id: 16, name: "Jack Hughes", team: "NJD", position: "C", overall: 88, rarity: "gold", chemistry: ["Speedster", "Young Gun"], image: "/src/assets/players/jack-hughes-realistic.jpg" },
   { id: 17, name: "Quinn Hughes", team: "VAN", position: "D", overall: 87, rarity: "gold", chemistry: ["Offensive D", "Speedster"], image: "/src/assets/players/quinn-hughes-realistic.jpg" },
-  { id: 18, name: "Dougie Hamilton", team: "NJD", position: "D", overall: 87, rarity: "gold", chemistry: ["Offensive D", "Powerplay"] },
-  { id: 19, name: "John Carlson", team: "WSH", position: "D", overall: 86, rarity: "gold", chemistry: ["Offensive D", "Veteran"] },
-  { id: 20, name: "Frederik Andersen", team: "CAR", position: "G", overall: 86, rarity: "gold", chemistry: ["Steady", "Veteran"] },
+  { id: 18, name: "Dougie Hamilton", team: "NJD", position: "D", overall: 87, rarity: "gold", chemistry: ["Offensive D", "Powerplay"], image: "/src/assets/players/dougie-hamilton-realistic.jpg" },
+  { id: 19, name: "John Carlson", team: "WSH", position: "D", overall: 86, rarity: "gold", chemistry: ["Offensive D", "Veteran"], image: "/src/assets/players/john-carlson-realistic.jpg" },
+  { id: 20, name: "Frederik Andersen", team: "CAR", position: "G", overall: 86, rarity: "gold", chemistry: ["Steady", "Veteran"], image: "/src/assets/players/frederik-andersen-realistic.jpg" },
   { id: 21, name: "Elias Pettersson", team: "VAN", position: "C", overall: 86, rarity: "gold", chemistry: ["Sniper", "Young Gun"], image: "/src/assets/players/elias-pettersson-realistic.jpg" },
   { id: 22, name: "Sebastian Aho", team: "CAR", position: "C", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Playmaker"], image: "/src/assets/players/sebastian-aho-realistic.jpg" },
 
@@ -60,25 +60,25 @@ export const nhlPlayerDatabase: Player[] = [
 
   // BRONZE TIER (65-79) - Common players
   { id: 31, name: "Ryan Strome", team: "ANA", position: "C", overall: 79, rarity: "bronze", chemistry: ["Two-Way"] },
-  { id: 32, name: "Nick Suzuki", team: "MTL", position: "C", overall: 79, rarity: "bronze", chemistry: ["Two-Way", "Young Gun"] },
-  { id: 33, name: "Kirby Dach", team: "MTL", position: "C", overall: 78, rarity: "bronze", chemistry: ["Power Forward", "Young Gun"] },
-  { id: 34, name: "Jake Sanderson", team: "OTT", position: "D", overall: 78, rarity: "bronze", chemistry: ["Two-Way", "Young Gun"] },
+  { id: 32, name: "Nick Suzuki", team: "MTL", position: "C", overall: 79, rarity: "bronze", chemistry: ["Two-Way", "Young Gun"], image: "/src/assets/players/nick-suzuki-realistic.jpg" },
+  { id: 33, name: "Kirby Dach", team: "MTL", position: "C", overall: 78, rarity: "bronze", chemistry: ["Power Forward", "Young Gun"], image: "/src/assets/players/kirby-dach-realistic.jpg" },
+  { id: 34, name: "Jake Sanderson", team: "OTT", position: "D", overall: 78, rarity: "bronze", chemistry: ["Two-Way", "Young Gun"], image: "/src/assets/players/jake-sanderson-realistic.jpg" },
   { id: 35, name: "Jack Drury", team: "CAR", position: "C", overall: 77, rarity: "bronze", chemistry: ["Defensive", "Young Gun"] },
   
   // Adding hundreds more players across all teams...
   // ANAHEIM DUCKS
-  { id: 36, name: "Troy Terry", team: "ANA", position: "RW", overall: 79, rarity: "bronze", chemistry: ["Sniper"] },
-  { id: 37, name: "Frank Vatrano", team: "ANA", position: "LW", overall: 77, rarity: "bronze", chemistry: ["Sniper"] },
+  { id: 36, name: "Troy Terry", team: "ANA", position: "RW", overall: 79, rarity: "bronze", chemistry: ["Sniper"], image: "/src/assets/players/troy-terry-realistic.jpg" },
+  { id: 37, name: "Frank Vatrano", team: "ANA", position: "LW", overall: 77, rarity: "bronze", chemistry: ["Sniper"], image: "/src/assets/players/frank-vatrano-realistic.jpg" },
   { id: 38, name: "Adam Henrique", team: "ANA", position: "C", overall: 76, rarity: "bronze", chemistry: ["Veteran"] },
-  { id: 39, name: "Cam Fowler", team: "ANA", position: "D", overall: 78, rarity: "bronze", chemistry: ["Veteran", "Defensive"] },
+  { id: 39, name: "Cam Fowler", team: "ANA", position: "D", overall: 78, rarity: "bronze", chemistry: ["Veteran", "Defensive"], image: "/src/assets/players/cam-fowler-realistic.jpg" },
   { id: 40, name: "Radko Gudas", team: "ANA", position: "D", overall: 76, rarity: "bronze", chemistry: ["Physical", "Defensive"] },
   
   // BOSTON BRUINS
-  { id: 41, name: "Pavel Zacha", team: "BOS", position: "C", overall: 79, rarity: "bronze", chemistry: ["Two-Way"] },
-  { id: 42, name: "Jake DeBrusk", team: "BOS", position: "LW", overall: 78, rarity: "bronze", chemistry: ["Speedster"] },
+  { id: 41, name: "Pavel Zacha", team: "BOS", position: "C", overall: 79, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/pavel-zacha-realistic.jpg" },
+  { id: 42, name: "Jake DeBrusk", team: "BOS", position: "LW", overall: 78, rarity: "bronze", chemistry: ["Speedster"], image: "/src/assets/players/jake-debrusk-realistic.jpg" },
   { id: 43, name: "Trent Frederic", team: "BOS", position: "C", overall: 75, rarity: "bronze", chemistry: ["Physical"] },
-  { id: 44, name: "Charlie McAvoy", team: "BOS", position: "D", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Leader"] },
-  { id: 45, name: "Hampus Lindholm", team: "BOS", position: "D", overall: 83, rarity: "silver", chemistry: ["Defensive"] },
+  { id: 44, name: "Charlie McAvoy", team: "BOS", position: "D", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Leader"], image: "/src/assets/players/charlie-mcavoy-realistic.jpg" },
+  { id: 45, name: "Hampus Lindholm", team: "BOS", position: "D", overall: 83, rarity: "silver", chemistry: ["Defensive"], image: "/src/assets/players/hampus-lindholm-realistic.jpg" },
   
   // BUFFALO SABRES
   { id: 46, name: "Tage Thompson", team: "BUF", position: "C", overall: 82, rarity: "silver", chemistry: ["Power Forward", "Sniper"] },
