@@ -15,8 +15,15 @@ import {
   Trophy,
   Activity,
   Users,
-  Timer
+  Timer,
+  Circle,
+  ArrowUp,
+  ArrowDown,
+  ArrowRight
 } from "lucide-react";
+
+// Import hockey rink image
+import hockeyRinkImg from "@/assets/hockey-rink.png";
 
 interface LiveEventsModeProps {
   playerData: {
@@ -39,6 +46,25 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
   const [powerPlay, setPowerPlay] = useState(false);
   const [powerPlayTime, setPowerPlayTime] = useState(0);
   const [gameEvents, setGameEvents] = useState<string[]>([]);
+  const [puckPosition, setPuckPosition] = useState({ x: 50, y: 50 }); // Center of rink
+  const [players, setPlayers] = useState({
+    yourTeam: [
+      { id: 1, x: 45, y: 45, name: "Player 1" },
+      { id: 2, x: 40, y: 55, name: "Player 2" },
+      { id: 3, x: 35, y: 50, name: "Player 3" },
+      { id: 4, x: 25, y: 40, name: "Defense 1" },
+      { id: 5, x: 25, y: 60, name: "Defense 2" },
+      { id: 6, x: 15, y: 50, name: "Goalie" }
+    ],
+    opponent: [
+      { id: 7, x: 55, y: 55, name: "Opp 1" },
+      { id: 8, x: 60, y: 45, name: "Opp 2" },
+      { id: 9, x: 65, y: 50, name: "Opp 3" },
+      { id: 10, x: 75, y: 40, name: "Opp D1" },
+      { id: 11, x: 75, y: 60, name: "Opp D2" },
+      { id: 12, x: 85, y: 50, name: "Opp G" }
+    ]
+  });
 
   // Game timer
   useEffect(() => {
@@ -303,6 +329,119 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
 
         {/* Game Area */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Hockey Rink Visualization */}
+          <div className="lg:col-span-2">
+            <Card className="p-4 nhl-gradient-bg border-primary/30">
+              <h3 className="font-bold text-foreground mb-3 flex items-center">
+                <Activity className="w-4 h-4 mr-2" />
+                Game Action
+              </h3>
+              
+              {/* Hockey Rink */}
+              <div className="relative w-full h-64 bg-white rounded-lg border-2 border-gray-300 overflow-hidden">
+                <img 
+                  src={hockeyRinkImg} 
+                  alt="Hockey Rink" 
+                  className="w-full h-full object-cover opacity-90"
+                />
+                
+                {/* Your Team Players (Blue) */}
+                {players.yourTeam.map((player) => (
+                  <div
+                    key={player.id}
+                    className="absolute w-3 h-3 bg-hockey-red rounded-full border border-white transform -translate-x-1/2 -translate-y-1/2 shadow-lg"
+                    style={{
+                      left: `${player.x}%`,
+                      top: `${player.y}%`,
+                    }}
+                    title={player.name}
+                  />
+                ))}
+                
+                {/* Opponent Players (Red) */}
+                {players.opponent.map((player) => (
+                  <div
+                    key={player.id}
+                    className="absolute w-3 h-3 bg-ice-blue rounded-full border border-white transform -translate-x-1/2 -translate-y-1/2 shadow-lg"
+                    style={{
+                      left: `${player.x}%`,
+                      top: `${player.y}%`,
+                    }}
+                    title={player.name}
+                  />
+                ))}
+                
+                {/* Puck */}
+                <div
+                  className="absolute w-2 h-2 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg"
+                  style={{
+                    left: `${puckPosition.x}%`,
+                    top: `${puckPosition.y}%`,
+                  }}
+                />
+                
+                {/* Goal Areas */}
+                <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-16 border-2 border-hockey-red rounded opacity-60" />
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-16 border-2 border-ice-blue rounded opacity-60" />
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {possession === 'player' ? (
+                  <>
+                    <Button 
+                      onClick={() => {
+                        // Move puck towards goal
+                        setPuckPosition(prev => ({ 
+                          x: Math.min(prev.x + 10, 85), 
+                          y: prev.y + (Math.random() - 0.5) * 10 
+                        }));
+                        handleShoot();
+                      }}
+                      className="bg-hockey-red hover:bg-hockey-red/80 text-white"
+                      disabled={gameState !== 'playing'}
+                    >
+                      <Target className="w-4 h-4 mr-2" />
+                      Shoot to Goal
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => {
+                        // Move puck to teammate
+                        setPuckPosition(prev => ({ 
+                          x: prev.x + (Math.random() - 0.5) * 15, 
+                          y: prev.y + (Math.random() - 0.5) * 15 
+                        }));
+                        handlePass();
+                      }}
+                      variant="outline"
+                      disabled={gameState !== 'playing'}
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      Pass
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    onClick={() => {
+                      // Move puck towards your team
+                      setPuckPosition(prev => ({ 
+                        x: Math.max(prev.x - 10, 15), 
+                        y: prev.y + (Math.random() - 0.5) * 10 
+                      }));
+                      handleDefend();
+                    }}
+                    className="col-span-2 bg-green-500 hover:bg-green-600 text-white"
+                    disabled={gameState !== 'playing'}
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Steal the Puck
+                  </Button>
+                )}
+              </div>
+            </Card>
+          </div>
+
           {/* Game Events */}
           <Card className="p-4 nhl-gradient-bg border-primary/30">
             <h3 className="font-bold text-foreground mb-3 flex items-center">
@@ -320,10 +459,12 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
               ))}
             </div>
           </Card>
+        </div>
 
-          {/* Game Controls */}
+        {/* Game Controls */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
           <Card className="p-6 nhl-gradient-bg border-primary/30">
-            <h3 className="font-bold text-foreground mb-4 text-center">Game Controls</h3>
+            <h3 className="font-bold text-foreground mb-4 text-center">Advanced Controls</h3>
             
             <div className="space-y-4">
               {possession === 'player' ? (
@@ -332,24 +473,43 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
                     YOU HAVE POSSESSION
                   </Badge>
                   
-                  <Button 
-                    onClick={handleShoot}
-                    className="w-full bg-hockey-red hover:bg-hockey-red/80 text-white"
-                    disabled={gameState !== 'playing'}
-                  >
-                    <Target className="w-4 h-4 mr-2" />
-                    Shoot
-                  </Button>
-                  
-                  <Button 
-                    onClick={handlePass}
-                    variant="outline"
-                    className="w-full"
-                    disabled={gameState !== 'playing'}
-                  >
-                    <Users className="w-4 h-4 mr-2" />
-                    Pass
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      onClick={() => {
+                        // Deke move
+                        setPuckPosition(prev => ({ 
+                          x: prev.x + 5, 
+                          y: prev.y + (Math.random() - 0.5) * 20 
+                        }));
+                        addGameEvent("🎯 Nice deke move!");
+                      }}
+                      variant="outline"
+                      className="text-xs"
+                      disabled={gameState !== 'playing'}
+                    >
+                      <Zap className="w-3 h-3 mr-1" />
+                      Deke
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => {
+                        // Body check
+                        const success = Math.random() < 0.7;
+                        if (success) {
+                          addGameEvent("💥 Big hit! Clear the zone!");
+                          setPossession('player');
+                        } else {
+                          addGameEvent("⚠️ Missed check, opponent keeps possession");
+                        }
+                      }}
+                      variant="outline"
+                      className="text-xs"
+                      disabled={gameState !== 'playing'}
+                    >
+                      <Shield className="w-3 h-3 mr-1" />
+                      Check
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -357,14 +517,9 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
                     OPPONENT HAS POSSESSION
                   </Badge>
                   
-                  <Button 
-                    onClick={handleDefend}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white"
-                    disabled={gameState !== 'playing'}
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Defend
-                  </Button>
+                  <div className="text-center text-sm text-muted-foreground">
+                    Defend your zone and try to steal the puck!
+                  </div>
                 </div>
               )}
               
