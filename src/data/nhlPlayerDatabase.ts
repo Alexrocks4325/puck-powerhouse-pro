@@ -326,7 +326,7 @@ export const nhlPlayerDatabase: Player[] = [
   // Adding MORE depth players across all teams to reach 600+ players
   
   // More ANAHEIM DUCKS depth
-  { id: 206, name: "Mason McTavish", team: "ANA", position: "C", overall: 79, rarity: "bronze", chemistry: ["Young Gun", "Power Forward"] },
+  { id: 206, name: "Mason McTavish", team: "ANA", position: "C", overall: 79, rarity: "bronze", chemistry: ["Young Gun", "Power Forward"], image: "/src/assets/players/mason-mctavish.jpg" },
   { id: 207, name: "Leo Carlsson", team: "ANA", position: "C", overall: 77, rarity: "bronze", chemistry: ["Young Gun", "Playmaker"] },
   { id: 208, name: "Ryan Strome", team: "ANA", position: "C", overall: 78, rarity: "bronze", chemistry: ["Veteran", "Playmaker"] },
   { id: 209, name: "Frank Vatrano", team: "ANA", position: "RW", overall: 76, rarity: "bronze", chemistry: ["Sniper"] },
@@ -338,7 +338,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 215, name: "Jakob Silfverberg", team: "ANA", position: "RW", overall: 74, rarity: "bronze", chemistry: ["Veteran"] },
 
   // More ARIZONA COYOTES depth
-  { id: 216, name: "Clayton Keller", team: "ARI", position: "C", overall: 84, rarity: "silver", chemistry: ["Speedster", "Playmaker"] },
+  { id: 216, name: "Clayton Keller", team: "ARI", position: "C", overall: 84, rarity: "silver", chemistry: ["Speedster", "Playmaker"], image: "/src/assets/players/clayton-keller.jpg" },
   { id: 217, name: "Nick Schmaltz", team: "ARI", position: "C", overall: 80, rarity: "bronze", chemistry: ["Playmaker"] },
   { id: 218, name: "Lawson Crouse", team: "ARI", position: "LW", overall: 78, rarity: "bronze", chemistry: ["Power Forward"] },
   { id: 219, name: "Travis Boyd", team: "ARI", position: "C", overall: 72, rarity: "bronze", chemistry: ["Veteran"] },
@@ -362,12 +362,12 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 235, name: "Jeremy Swayman", team: "BOS", position: "G", overall: 82, rarity: "silver", chemistry: ["Young Gun"] },
 
   // More BUFFALO SABRES depth
-  { id: 236, name: "Tage Thompson", team: "BUF", position: "C", overall: 85, rarity: "gold", chemistry: ["Sniper", "Power Forward"] },
-  { id: 237, name: "Dylan Cozens", team: "BUF", position: "C", overall: 81, rarity: "silver", chemistry: ["Young Gun", "Two-Way"] },
-  { id: 238, name: "Alex Tuch", team: "BUF", position: "RW", overall: 82, rarity: "silver", chemistry: ["Power Forward"] },
+  { id: 236, name: "Tage Thompson", team: "BUF", position: "C", overall: 85, rarity: "gold", chemistry: ["Sniper", "Power Forward"], image: "/src/assets/players/tage-thompson.jpg" },
+  { id: 237, name: "Dylan Cozens", team: "BUF", position: "C", overall: 81, rarity: "silver", chemistry: ["Young Gun", "Two-Way"], image: "/src/assets/players/dylan-cozens.jpg" },
+  { id: 238, name: "Alex Tuch", team: "BUF", position: "RW", overall: 82, rarity: "silver", chemistry: ["Power Forward"], image: "/src/assets/players/alex-tuch.jpg" },
   { id: 239, name: "JJ Peterka", team: "BUF", position: "RW", overall: 78, rarity: "bronze", chemistry: ["Young Gun", "Speedster"] },
   { id: 240, name: "Jack Quinn", team: "BUF", position: "RW", overall: 77, rarity: "bronze", chemistry: ["Young Gun", "Sniper"] },
-  { id: 241, name: "Rasmus Dahlin", team: "BUF", position: "D", overall: 85, rarity: "gold", chemistry: ["Offensive D", "Young Gun"] },
+  { id: 241, name: "Rasmus Dahlin", team: "BUF", position: "D", overall: 85, rarity: "gold", chemistry: ["Offensive D", "Young Gun"], image: "/src/assets/players/rasmus-dahlin.jpg" },
   { id: 242, name: "Owen Power", team: "BUF", position: "D", overall: 80, rarity: "bronze", chemistry: ["Young Gun", "Two-Way"] },
   { id: 243, name: "Mattias Samuelsson", team: "BUF", position: "D", overall: 76, rarity: "bronze", chemistry: ["Defensive", "Young Gun"] },
   { id: 244, name: "Henri Jokiharju", team: "BUF", position: "D", overall: 75, rarity: "bronze", chemistry: ["Two-Way"] },
@@ -436,11 +436,68 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 295, name: "Elvis Merzlikins", team: "CBJ", position: "G", overall: 79, rarity: "bronze", chemistry: ["Veteran"] },
 
   // More DALLAS STARS depth (already have some)
-  { id: 296, name: "Jason Robertson", team: "DAL", position: "LW", overall: 87, rarity: "gold", chemistry: ["Sniper", "Young Gun"] },
-  { id: 297, name: "Roope Hintz", team: "DAL", position: "C", overall: 84, rarity: "silver", chemistry: ["Speedster", "Two-Way"] },
-  { id: 298, name: "Jamie Benn", team: "DAL", position: "LW", overall: 81, rarity: "silver", chemistry: ["Veteran", "Leader", "Power Forward"] },
-  { id: 299, name: "Tyler Seguin", team: "DAL", position: "C", overall: 82, rarity: "silver", chemistry: ["Veteran", "Sniper"] },
+  { id: 296, name: "Jason Robertson", team: "DAL", position: "LW", overall: 87, rarity: "gold", chemistry: ["Sniper", "Young Gun"], image: "/src/assets/players/jason-robertson.jpg" },
+  { id: 297, name: "Roope Hintz", team: "DAL", position: "C", overall: 84, rarity: "silver", chemistry: ["Speedster", "Two-Way"], image: "/src/assets/players/roope-hintz.jpg" },
+  { id: 298, name: "Jamie Benn", team: "DAL", position: "LW", overall: 81, rarity: "silver", chemistry: ["Veteran", "Leader", "Power Forward"], image: "/src/assets/players/jamie-benn.jpg" },
+  { id: 299, name: "Tyler Seguin", team: "DAL", position: "C", overall: 82, rarity: "silver", chemistry: ["Veteran", "Sniper"], image: "/src/assets/players/tyler-seguin.jpg" },
   { id: 300, name: "Wyatt Johnston", team: "DAL", position: "C", overall: 79, rarity: "bronze", chemistry: ["Young Gun", "Two-Way"] },
+
+  // Continue adding the rest...
+  { id: 301, name: "Miro Heiskanen", team: "DAL", position: "D", overall: 86, rarity: "gold", chemistry: ["Two-Way", "Young Gun"] },
+  { id: 302, name: "Joe Pavelski", team: "DAL", position: "C", overall: 79, rarity: "bronze", chemistry: ["Veteran", "Clutch"] },
+  { id: 303, name: "Radek Faksa", team: "DAL", position: "C", overall: 74, rarity: "bronze", chemistry: ["Defensive"] },
+  
+  // More DETROIT RED WINGS depth
+  { id: 304, name: "Dylan Larkin", team: "DET", position: "C", overall: 86, rarity: "gold", chemistry: ["Speedster", "Leader"] },
+  { id: 305, name: "Lucas Raymond", team: "DET", position: "LW", overall: 82, rarity: "silver", chemistry: ["Young Gun", "Playmaker"] },
+  { id: 306, name: "Alex DeBrincat", team: "DET", position: "RW", overall: 84, rarity: "silver", chemistry: ["Sniper"] },
+  { id: 307, name: "Moritz Seider", team: "DET", position: "D", overall: 84, rarity: "silver", chemistry: ["Young Gun", "Two-Way"] },
+  { id: 308, name: "David Perron", team: "DET", position: "RW", overall: 78, rarity: "bronze", chemistry: ["Veteran"] },
+
+  // More EDMONTON OILERS depth (already have stars)
+  { id: 309, name: "Ryan Nugent-Hopkins", team: "EDM", position: "C", overall: 84, rarity: "silver", chemistry: ["Two-Way", "Veteran"] },
+  { id: 310, name: "Zach Hyman", team: "EDM", position: "LW", overall: 81, rarity: "silver", chemistry: ["Two-Way", "Net Front"] },
+  { id: 311, name: "Evander Kane", team: "EDM", position: "LW", overall: 79, rarity: "bronze", chemistry: ["Power Forward"] },
+  { id: 312, name: "Darnell Nurse", team: "EDM", position: "D", overall: 82, rarity: "silver", chemistry: ["Two-Way"] },
+  { id: 313, name: "Evan Bouchard", team: "EDM", position: "D", overall: 81, rarity: "silver", chemistry: ["Offensive D", "Young Gun"] },
+
+  // More FLORIDA PANTHERS depth (already added some above)
+  { id: 314, name: "Aleksander Barkov", team: "FLA", position: "C", overall: 89, rarity: "gold", chemistry: ["Two-Way", "Leader"] },
+  { id: 315, name: "Carter Verhaeghe", team: "FLA", position: "C", overall: 83, rarity: "silver", chemistry: ["Speedster", "Clutch"] },
+  { id: 316, name: "Sam Reinhart", team: "FLA", position: "RW", overall: 84, rarity: "silver", chemistry: ["Two-Way"] },
+  { id: 317, name: "Matthew Tkachuk", team: "FLA", position: "LW", overall: 87, rarity: "gold", chemistry: ["Power Forward", "Agitator"] },
+  { id: 318, name: "Aaron Ekblad", team: "FLA", position: "D", overall: 83, rarity: "silver", chemistry: ["Two-Way"] },
+
+  // Continue with more teams and players...
+  // LOS ANGELES KINGS (already added some)
+  { id: 319, name: "Kevin Fiala", team: "LAK", position: "LW", overall: 84, rarity: "silver", chemistry: ["Playmaker"], image: "/src/assets/players/kevin-fiala.jpg" },
+  { id: 320, name: "Drew Doughty", team: "LAK", position: "D", overall: 84, rarity: "silver", chemistry: ["Veteran", "Two-Way"] },
+  { id: 321, name: "Quinton Byfield", team: "LAK", position: "C", overall: 78, rarity: "bronze", chemistry: ["Young Gun", "Power Forward"] },
+  { id: 322, name: "Phillip Danault", team: "LAK", position: "C", overall: 79, rarity: "bronze", chemistry: ["Defensive", "Two-Way"] },
+  { id: 323, name: "Trevor Moore", team: "LAK", position: "LW", overall: 77, rarity: "bronze", chemistry: ["Speedster"] },
+
+  // MINNESOTA WILD (already added some)
+  { id: 324, name: "Joel Eriksson Ek", team: "MIN", position: "C", overall: 82, rarity: "silver", chemistry: ["Two-Way", "Defensive"], image: "/src/assets/players/joel-eriksson-ek.jpg" },
+  { id: 325, name: "Mats Zuccarello", team: "MIN", position: "RW", overall: 80, rarity: "bronze", chemistry: ["Veteran", "Playmaker"] },
+  { id: 326, name: "Jared Spurgeon", team: "MIN", position: "D", overall: 82, rarity: "silver", chemistry: ["Two-Way", "Leader"] },
+  { id: 327, name: "Jonas Brodin", team: "MIN", position: "D", overall: 80, rarity: "bronze", chemistry: ["Defensive"] },
+  { id: 328, name: "Marco Rossi", team: "MIN", position: "C", overall: 76, rarity: "bronze", chemistry: ["Young Gun", "Playmaker"] },
+
+  // Continue with all other NHL teams and add depth players to reach 1000+
+  // This would include backup goalies, prospects, fourth-liners, etc.
+  
+  // Adding some goaltenders
+  { id: 329, name: "Connor Hellebuyck", team: "WPG", position: "G", overall: 89, rarity: "gold", chemistry: ["Elite Goalie"] },
+  { id: 330, name: "Jacob Markstrom", team: "CGY", position: "G", overall: 84, rarity: "silver", chemistry: ["Elite Goalie"] },
+  { id: 331, name: "Frederik Andersen", team: "CAR", position: "G", overall: 82, rarity: "silver", chemistry: ["Veteran"] },
+  { id: 332, name: "Juuse Saros", team: "NSH", position: "G", overall: 86, rarity: "gold", chemistry: ["Elite Goalie"] },
+  { id: 333, name: "Ilya Sorokin", team: "NYI", position: "G", overall: 85, rarity: "gold", chemistry: ["Elite Goalie"] },
+
+  // More depth forwards from various teams
+  { id: 334, name: "Sam Bennett", team: "FLA", position: "C", overall: 80, rarity: "bronze", chemistry: ["Physical", "Power Forward"] },
+  { id: 335, name: "Evan Rodrigues", team: "FLA", position: "LW", overall: 76, rarity: "bronze", chemistry: ["Speedster"] },
+  { id: 336, name: "Nick Cousins", team: "FLA", position: "C", overall: 73, rarity: "bronze", chemistry: ["Agitator"] },
+  { id: 337, name: "Niko Mikkola", team: "FLA", position: "D", overall: 75, rarity: "bronze", chemistry: ["Physical", "Defensive"] },
   { id: 183, name: "T.J. Oshie", team: "WSH", position: "RW", overall: 80, rarity: "bronze", chemistry: ["Veteran", "Clutch"] },
   { id: 184, name: "Tom Wilson", team: "WSH", position: "RW", overall: 79, rarity: "bronze", chemistry: ["Physical", "Power Forward"] },
   { id: 185, name: "Trevor van Riemsdyk", team: "WSH", position: "D", overall: 74, rarity: "bronze", chemistry: ["Defensive"] },
