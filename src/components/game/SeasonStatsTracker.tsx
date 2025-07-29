@@ -35,20 +35,38 @@ interface SeasonStatsProps {
 }
 
 const SeasonStatsTracker = ({ currentGame }: SeasonStatsProps) => {
-  // Generate all 32 NHL teams with realistic standings
+  // Generate all 32 NHL teams with realistic standings by division
   const generateTeamStandings = () => {
-    const teams = [
-      'Boston Bruins', 'Toronto Maple Leafs', 'Tampa Bay Lightning', 'Florida Panthers',
-      'New York Rangers', 'New Jersey Devils', 'Carolina Hurricanes', 'New York Islanders',
-      'Washington Capitals', 'Pittsburgh Penguins', 'Philadelphia Flyers', 'Detroit Red Wings',
-      'Ottawa Senators', 'Buffalo Sabres', 'Montreal Canadiens', 'Columbus Blue Jackets',
-      'Vegas Golden Knights', 'Edmonton Oilers', 'Los Angeles Kings', 'Seattle Kraken',
-      'Colorado Avalanche', 'Dallas Stars', 'Minnesota Wild', 'Winnipeg Jets',
-      'Nashville Predators', 'St. Louis Blues', 'Vancouver Canucks', 'Arizona Coyotes',
-      'Anaheim Ducks', 'San Jose Sharks', 'Calgary Flames', 'Chicago Blackhawks'
+    const easternConference = {
+      atlantic: [
+        'Boston Bruins', 'Toronto Maple Leafs', 'Tampa Bay Lightning', 'Florida Panthers',
+        'Buffalo Sabres', 'Ottawa Senators', 'Detroit Red Wings', 'Montreal Canadiens'
+      ],
+      metropolitan: [
+        'New York Rangers', 'New Jersey Devils', 'Carolina Hurricanes', 'New York Islanders',
+        'Washington Capitals', 'Pittsburgh Penguins', 'Philadelphia Flyers', 'Columbus Blue Jackets'
+      ]
+    };
+    
+    const westernConference = {
+      central: [
+        'Colorado Avalanche', 'Dallas Stars', 'Minnesota Wild', 'Winnipeg Jets',
+        'Nashville Predators', 'St. Louis Blues', 'Arizona Coyotes', 'Chicago Blackhawks'
+      ],
+      pacific: [
+        'Vegas Golden Knights', 'Edmonton Oilers', 'Los Angeles Kings', 'Seattle Kraken',
+        'Vancouver Canucks', 'Calgary Flames', 'Anaheim Ducks', 'San Jose Sharks'
+      ]
+    };
+
+    const allTeams = [
+      ...easternConference.atlantic,
+      ...easternConference.metropolitan,
+      ...westernConference.central,
+      ...westernConference.pacific
     ];
 
-    return teams.map((team, index) => {
+    const standings = allTeams.map((team, index) => {
       const gamesPlayed = Math.min(currentGame, 82);
       const teamStrength = 0.7 - (index * 0.02) + (Math.random() * 0.15);
       const winRate = Math.max(0.25, Math.min(0.85, teamStrength));
@@ -57,6 +75,23 @@ const SeasonStatsTracker = ({ currentGame }: SeasonStatsProps) => {
       const losses = gamesPlayed - wins - otLosses;
       const points = wins * 2 + otLosses;
       
+      // Determine division and conference
+      let division = '';
+      let conference = '';
+      if (easternConference.atlantic.includes(team)) {
+        division = 'Atlantic';
+        conference = 'Eastern';
+      } else if (easternConference.metropolitan.includes(team)) {
+        division = 'Metropolitan';
+        conference = 'Eastern';
+      } else if (westernConference.central.includes(team)) {
+        division = 'Central';
+        conference = 'Western';
+      } else {
+        division = 'Pacific';
+        conference = 'Western';
+      }
+      
       return {
         rank: index + 1,
         team,
@@ -64,14 +99,27 @@ const SeasonStatsTracker = ({ currentGame }: SeasonStatsProps) => {
         losses,
         otLosses,
         points,
-        gf: Math.floor(wins * 3.2 + losses * 2.1 + otLosses * 2.8 + Math.random() * 10),
-        ga: Math.floor(wins * 2.1 + losses * 3.2 + otLosses * 2.9 + Math.random() * 10),
-        gp: gamesPlayed
+        gf: gamesPlayed > 0 ? Math.floor(wins * 3.2 + losses * 2.1 + otLosses * 2.8 + Math.random() * 10) : 0,
+        ga: gamesPlayed > 0 ? Math.floor(wins * 2.1 + losses * 3.2 + otLosses * 2.9 + Math.random() * 10) : 0,
+        gp: gamesPlayed,
+        division,
+        conference,
+        isMyTeam: team === 'Your Team' // Highlight user's team
       };
     }).sort((a, b) => b.points - a.points).map((team, index) => ({
       ...team,
       rank: index + 1
     }));
+
+    return {
+      overall: standings,
+      eastern: standings.filter(team => team.conference === 'Eastern').sort((a, b) => b.points - a.points),
+      western: standings.filter(team => team.conference === 'Western').sort((a, b) => b.points - a.points),
+      atlantic: standings.filter(team => team.division === 'Atlantic').sort((a, b) => b.points - a.points),
+      metropolitan: standings.filter(team => team.division === 'Metropolitan').sort((a, b) => b.points - a.points),
+      central: standings.filter(team => team.division === 'Central').sort((a, b) => b.points - a.points),
+      pacific: standings.filter(team => team.division === 'Pacific').sort((a, b) => b.points - a.points)
+    };
   };
 
   // Generate realistic stats based on current game progression
@@ -167,7 +215,7 @@ const SeasonStatsTracker = ({ currentGame }: SeasonStatsProps) => {
               <span>GF-GA</span>
               <span>DIFF</span>
             </div>
-            {teamStandings.map((team) => (
+            {teamStandings.overall.map((team) => (
               <div key={team.rank} className="grid grid-cols-7 gap-2 text-sm p-2 rounded bg-muted/20 hover:bg-primary/10">
                 <span className="text-xs font-semibold">{team.rank}</span>
                 <span className="font-medium truncate">{team.team}</span>

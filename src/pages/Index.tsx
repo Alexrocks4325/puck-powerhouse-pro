@@ -10,14 +10,15 @@ import TeamManagement from "@/components/game/TeamManagement";
 import EnhancedSeasonMode from "@/components/game/EnhancedSeasonMode";
 import TasksAndChallenges from "@/components/game/TasksAndChallenges";
 import LeaguesMode from "@/components/game/LeaguesMode";
+import LiveEventsMode from "@/components/game/LiveEventsMode";
 import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package } from "lucide-react";
 import nhlLogo from "@/assets/nhl-ultimate-logo.png";
 import { getStarterTeam } from "@/data/nhlPlayerDatabase";
 
 const Index = () => {
-  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues'>('intro');
+  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events'>('intro');
 
-  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues') => {
+  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events') => {
     setGameState(screen);
   };
 
@@ -125,6 +126,16 @@ const Index = () => {
   if (gameState === 'leagues') {
     return (
       <LeaguesMode 
+        playerData={playerData}
+        setPlayerData={setPlayerData}
+        onNavigate={handleNavigate}
+      />
+    );
+  }
+
+  if (gameState === 'live-events') {
+    return (
+      <LiveEventsMode 
         playerData={playerData}
         setPlayerData={setPlayerData}
         onNavigate={handleNavigate}
@@ -308,16 +319,25 @@ const Index = () => {
             </div>
           </Card>
 
-          <Card className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform">
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => {
+              if (!playerData.completedTutorial) {
+                handleStartGame();
+              } else {
+                setGameState('live-events');
+              }
+            }}
+          >
             <Users className="w-12 h-12 mx-auto mb-4 text-ice-blue" />
-            <h3 className="text-xl font-bold mb-2">Team Chemistry</h3>
+            <h3 className="text-xl font-bold mb-2">Live Events</h3>
             <p className="text-muted-foreground mb-4">
-              Master team synergies and chemistry combinations for maximum performance
+              Play real-time hockey games with interactive controls and instant rewards
             </p>
             <div className="flex justify-center space-x-2">
               <Star className="w-4 h-4 text-ice-blue" />
               <Star className="w-4 h-4 text-ice-blue" />
-              <Star className="w-4 h-4 text-muted-foreground" />
+              <Star className="w-4 h-4 text-ice-blue" />
             </div>
           </Card>
         </div>
