@@ -19,30 +19,32 @@ export interface Player {
 
 export const nhlPlayerDatabase: Player[] = [
   // LEGEND TIER (96-99) - Ultra rare
-  { id: 1, name: "Connor McDavid", team: "EDM", position: "C", overall: 99, rarity: "legend", chemistry: ["Speedster", "Playmaker", "Captain"], image: "/src/assets/players/connor-mcdavid.jpg" },
-  { id: 2, name: "Nathan MacKinnon", team: "COL", position: "C", overall: 97, rarity: "legend", chemistry: ["Speedster", "Clutch", "Power Forward"], image: "/src/assets/players/nathan-mackinnon.jpg" },
-  { id: 3, name: "Cale Makar", team: "COL", position: "D", overall: 96, rarity: "legend", chemistry: ["Two-Way", "Speedster", "Offensive D"], image: "/src/assets/players/cale-makar.jpg" },
+  { id: 1, name: "Connor McDavid", team: "EDM", position: "C", overall: 99, rarity: "legend", chemistry: ["Speedster", "Playmaker", "Captain"], image: "/src/assets/players/connor-mcdavid-realistic.jpg" },
+  { id: 2, name: "Nathan MacKinnon", team: "COL", position: "C", overall: 97, rarity: "legend", chemistry: ["Speedster", "Clutch", "Power Forward"], image: "/src/assets/players/nathan-mackinnon-realistic.jpg" },
+  { id: 3, name: "Cale Makar", team: "COL", position: "D", overall: 96, rarity: "legend", chemistry: ["Two-Way", "Speedster", "Offensive D"], image: "/src/assets/players/cale-makar-realistic.jpg" },
   
   // ELITE TIER (90-95) - Very rare
-  { id: 4, name: "Auston Matthews", team: "TOR", position: "C", overall: 95, rarity: "elite", chemistry: ["Sniper", "Power Forward"], image: "/src/assets/players/auston-matthews.jpg" },
-  { id: 5, name: "Leon Draisaitl", team: "EDM", position: "C", overall: 94, rarity: "elite", chemistry: ["Power Forward", "Playmaker"], image: "/src/assets/players/leon-draisaitl.jpg" },
-  { id: 6, name: "Erik Karlsson", team: "PIT", position: "D", overall: 93, rarity: "elite", chemistry: ["Offensive D", "Powerplay"], image: "/src/assets/players/erik-karlsson.jpg" },
-  { id: 7, name: "David Pastrnak", team: "BOS", position: "RW", overall: 92, rarity: "elite", chemistry: ["Sniper", "Clutch"], image: "/src/assets/players/david-pastrnak.jpg" },
-  { id: 8, name: "Artemi Panarin", team: "NYR", position: "LW", overall: 91, rarity: "elite", chemistry: ["Playmaker", "Clutch"], image: "/src/assets/players/artemi-panarin.jpg" },
-  { id: 9, name: "Igor Shesterkin", team: "NYR", position: "G", overall: 91, rarity: "elite", chemistry: ["Brick Wall", "Clutch"], image: "/src/assets/players/igor-shesterkin.jpg" },
-  { id: 10, name: "Victor Hedman", team: "TBL", position: "D", overall: 90, rarity: "elite", chemistry: ["Defensive", "Leader"], image: "/src/assets/players/victor-hedman.jpg" },
+  { id: 4, name: "Auston Matthews", team: "TOR", position: "C", overall: 95, rarity: "elite", chemistry: ["Sniper", "Power Forward"], image: "/src/assets/players/auston-matthews-realistic.jpg" },
+  { id: 5, name: "Leon Draisaitl", team: "EDM", position: "C", overall: 94, rarity: "elite", chemistry: ["Power Forward", "Playmaker"], image: "/src/assets/players/leon-draisaitl-realistic.jpg" },
+  { id: 6, name: "Erik Karlsson", team: "PIT", position: "D", overall: 93, rarity: "elite", chemistry: ["Offensive D", "Powerplay"], image: "/src/assets/players/erik-karlsson-realistic.jpg" },
+  { id: 7, name: "David Pastrnak", team: "BOS", position: "RW", overall: 92, rarity: "elite", chemistry: ["Sniper", "Clutch"], image: "/src/assets/players/david-pastrnak-realistic.jpg" },
+  { id: 8, name: "Artemi Panarin", team: "NYR", position: "LW", overall: 91, rarity: "elite", chemistry: ["Playmaker", "Clutch"], image: "/src/assets/players/artemi-panarin-realistic.jpg" },
+  { id: 9, name: "Igor Shesterkin", team: "NYR", position: "G", overall: 91, rarity: "elite", chemistry: ["Brick Wall", "Clutch"], image: "/src/assets/players/igor-shesterkin-realistic.jpg" },
+  { id: 10, name: "Victor Hedman", team: "TBL", position: "D", overall: 90, rarity: "elite", chemistry: ["Defensive", "Leader"], image: "/src/assets/players/victor-hedman-realistic.jpg" },
+  { id: 11, name: "Sidney Crosby", team: "PIT", position: "C", overall: 92, rarity: "elite", chemistry: ["Legend", "Playmaker", "Leader"], image: "/src/assets/players/sidney-crosby-realistic.jpg" },
+  { id: 12, name: "Alex Ovechkin", team: "WSH", position: "LW", overall: 91, rarity: "elite", chemistry: ["Legend", "Sniper", "Power Forward"], image: "/src/assets/players/alex-ovechkin-realistic.jpg" },
 
   // GOLD TIER (85-89) - Rare
-  { id: 11, name: "Mitch Marner", team: "TOR", position: "RW", overall: 89, rarity: "gold", chemistry: ["Playmaker", "Speedster"] },
-  { id: 12, name: "Brad Marchand", team: "BOS", position: "LW", overall: 89, rarity: "gold", chemistry: ["Agitator", "Clutch"] },
-  { id: 13, name: "Nikita Kucherov", team: "TBL", position: "RW", overall: 88, rarity: "gold", chemistry: ["Playmaker", "Sniper"] },
-  { id: 14, name: "Jack Hughes", team: "NJD", position: "C", overall: 88, rarity: "gold", chemistry: ["Speedster", "Young Gun"] },
-  { id: 15, name: "Quinn Hughes", team: "VAN", position: "D", overall: 87, rarity: "gold", chemistry: ["Offensive D", "Speedster"] },
-  { id: 16, name: "Dougie Hamilton", team: "NJD", position: "D", overall: 87, rarity: "gold", chemistry: ["Offensive D", "Powerplay"] },
-  { id: 17, name: "John Carlson", team: "WSH", position: "D", overall: 86, rarity: "gold", chemistry: ["Offensive D", "Veteran"] },
-  { id: 18, name: "Frederik Andersen", team: "CAR", position: "G", overall: 86, rarity: "gold", chemistry: ["Steady", "Veteran"] },
-  { id: 19, name: "Elias Pettersson", team: "VAN", position: "C", overall: 86, rarity: "gold", chemistry: ["Sniper", "Young Gun"] },
-  { id: 20, name: "Sebastian Aho", team: "CAR", position: "C", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Playmaker"] },
+  { id: 13, name: "Mitch Marner", team: "TOR", position: "RW", overall: 89, rarity: "gold", chemistry: ["Playmaker", "Speedster"], image: "/src/assets/players/mitch-marner-realistic.jpg" },
+  { id: 14, name: "Brad Marchand", team: "BOS", position: "LW", overall: 89, rarity: "gold", chemistry: ["Agitator", "Clutch"], image: "/src/assets/players/brad-marchand-realistic.jpg" },
+  { id: 15, name: "Nikita Kucherov", team: "TBL", position: "RW", overall: 88, rarity: "gold", chemistry: ["Playmaker", "Sniper"], image: "/src/assets/players/nikita-kucherov-realistic.jpg" },
+  { id: 16, name: "Jack Hughes", team: "NJD", position: "C", overall: 88, rarity: "gold", chemistry: ["Speedster", "Young Gun"], image: "/src/assets/players/jack-hughes-realistic.jpg" },
+  { id: 17, name: "Quinn Hughes", team: "VAN", position: "D", overall: 87, rarity: "gold", chemistry: ["Offensive D", "Speedster"], image: "/src/assets/players/quinn-hughes-realistic.jpg" },
+  { id: 18, name: "Dougie Hamilton", team: "NJD", position: "D", overall: 87, rarity: "gold", chemistry: ["Offensive D", "Powerplay"] },
+  { id: 19, name: "John Carlson", team: "WSH", position: "D", overall: 86, rarity: "gold", chemistry: ["Offensive D", "Veteran"] },
+  { id: 20, name: "Frederik Andersen", team: "CAR", position: "G", overall: 86, rarity: "gold", chemistry: ["Steady", "Veteran"] },
+  { id: 21, name: "Elias Pettersson", team: "VAN", position: "C", overall: 86, rarity: "gold", chemistry: ["Sniper", "Young Gun"], image: "/src/assets/players/elias-pettersson-realistic.jpg" },
+  { id: 22, name: "Sebastian Aho", team: "CAR", position: "C", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Playmaker"], image: "/src/assets/players/sebastian-aho-realistic.jpg" },
 
   // SILVER TIER (80-84) - Uncommon
   { id: 21, name: "Bo Horvat", team: "NYI", position: "C", overall: 84, rarity: "silver", chemistry: ["Two-Way", "Leader"] },

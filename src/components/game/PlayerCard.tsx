@@ -78,35 +78,26 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
       className={`${sizeClasses[size]} ${getRarityClass(player.rarity)} cursor-pointer hover:scale-105 transition-transform duration-200 flex flex-col relative overflow-hidden`}
       onClick={onClick}
     >
-      {/* Player Image Background */}
-      {player.image && (
-        <div className="absolute inset-0 opacity-20">
-          <img 
-            src={player.image} 
-            alt={player.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-        </div>
-      )}
-      
-      {/* Card Content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-between p-1">
-        <div className="text-center">
-          <div className={`font-bold ${getOverallColor(player.overall)} ${size === 'small' ? 'text-lg' : 'text-2xl'} mb-1`}>
+      {/* Player Image as Main Focus */}
+      <div className="relative flex-1 flex flex-col justify-between p-1">
+        {/* Overall Rating Badge */}
+        <div className="absolute top-1 left-1 z-20">
+          <div className={`font-bold ${getOverallColor(player.overall)} ${size === 'small' ? 'text-lg' : 'text-2xl'} bg-black/70 rounded px-2 py-1`}>
             {player.overall}
           </div>
-          <Badge variant="outline" className={`${textSizeClasses[size]} mb-2`}>
+        </div>
+
+        {/* Position Badge */}
+        <div className="absolute top-1 right-1 z-20">
+          <Badge variant="outline" className={`${textSizeClasses[size]} bg-black/70 border-white/50 text-white`}>
             {player.position}
           </Badge>
         </div>
-        
-        {/* Player Image Circle (for main display) */}
-        {player.image && size !== 'small' && (
-          <div className="flex justify-center mb-2">
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/30">
+
+        {/* Main Player Image */}
+        <div className="flex-1 flex items-center justify-center my-2">
+          {player.image ? (
+            <div className={`relative ${size === 'small' ? 'w-16 h-16' : size === 'medium' ? 'w-20 h-20' : 'w-24 h-24'} rounded-full overflow-hidden border-2 border-primary/50 bg-black/20`}>
               <img 
                 src={player.image} 
                 alt={player.name}
@@ -116,11 +107,20 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
                 }}
               />
             </div>
-          </div>
-        )}
+          ) : (
+            <div className={`${size === 'small' ? 'w-16 h-16' : size === 'medium' ? 'w-20 h-20' : 'w-24 h-24'} rounded-full overflow-hidden border-2 border-primary/30 bg-muted/40 flex items-center justify-center`}>
+              <img 
+                src={defaultPlayerImg} 
+                alt={player.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </div>
         
-        <div className="text-center flex-1 flex flex-col justify-center">
-          <div className={`font-semibold ${textSizeClasses[size]} text-foreground leading-tight mb-1`}>
+        {/* Player Info */}
+        <div className="text-center space-y-1">
+          <div className={`font-semibold ${textSizeClasses[size]} text-foreground leading-tight`}>
             {player.name}
           </div>
           <div className={`${textSizeClasses[size]} text-muted-foreground`}>
@@ -128,9 +128,10 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
           </div>
         </div>
         
-        <div className="flex items-center justify-center">
+        {/* Rarity Indicator */}
+        <div className="flex items-center justify-center mt-1">
           <Star className={`w-3 h-3 ${getRarityColor(player.rarity)} mr-1`} />
-          <span className={`${textSizeClasses[size]} ${getRarityColor(player.rarity)} capitalize`}>
+          <span className={`${textSizeClasses[size]} ${getRarityColor(player.rarity)} capitalize font-medium`}>
             {player.rarity}
           </span>
         </div>
