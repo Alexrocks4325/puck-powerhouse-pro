@@ -24,7 +24,7 @@ interface EnhancedSeasonModeProps {
 }
 
 const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedSeasonModeProps) => {
-  const [seasonProgress, setSeasonProgress] = useState(playerData.seasonData?.progress || 0);
+  const [seasonProgress, setSeasonProgress] = useState(0); // Always start from 0
   const [playoffProgress, setPlayoffProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMode, setCurrentMode] = useState<'season' | 'playoffs'>('season');
@@ -32,8 +32,8 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
   const [showStanleyCupAnimation, setShowStanleyCupAnimation] = useState(false);
   const [playoffSeries, setPlayoffSeries] = useState({ round: 1, wins: 0, losses: 0, games: [] });
   const [gameStats, setGameStats] = useState([]);
-  const [currentGameNumber, setCurrentGameNumber] = useState(Math.floor(seasonProgress / (100 / 16)));
-  const [playoffBracket] = useState(generateInitialBracket());
+  const [currentGameNumber, setCurrentGameNumber] = useState(0); // Start from game 0
+  const [playoffBracket, setPlayoffBracket] = useState(generateInitialBracket());
 
   // Calculate team strength for dynamic difficulty  
   const calculateTeamStrength = () => {
@@ -162,7 +162,8 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
         }));
         
         // Check if series won (4 wins)
-        if (playoffSeries.wins + 1 >= 4) {
+        const newWins = playoffSeries.wins + 1;
+        if (newWins >= 4) {
           if (opponent.round === 4) {
             // Stanley Cup won!
             setShowStanleyCupAnimation(true);
@@ -186,7 +187,8 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
         }));
         
         // Check if series lost (4 losses)
-        if (playoffSeries.losses + 1 >= 4) {
+        const newLosses = playoffSeries.losses + 1;
+        if (newLosses >= 4) {
           alert(`Series Lost! Better luck next season. You'll need to improve your team to advance further.`);
           setCurrentMode('season');
           setPlayoffProgress(0);
@@ -202,7 +204,9 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
 
       setIsPlaying(false);
       
-      const gameResult = `${isWin ? '🏆 WIN' : '💔 LOSS'} vs ${opponent.name}\n💰 Earned ${coinsEarned} coins\nSeries: ${playoffSeries.wins + (isWin ? 1 : 0)}-${playoffSeries.losses + (isWin ? 0 : 1)}`;
+      const newWins = playoffSeries.wins + (isWin ? 1 : 0);
+      const newLosses = playoffSeries.losses + (isWin ? 0 : 1);
+      const gameResult = `${isWin ? '🏆 WIN' : '💔 LOSS'} vs ${opponent.name}\n💰 Earned ${coinsEarned} coins\nSeries: ${newWins}-${newLosses}`;
       alert(gameResult);
     }, 3000);
   };

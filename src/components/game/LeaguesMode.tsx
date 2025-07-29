@@ -22,6 +22,25 @@ const LeaguesMode = ({ playerData, setPlayerData, onNavigate }: LeaguesModeProps
   const [currentLeague, setCurrentLeague] = useState('bronze');
   const [leaguePoints, setLeaguePoints] = useState(245);
 
+  // Auto-promote when reaching max points
+  const checkLeaguePromotion = (points: number) => {
+    const leagues = [
+      { id: 'bronze', maxPoints: 500 },
+      { id: 'silver', maxPoints: 1000 },
+      { id: 'gold', maxPoints: 2000 },
+      { id: 'elite', maxPoints: 4000 },
+      { id: 'masters', maxPoints: -1 }
+    ];
+
+    for (let i = 0; i < leagues.length - 1; i++) {
+      if (points >= leagues[i].maxPoints && currentLeague === leagues[i].id) {
+        setCurrentLeague(leagues[i + 1].id);
+        alert(`🏆 Congratulations! You've been promoted to ${leagues[i + 1].id.charAt(0).toUpperCase() + leagues[i + 1].id.slice(1)} League!`);
+        break;
+      }
+    }
+  };
+
   const leagues = [
     {
       id: 'bronze',
@@ -106,7 +125,9 @@ const LeaguesMode = ({ playerData, setPlayerData, onNavigate }: LeaguesModeProps
     const pointsGained = isWin ? Math.floor(15 + Math.random() * 15) : Math.floor(5 + Math.random() * 10);
     const coinsEarned = isWin ? Math.floor(50 + Math.random() * 100) : Math.floor(20 + Math.random() * 50);
     
-    setLeaguePoints(prev => prev + pointsGained);
+    const newPoints = leaguePoints + pointsGained;
+    setLeaguePoints(newPoints);
+    checkLeaguePromotion(newPoints);
     setPlayerData(prev => ({
       ...prev,
       coins: prev.coins + coinsEarned

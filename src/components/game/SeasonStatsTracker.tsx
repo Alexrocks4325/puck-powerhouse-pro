@@ -35,6 +35,45 @@ interface SeasonStatsProps {
 }
 
 const SeasonStatsTracker = ({ currentGame }: SeasonStatsProps) => {
+  // Generate all 32 NHL teams with realistic standings
+  const generateTeamStandings = () => {
+    const teams = [
+      'Boston Bruins', 'Toronto Maple Leafs', 'Tampa Bay Lightning', 'Florida Panthers',
+      'New York Rangers', 'New Jersey Devils', 'Carolina Hurricanes', 'New York Islanders',
+      'Washington Capitals', 'Pittsburgh Penguins', 'Philadelphia Flyers', 'Detroit Red Wings',
+      'Ottawa Senators', 'Buffalo Sabres', 'Montreal Canadiens', 'Columbus Blue Jackets',
+      'Vegas Golden Knights', 'Edmonton Oilers', 'Los Angeles Kings', 'Seattle Kraken',
+      'Colorado Avalanche', 'Dallas Stars', 'Minnesota Wild', 'Winnipeg Jets',
+      'Nashville Predators', 'St. Louis Blues', 'Vancouver Canucks', 'Arizona Coyotes',
+      'Anaheim Ducks', 'San Jose Sharks', 'Calgary Flames', 'Chicago Blackhawks'
+    ];
+
+    return teams.map((team, index) => {
+      const gamesPlayed = Math.min(currentGame, 82);
+      const teamStrength = 0.7 - (index * 0.02) + (Math.random() * 0.15);
+      const winRate = Math.max(0.25, Math.min(0.85, teamStrength));
+      const wins = Math.floor(gamesPlayed * winRate);
+      const otLosses = Math.floor((gamesPlayed - wins) * 0.2);
+      const losses = gamesPlayed - wins - otLosses;
+      const points = wins * 2 + otLosses;
+      
+      return {
+        rank: index + 1,
+        team,
+        wins,
+        losses,
+        otLosses,
+        points,
+        gf: Math.floor(wins * 3.2 + losses * 2.1 + otLosses * 2.8 + Math.random() * 10),
+        ga: Math.floor(wins * 2.1 + losses * 3.2 + otLosses * 2.9 + Math.random() * 10),
+        gp: gamesPlayed
+      };
+    }).sort((a, b) => b.points - a.points).map((team, index) => ({
+      ...team,
+      rank: index + 1
+    }));
+  };
+
   // Generate realistic stats based on current game progression
   const generatePlayerStats = (): PlayerStats[] => {
     const players = [
@@ -104,16 +143,45 @@ const SeasonStatsTracker = ({ currentGame }: SeasonStatsProps) => {
 
   const playerStats = generatePlayerStats();
   const goalieStats = generateGoalieStats();
+  const teamStandings = generateTeamStandings();
 
   return (
     <Card className="p-6 nhl-gradient-bg border-primary/30">
       <h3 className="text-xl font-bold text-foreground mb-4">League Leaders</h3>
       
-      <Tabs defaultValue="skaters" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+      <Tabs defaultValue="standings" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsTrigger value="standings">Standings</TabsTrigger>
           <TabsTrigger value="skaters">Skaters</TabsTrigger>
           <TabsTrigger value="goalies">Goalies</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="standings">
+          <div className="space-y-1 max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-7 gap-2 text-xs font-semibold text-muted-foreground border-b pb-2 sticky top-0 bg-background">
+              <span>Rank</span>
+              <span>Team</span>
+              <span>GP</span>
+              <span>W-L-OT</span>
+              <span>PTS</span>
+              <span>GF-GA</span>
+              <span>DIFF</span>
+            </div>
+            {teamStandings.map((team) => (
+              <div key={team.rank} className="grid grid-cols-7 gap-2 text-sm p-2 rounded bg-muted/20 hover:bg-primary/10">
+                <span className="text-xs font-semibold">{team.rank}</span>
+                <span className="font-medium truncate">{team.team}</span>
+                <span>{team.gp}</span>
+                <span>{team.wins}-{team.losses}-{team.otLosses}</span>
+                <span className="font-semibold text-gold">{team.points}</span>
+                <span className="text-muted-foreground">{team.gf}-{team.ga}</span>
+                <span className={`font-medium ${(team.gf - team.ga) > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {team.gf - team.ga > 0 ? '+' : ''}{team.gf - team.ga}
+                </span>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
         
         <TabsContent value="skaters">
           <div className="space-y-2">

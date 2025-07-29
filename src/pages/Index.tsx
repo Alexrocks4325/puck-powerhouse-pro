@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import GameHeader from "@/components/game/GameHeader";
+import IntroductionScreen from "@/components/game/IntroductionScreen";
+import TeamCoachSelection from "@/components/game/TeamCoachSelection";
 import Tutorial from "@/components/game/Tutorial";
 import PackOpening from "@/components/game/PackOpening";
 import TeamManagement from "@/components/game/TeamManagement";
@@ -13,9 +15,9 @@ import nhlLogo from "@/assets/nhl-ultimate-logo.png";
 import { getStarterTeam } from "@/data/nhlPlayerDatabase";
 
 const Index = () => {
-  const [gameState, setGameState] = useState<'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues'>('menu');
+  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues'>('intro');
 
-  const handleNavigate = (screen: 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues') => {
+  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues') => {
     setGameState(screen);
   };
 
@@ -26,11 +28,30 @@ const Index = () => {
     team: [],
     completedTutorial: false,
     seasonProgress: 0,
-    leaguePoints: 0
+    leaguePoints: 0,
+    selectedTeam: '',
+    coachName: '',
+    completedIntro: false
   });
 
+  const handleIntroComplete = () => {
+    setGameState('selection');
+  };
+
+  const handleSelectionComplete = (selectedTeam: string, coachName: string) => {
+    setPlayerData(prev => ({
+      ...prev,
+      selectedTeam,
+      coachName,
+      completedIntro: true
+    }));
+    setGameState('tutorial');
+  };
+
   const handleStartGame = () => {
-    if (!playerData.completedTutorial) {
+    if (!playerData.completedIntro) {
+      setGameState('intro');
+    } else if (!playerData.completedTutorial) {
       setGameState('tutorial');
     } else {
       setGameState('team');
@@ -49,6 +70,14 @@ const Index = () => {
   };
 
   // Route to appropriate component
+  if (gameState === 'intro') {
+    return <IntroductionScreen onComplete={handleIntroComplete} />;
+  }
+
+  if (gameState === 'selection') {
+    return <TeamCoachSelection onComplete={handleSelectionComplete} />;
+  }
+
   if (gameState === 'tutorial') {
     return <Tutorial onComplete={handleTutorialComplete} />;
   }
