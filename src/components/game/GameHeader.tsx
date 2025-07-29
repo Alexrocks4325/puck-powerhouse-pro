@@ -6,13 +6,17 @@ interface GameHeaderProps {
     coins: number;
     packs: number;
     level: number;
+    experience?: number;
+    experienceToNext?: number;
   };
   showBackButton?: boolean;
   onBack?: () => void;
   title?: string;
+  onCoinsClick?: () => void;
+  onPacksClick?: () => void;
 }
 
-const GameHeader = ({ playerData, showBackButton = false, onBack, title }: GameHeaderProps) => {
+const GameHeader = ({ playerData, showBackButton = false, onBack, title, onCoinsClick, onPacksClick }: GameHeaderProps) => {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/90 backdrop-blur-md border-b border-border/50">
       <div className="container mx-auto px-4 py-3">
@@ -39,14 +43,20 @@ const GameHeader = ({ playerData, showBackButton = false, onBack, title }: GameH
           
           {playerData && (
             <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
+              <div 
+                className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={onCoinsClick}
+              >
                 <Coins className="w-5 h-5 text-gold" />
                 <span className="font-semibold text-gold">
                   {playerData.coins.toLocaleString()}
                 </span>
               </div>
               
-              <div className="flex items-center space-x-2">
+              <div 
+                className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={onPacksClick}
+              >
                 <Package className="w-5 h-5 text-primary" />
                 <span className="font-semibold text-primary">
                   {playerData.packs}
@@ -58,6 +68,16 @@ const GameHeader = ({ playerData, showBackButton = false, onBack, title }: GameH
                 <span className="font-semibold text-ice-blue">
                   Lvl {playerData.level}
                 </span>
+                {playerData.experience !== undefined && playerData.experienceToNext && (
+                  <div className="ml-2">
+                    <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-ice-blue transition-all duration-300"
+                        style={{ width: `${(playerData.experience / playerData.experienceToNext) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

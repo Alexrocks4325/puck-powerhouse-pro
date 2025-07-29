@@ -24,13 +24,13 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 3, name: "Cale Makar", team: "COL", position: "D", overall: 96, rarity: "legend", chemistry: ["Two-Way", "Speedster", "Offensive D"], image: "/src/assets/players/cale-makar.jpg" },
   
   // ELITE TIER (90-95) - Very rare
-  { id: 4, name: "Auston Matthews", team: "TOR", position: "C", overall: 95, rarity: "elite", chemistry: ["Sniper", "Power Forward"] },
-  { id: 5, name: "Leon Draisaitl", team: "EDM", position: "C", overall: 94, rarity: "elite", chemistry: ["Power Forward", "Playmaker"] },
-  { id: 6, name: "Erik Karlsson", team: "PIT", position: "D", overall: 93, rarity: "elite", chemistry: ["Offensive D", "Powerplay"] },
-  { id: 7, name: "David Pastrnak", team: "BOS", position: "RW", overall: 92, rarity: "elite", chemistry: ["Sniper", "Clutch"] },
-  { id: 8, name: "Artemi Panarin", team: "NYR", position: "LW", overall: 91, rarity: "elite", chemistry: ["Playmaker", "Clutch"] },
+  { id: 4, name: "Auston Matthews", team: "TOR", position: "C", overall: 95, rarity: "elite", chemistry: ["Sniper", "Power Forward"], image: "/src/assets/players/default-player.jpg" },
+  { id: 5, name: "Leon Draisaitl", team: "EDM", position: "C", overall: 94, rarity: "elite", chemistry: ["Power Forward", "Playmaker"], image: "/src/assets/players/leon-draisaitl.jpg" },
+  { id: 6, name: "Erik Karlsson", team: "PIT", position: "D", overall: 93, rarity: "elite", chemistry: ["Offensive D", "Powerplay"], image: "/src/assets/players/default-player.jpg" },
+  { id: 7, name: "David Pastrnak", team: "BOS", position: "RW", overall: 92, rarity: "elite", chemistry: ["Sniper", "Clutch"], image: "/src/assets/players/default-player.jpg" },
+  { id: 8, name: "Artemi Panarin", team: "NYR", position: "LW", overall: 91, rarity: "elite", chemistry: ["Playmaker", "Clutch"], image: "/src/assets/players/default-player.jpg" },
   { id: 9, name: "Igor Shesterkin", team: "NYR", position: "G", overall: 91, rarity: "elite", chemistry: ["Brick Wall", "Clutch"], image: "/src/assets/players/igor-shesterkin.jpg" },
-  { id: 10, name: "Victor Hedman", team: "TBL", position: "D", overall: 90, rarity: "elite", chemistry: ["Defensive", "Leader"] },
+  { id: 10, name: "Victor Hedman", team: "TBL", position: "D", overall: 90, rarity: "elite", chemistry: ["Defensive", "Leader"], image: "/src/assets/players/default-player.jpg" },
 
   // GOLD TIER (85-89) - Rare
   { id: 11, name: "Mitch Marner", team: "TOR", position: "RW", overall: 89, rarity: "gold", chemistry: ["Playmaker", "Speedster"] },
