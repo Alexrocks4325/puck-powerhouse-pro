@@ -73,6 +73,24 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
     return 'text-gray-400';
   };
 
+  // Auto-generate image path for any player
+  const getPlayerImage = (player: Player): string => {
+    // If player has a specific image path, use it
+    if (player.image && !player.image.includes('default-player')) {
+      return player.image;
+    }
+    
+    // Auto-generate realistic image path based on player name
+    const cleanName = player.name.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+      .replace(/--+/g, '-'); // Replace multiple hyphens with single
+    
+    // Try realistic image first
+    return `/src/assets/players/${cleanName}-realistic.jpg`;
+  };
+
   return (
     <Card 
       className={`${sizeClasses[size]} ${getRarityClass(player.rarity)} cursor-pointer hover:scale-105 transition-transform duration-200 flex flex-col relative overflow-hidden`}
@@ -96,26 +114,22 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
 
         {/* Main Player Image */}
         <div className="flex-1 flex items-center justify-center my-2">
-          {player.image ? (
-            <div className={`relative ${size === 'small' ? 'w-16 h-16' : size === 'medium' ? 'w-20 h-20' : 'w-24 h-24'} rounded-full overflow-hidden border-2 border-primary/50 bg-black/20`}>
-              <img 
-                src={player.image} 
-                alt={player.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
+          <div className={`relative ${size === 'small' ? 'w-16 h-16' : size === 'medium' ? 'w-20 h-20' : 'w-24 h-24'} rounded-full overflow-hidden border-2 border-primary/50 bg-black/20`}>
+            <img 
+              src={getPlayerImage(player)} 
+              alt={player.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // If realistic image fails, try original image path
+                if (player.image && e.currentTarget.src !== player.image) {
+                  e.currentTarget.src = player.image;
+                } else {
+                  // Finally fallback to default
                   e.currentTarget.src = defaultPlayerImg;
-                }}
-              />
-            </div>
-          ) : (
-            <div className={`${size === 'small' ? 'w-16 h-16' : size === 'medium' ? 'w-20 h-20' : 'w-24 h-24'} rounded-full overflow-hidden border-2 border-primary/30 bg-muted/40 flex items-center justify-center`}>
-              <img 
-                src={defaultPlayerImg} 
-                alt={player.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+                }
+              }}
+            />
+          </div>
         </div>
         
         {/* Player Info */}
