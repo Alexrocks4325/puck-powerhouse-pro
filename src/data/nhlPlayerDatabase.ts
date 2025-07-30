@@ -80,6 +80,19 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 44, name: "Charlie McAvoy", team: "BOS", position: "D", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Leader"], image: "/src/assets/players/8479325.jpg" },
   { id: 45, name: "Hampus Lindholm", team: "BOS", position: "D", overall: 83, rarity: "silver", chemistry: ["Defensive"], image: "/src/assets/players/8476854.jpg" },
   
+  // Additional Boston Bruins players from roster
+  { id: 46, name: "Nikita Zadorov", team: "BOS", position: "D", overall: 80, rarity: "bronze", chemistry: ["Physical", "Defensive"], image: "/src/assets/players/8477507.jpg" },
+  { id: 47, name: "Andrew Peeke", team: "BOS", position: "D", overall: 76, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/8479369.jpg" },
+  { id: 48, name: "Viktor Arvidsson", team: "BOS", position: "LW", overall: 79, rarity: "bronze", chemistry: ["Speedster", "Sniper"], image: "/src/assets/players/8478042.jpg" },
+  { id: 49, name: "John Beecher", team: "BOS", position: "C", overall: 73, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/8481556.jpg" },
+  { id: 50, name: "Michael Eyssimont", team: "BOS", position: "C", overall: 72, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8479591.jpg" },
+  { id: 51, name: "Morgan Geekie", team: "BOS", position: "C", overall: 74, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8478495.jpg" },
+  { id: 52, name: "Tanner Jeannot", team: "BOS", position: "LW", overall: 75, rarity: "bronze", chemistry: ["Physical"], image: "/src/assets/players/8479661.jpg" },
+  { id: 53, name: "Sean Kuraly", team: "BOS", position: "C", overall: 74, rarity: "bronze", chemistry: ["Physical"], image: "/src/assets/players/8476374.jpg" },
+  { id: 54, name: "Elias Lindholm", team: "BOS", position: "C", overall: 81, rarity: "silver", chemistry: ["Two-Way"], image: "/src/assets/players/8476414.jpg" },
+  { id: 55, name: "Casey Mittelstadt", team: "BOS", position: "C", overall: 78, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8479999.jpg" },
+  { id: 56, name: "Joonas Korpisalo", team: "BOS", position: "G", overall: 77, rarity: "bronze", chemistry: ["Veteran"], image: "/src/assets/players/8476914.jpg" },
+  { id: 57, name: "Mason Lohrei", team: "BOS", position: "D", overall: 75, rarity: "bronze", chemistry: ["Young Gun", "Offensive D"], image: "/src/assets/players/8482511.jpg" },
   // BUFFALO SABRES
   { id: 46, name: "Tage Thompson", team: "BUF", position: "C", overall: 82, rarity: "silver", chemistry: ["Power Forward", "Sniper"], image: "/src/assets/players/8479420.jpg" },
   { id: 47, name: "Alex Tuch", team: "BUF", position: "RW", overall: 80, rarity: "bronze", chemistry: ["Power Forward"], image: "/src/assets/players/8477949.jpg" },
@@ -383,7 +396,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 232, name: "Matt Grzelcyk", team: "BOS", position: "D", overall: 76, rarity: "bronze", chemistry: ["Offensive D"] },
   { id: 233, name: "Derek Forbort", team: "BOS", position: "D", overall: 74, rarity: "bronze", chemistry: ["Defensive"] },
   { id: 234, name: "Linus Ullmark", team: "BOS", position: "G", overall: 87, rarity: "gold", chemistry: ["Elite Goalie"] },
-  { id: 235, name: "Jeremy Swayman", team: "BOS", position: "G", overall: 82, rarity: "silver", chemistry: ["Young Gun"] },
+  { id: 235, name: "Jeremy Swayman", team: "BOS", position: "G", overall: 82, rarity: "silver", chemistry: ["Young Gun"], image: "/src/assets/players/8476882.jpg" },
 
   // More BUFFALO SABRES depth
   { id: 236, name: "Tage Thompson", team: "BUF", position: "C", overall: 85, rarity: "gold", chemistry: ["Sniper", "Power Forward"], image: "/src/assets/players/tage-thompson.jpg" },
