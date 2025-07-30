@@ -94,12 +94,12 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 56, name: "Jeremy Swayman", team: "BOS", position: "G", overall: 82, rarity: "silver", chemistry: ["Young Gun"], image: "/src/assets/players/8476882.jpg" },
   { id: 57, name: "Joonas Korpisalo", team: "BOS", position: "G", overall: 77, rarity: "bronze", chemistry: ["Veteran"], image: "/src/assets/players/8476914.jpg" },
   { id: 58, name: "Mason Lohrei", team: "BOS", position: "D", overall: 75, rarity: "bronze", chemistry: ["Young Gun", "Offensive D"], image: "/src/assets/players/8482511.jpg" },
-  // BUFFALO SABRES
-  { id: 46, name: "Tage Thompson", team: "BUF", position: "C", overall: 82, rarity: "silver", chemistry: ["Power Forward", "Sniper"], image: "/src/assets/players/8479420.jpg" },
-  { id: 47, name: "Alex Tuch", team: "BUF", position: "RW", overall: 80, rarity: "bronze", chemistry: ["Power Forward"], image: "/src/assets/players/8477949.jpg" },
-  { id: 48, name: "Kyle Okposo", team: "BUF", position: "RW", overall: 74, rarity: "bronze", chemistry: ["Veteran", "Leader"] },
-  { id: 49, name: "Jeff Skinner", team: "BUF", position: "LW", overall: 77, rarity: "bronze", chemistry: ["Sniper"] },
-  { id: 50, name: "Mattias Samuelsson", team: "BUF", position: "D", overall: 76, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/8480807.jpg" },
+  // BUFFALO SABRES - Updated with correct NHL Profile IDs
+  { id: 500, name: "Tage Thompson", team: "BUF", position: "C", overall: 82, rarity: "silver", chemistry: ["Power Forward", "Sniper"], image: "/src/assets/players/8479420.jpg" },
+  { id: 501, name: "Alex Tuch", team: "BUF", position: "RW", overall: 80, rarity: "bronze", chemistry: ["Power Forward"], image: "/src/assets/players/8477949.jpg" },
+  { id: 502, name: "Kyle Okposo", team: "BUF", position: "RW", overall: 74, rarity: "bronze", chemistry: ["Veteran", "Leader"], image: "/src/assets/players/8474157.jpg" },
+  { id: 503, name: "Jeff Skinner", team: "BUF", position: "LW", overall: 77, rarity: "bronze", chemistry: ["Sniper"], image: "/src/assets/players/8475784.jpg" },
+  { id: 504, name: "Mattias Samuelsson", team: "BUF", position: "D", overall: 76, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/8480807.jpg" },
   
   // CALGARY FLAMES  
   { id: 51, name: "Nazem Kadri", team: "CGY", position: "C", overall: 82, rarity: "silver", chemistry: ["Two-Way", "Veteran"] },
