@@ -119,7 +119,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 71, name: "Johnny Gaudreau", team: "CBJ", position: "LW", overall: 85, rarity: "gold", chemistry: ["Playmaker", "Speedster"] },
   { id: 72, name: "Patrik Laine", team: "CBJ", position: "RW", overall: 82, rarity: "silver", chemistry: ["Sniper"] },
   { id: 73, name: "Boone Jenner", team: "CBJ", position: "C", overall: 78, rarity: "bronze", chemistry: ["Leader", "Two-Way"] },
-  { id: 74, name: "Zach Werenski", team: "CBJ", position: "D", overall: 84, rarity: "silver", chemistry: ["Offensive D"] },
+  { id: 74, name: "Zach Werenski", team: "CBJ", position: "D", overall: 84, rarity: "silver", chemistry: ["Offensive D"], image: "/src/assets/players/zach-werenski-realistic.jpg" },
   { id: 75, name: "Ivan Provorov", team: "CBJ", position: "D", overall: 80, rarity: "bronze", chemistry: ["Two-Way"] },
   
   // DALLAS STARS
@@ -154,7 +154,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 96, name: "Uvis Balinskis", team: "FLA", position: "D", overall: 74, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/uvis-balinskis-realistic.jpg" },
   // Centers: 8477482, 8477935, 8478021, 8476782, 8479950, 8478674, 8480573, 8479373
   { id: 97, name: "Aleksander Barkov", team: "FLA", position: "C", overall: 90, rarity: "elite", chemistry: ["Two-Way", "Leader"], image: "/src/assets/players/aleksander-barkov-realistic.jpg" },
-  { id: 98, name: "Sam Reinhart", team: "FLA", position: "C", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Sniper"], image: "/src/assets/players/sam-reinhart-realistic.jpg" },
+  { id: 98, name: "Sam Reinhart", team: "FLA", position: "C", overall: 85, rarity: "gold", chemistry: ["Two-Way", "Sniper"], image: "/src/assets/players/8477935.jpg" },
   { id: 99, name: "Carter Verhaeghe", team: "FLA", position: "C", overall: 83, rarity: "silver", chemistry: ["Speedster", "Clutch"], image: "/src/assets/players/carter-verhaeghe-realistic.jpg" },
   { id: 100, name: "Sam Bennett", team: "FLA", position: "C", overall: 80, rarity: "silver", chemistry: ["Physical", "Power Forward"], image: "/src/assets/players/sam-bennett-realistic.jpg" },
   { id: 101, name: "Anton Lundell", team: "FLA", position: "C", overall: 79, rarity: "bronze", chemistry: ["Two-Way", "Young Gun"], image: "/src/assets/players/anton-lundell-realistic.jpg" },
@@ -291,7 +291,7 @@ export const nhlPlayerDatabase: Player[] = [
   // TAMPA BAY LIGHTNING (already added some above)
   { id: 161, name: "Brayden Point", team: "TBL", position: "C", overall: 88, rarity: "gold", chemistry: ["Two-Way", "Clutch"] },
   { id: 162, name: "Steven Stamkos", team: "TBL", position: "C", overall: 86, rarity: "gold", chemistry: ["Sniper", "Veteran", "Leader"] },
-  { id: 163, name: "Anthony Cirelli", team: "TBL", position: "C", overall: 81, rarity: "silver", chemistry: ["Defensive", "Two-Way"] },
+  { id: 163, name: "Anthony Cirelli", team: "TBL", position: "C", overall: 81, rarity: "silver", chemistry: ["Defensive", "Two-Way"], image: "/src/assets/players/8476463.jpg" },
   { id: 164, name: "Mikhail Sergachev", team: "TBL", position: "D", overall: 83, rarity: "silver", chemistry: ["Offensive D"] },
   { id: 165, name: "Brandon Hagel", team: "TBL", position: "LW", overall: 80, rarity: "bronze", chemistry: ["Speedster", "Physical"] },
 
@@ -453,7 +453,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 288, name: "Boone Jenner", team: "CBJ", position: "C", overall: 79, rarity: "bronze", chemistry: ["Two-Way", "Leader"] },
   { id: 289, name: "Gustav Nyquist", team: "CBJ", position: "RW", overall: 77, rarity: "bronze", chemistry: ["Veteran"] },
   { id: 290, name: "Sean Kuraly", team: "CBJ", position: "C", overall: 73, rarity: "bronze", chemistry: ["Physical"] },
-  { id: 291, name: "Zach Werenski", team: "CBJ", position: "D", overall: 86, rarity: "gold", chemistry: ["Offensive D"] },
+  { id: 291, name: "Zach Werenski", team: "CBJ", position: "D", overall: 86, rarity: "gold", chemistry: ["Offensive D"], image: "/src/assets/players/zach-werenski-realistic.jpg" },
   { id: 292, name: "Ivan Provorov", team: "CBJ", position: "D", overall: 81, rarity: "silver", chemistry: ["Two-Way"] },
   { id: 293, name: "Erik Gudbranson", team: "CBJ", position: "D", overall: 74, rarity: "bronze", chemistry: ["Physical", "Defensive"] },
   { id: 294, name: "Damon Severson", team: "CBJ", position: "D", overall: 78, rarity: "bronze", chemistry: ["Two-Way"] },
