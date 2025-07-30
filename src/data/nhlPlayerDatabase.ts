@@ -250,7 +250,7 @@ export const nhlPlayerDatabase: Player[] = [
   // In a real implementation, this would include 1000+ players
 
   // OTTAWA SENATORS
-  { id: 131, name: "Brady Tkachuk", team: "OTT", position: "LW", overall: 84, rarity: "silver", chemistry: ["Power Forward", "Leader"], image: "/src/assets/players/brady-tkachuk-realistic.jpg" },
+  { id: 131, name: "Brady Tkachuk", team: "OTT", position: "LW", overall: 84, rarity: "silver", chemistry: ["Power Forward", "Leader"], image: "/src/assets/players/8480801.jpg" },
   { id: 132, name: "Drake Batherson", team: "OTT", position: "RW", overall: 81, rarity: "silver", chemistry: ["Sniper"], image: "/src/assets/players/drake-batherson-realistic.jpg" },
   { id: 133, name: "Claude Giroux", team: "OTT", position: "RW", overall: 82, rarity: "silver", chemistry: ["Veteran", "Playmaker"], image: "/src/assets/players/claude-giroux-realistic.jpg" },
   { id: 134, name: "Thomas Chabot", team: "OTT", position: "D", overall: 83, rarity: "silver", chemistry: ["Offensive D"], image: "/src/assets/players/thomas-chabot-realistic.jpg" },
