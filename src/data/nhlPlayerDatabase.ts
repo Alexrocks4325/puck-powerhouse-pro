@@ -91,8 +91,9 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 53, name: "Sean Kuraly", team: "BOS", position: "C", overall: 74, rarity: "bronze", chemistry: ["Physical"], image: "/src/assets/players/8476374.jpg" },
   { id: 54, name: "Elias Lindholm", team: "BOS", position: "C", overall: 81, rarity: "silver", chemistry: ["Two-Way"], image: "/src/assets/players/8476414.jpg" },
   { id: 55, name: "Casey Mittelstadt", team: "BOS", position: "C", overall: 78, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8479999.jpg" },
-  { id: 56, name: "Joonas Korpisalo", team: "BOS", position: "G", overall: 77, rarity: "bronze", chemistry: ["Veteran"], image: "/src/assets/players/8476914.jpg" },
-  { id: 57, name: "Mason Lohrei", team: "BOS", position: "D", overall: 75, rarity: "bronze", chemistry: ["Young Gun", "Offensive D"], image: "/src/assets/players/8482511.jpg" },
+  { id: 56, name: "Jeremy Swayman", team: "BOS", position: "G", overall: 82, rarity: "silver", chemistry: ["Young Gun"], image: "/src/assets/players/8476882.jpg" },
+  { id: 57, name: "Joonas Korpisalo", team: "BOS", position: "G", overall: 77, rarity: "bronze", chemistry: ["Veteran"], image: "/src/assets/players/8476914.jpg" },
+  { id: 58, name: "Mason Lohrei", team: "BOS", position: "D", overall: 75, rarity: "bronze", chemistry: ["Young Gun", "Offensive D"], image: "/src/assets/players/8482511.jpg" },
   // BUFFALO SABRES
   { id: 46, name: "Tage Thompson", team: "BUF", position: "C", overall: 82, rarity: "silver", chemistry: ["Power Forward", "Sniper"], image: "/src/assets/players/8479420.jpg" },
   { id: 47, name: "Alex Tuch", team: "BUF", position: "RW", overall: 80, rarity: "bronze", chemistry: ["Power Forward"], image: "/src/assets/players/8477949.jpg" },
