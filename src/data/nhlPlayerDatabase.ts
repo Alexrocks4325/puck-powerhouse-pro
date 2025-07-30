@@ -313,7 +313,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 166, name: "William Nylander", team: "TOR", position: "RW", overall: 87, rarity: "gold", chemistry: ["Sniper", "Speedster"] },
   { id: 167, name: "John Tavares", team: "TOR", position: "C", overall: 84, rarity: "silver", chemistry: ["Veteran", "Leader"] },
   { id: 168, name: "Matthew Knies", team: "TOR", position: "LW", overall: 77, rarity: "bronze", chemistry: ["Young Gun", "Power Forward"] },
-  { id: 169, name: "T.J. Brodie", team: "TOR", position: "D", overall: 78, rarity: "bronze", chemistry: ["Veteran", "Defensive"] },
+  { id: 169, name: "T.J. Brodie", team: "TOR", position: "D", overall: 78, rarity: "bronze", chemistry: ["Veteran", "Defensive"], image: "/src/assets/players/8475231.jpg" },
   { id: 170, name: "Jake McCabe", team: "TOR", position: "D", overall: 77, rarity: "bronze", chemistry: ["Physical", "Defensive"] },
 
   // VANCOUVER CANUCKS (already added some above)
