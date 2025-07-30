@@ -32,7 +32,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 9, name: "Igor Shesterkin", team: "NYR", position: "G", overall: 91, rarity: "elite", chemistry: ["Brick Wall", "Clutch"], image: "/src/assets/players/igor-shesterkin-realistic.jpg" },
   { id: 10, name: "Victor Hedman", team: "TBL", position: "D", overall: 90, rarity: "elite", chemistry: ["Defensive", "Leader"], image: "/src/assets/players/8475167.jpg" },
   { id: 11, name: "Sidney Crosby", team: "PIT", position: "C", overall: 92, rarity: "elite", chemistry: ["Legend", "Playmaker", "Leader"], image: "/src/assets/players/sidney-crosby-realistic.jpg" },
-  { id: 12, name: "Alex Ovechkin", team: "WSH", position: "LW", overall: 91, rarity: "elite", chemistry: ["Legend", "Sniper", "Power Forward"], image: "/src/assets/players/alex-ovechkin-realistic.jpg" },
+  { id: 12, name: "Alex Ovechkin", team: "WSH", position: "RW", overall: 91, rarity: "elite", chemistry: ["Legend", "Sniper", "Power Forward"], image: "/src/assets/players/8471214.jpg" },
 
   // GOLD TIER (85-89) - Rare
   { id: 13, name: "Mitch Marner", team: "TOR", position: "RW", overall: 89, rarity: "gold", chemistry: ["Playmaker", "Speedster"], image: "/src/assets/players/8477939.jpg" },
@@ -337,15 +337,25 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 184, name: "Reilly Smith", team: "VGK", position: "RW", overall: 77, rarity: "bronze", chemistry: ["Veteran"] },
   { id: 185, name: "Nicolas Hague", team: "VGK", position: "D", overall: 76, rarity: "bronze", chemistry: ["Physical"] },
 
-  // WASHINGTON CAPITALS
-  { id: 186, name: "Alex Ovechkin", team: "WSH", position: "LW", overall: 91, rarity: "elite", chemistry: ["Legend", "Sniper", "Power Forward"] },
-  { id: 187, name: "Dylan Strome", team: "WSH", position: "C", overall: 81, rarity: "silver", chemistry: ["Playmaker"] },
-  { id: 188, name: "T.J. Oshie", team: "WSH", position: "RW", overall: 79, rarity: "bronze", chemistry: ["Veteran", "Clutch"] },
-  { id: 189, name: "Tom Wilson", team: "WSH", position: "RW", overall: 80, rarity: "bronze", chemistry: ["Physical", "Power Forward"] },
-  { id: 190, name: "John Carlson", team: "WSH", position: "D", overall: 83, rarity: "silver", chemistry: ["Offensive D", "Powerplay"] },
-  { id: 191, name: "Dmitry Orlov", team: "WSH", position: "D", overall: 80, rarity: "bronze", chemistry: ["Two-Way"] },
-  { id: 192, name: "Anthony Mantha", team: "WSH", position: "RW", overall: 78, rarity: "bronze", chemistry: ["Power Forward"] },
-  { id: 193, name: "Evgeny Kuznetsov", team: "WSH", position: "C", overall: 82, rarity: "silver", chemistry: ["Playmaker"] },
+  // WASHINGTON CAPITALS - Updated with correct NHL Profile IDs
+  { id: 186, name: "Anthony Beauvillier", team: "WSH", position: "LW", overall: 79, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8478463.jpg" },
+  { id: 187, name: "Nic Dowd", team: "WSH", position: "C", overall: 76, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/8475343.jpg" },
+  { id: 188, name: "Pierre-Luc Dubois", team: "WSH", position: "C", overall: 82, rarity: "silver", chemistry: ["Power Forward"], image: "/src/assets/players/8479400.jpg" },
+  { id: 189, name: "Brandon Duhaime", team: "WSH", position: "LW", overall: 75, rarity: "bronze", chemistry: ["Physical"], image: "/src/assets/players/8479520.jpg" },
+  { id: 190, name: "Ethen Frank", team: "WSH", position: "LW", overall: 72, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/8483573.jpg" },
+  { id: 191, name: "Connor McMichael", team: "WSH", position: "C", overall: 78, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/8481580.jpg" },
+  { id: 192, name: "Sonny Milano", team: "WSH", position: "LW", overall: 77, rarity: "bronze", chemistry: ["Speedster"], image: "/src/assets/players/8477947.jpg" },
+  { id: 193, name: "Aliaksei Protas", team: "WSH", position: "C", overall: 76, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/8481656.jpg" },
+  { id: 194, name: "Dylan Strome", team: "WSH", position: "C", overall: 80, rarity: "bronze", chemistry: ["Playmaker"], image: "/src/assets/players/8478440.jpg" },
+  { id: 195, name: "Tom Wilson", team: "WSH", position: "RW", overall: 81, rarity: "silver", chemistry: ["Physical", "Power Forward"], image: "/src/assets/players/8476880.jpg" },
+  { id: 196, name: "John Carlson", team: "WSH", position: "D", overall: 86, rarity: "gold", chemistry: ["Offensive D", "Veteran"], image: "/src/assets/players/8474590.jpg" },
+  { id: 197, name: "Jakob Chychrun", team: "WSH", position: "D", overall: 82, rarity: "silver", chemistry: ["Offensive D"], image: "/src/assets/players/8479345.jpg" },
+  { id: 198, name: "Martin Fehérváry", team: "WSH", position: "D", overall: 78, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/8480796.jpg" },
+  { id: 199, name: "Matt Roy", team: "WSH", position: "D", overall: 79, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/8478911.jpg" },
+  { id: 200, name: "Rasmus Sandin", team: "WSH", position: "D", overall: 77, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8480873.jpg" },
+  { id: 201, name: "Trevor van Riemsdyk", team: "WSH", position: "D", overall: 74, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/8477845.jpg" },
+  { id: 202, name: "Charlie Lindgren", team: "WSH", position: "G", overall: 80, rarity: "bronze", chemistry: ["Steady"], image: "/src/assets/players/8479292.jpg" },
+  { id: 203, name: "Logan Thompson", team: "WSH", position: "G", overall: 78, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/8480313.jpg" },
   { id: 194, name: "Lars Eller", team: "WSH", position: "C", overall: 75, rarity: "bronze", chemistry: ["Veteran", "Defensive"] },
   { id: 195, name: "Martin Fehervary", team: "WSH", position: "D", overall: 77, rarity: "bronze", chemistry: ["Defensive"] },
 
