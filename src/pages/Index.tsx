@@ -13,17 +13,20 @@ import LeaguesMode from "@/components/game/LeaguesMode";
 import LiveEventsMode from "@/components/game/LiveEventsMode";
 import PackManager from "@/components/game/PackManager";
 import CoinShop from "@/components/game/CoinShop";
-import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package } from "lucide-react";
+import { BeAProMode } from "@/components/GameModes/BeAProMode";
+import { FranchiseMode } from "@/components/GameModes/FranchiseMode";
+import { WorldOfCHEL } from "@/components/GameModes/WorldOfCHEL";
+import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package, User, Building, Gamepad2 } from "lucide-react";
 import nhlLogo from "@/assets/nhl-ultimate-logo.png";
 import { getStarterTeam } from "@/data/nhlPlayerDatabase";
 import { addExperience, showLevelUpNotification, EXPERIENCE_REWARDS } from "@/components/game/ProgressionSystem";
 
 const Index = () => {
-  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events'>('intro');
+  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'be-a-pro' | 'franchise' | 'world-of-chel'>('intro');
   const [showPackManager, setShowPackManager] = useState(false);
   const [showCoinShop, setShowCoinShop] = useState(false);
 
-  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events') => {
+  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'be-a-pro' | 'franchise' | 'world-of-chel') => {
     setGameState(screen);
   };
 
@@ -303,6 +306,18 @@ const Index = () => {
     );
   }
 
+  if (gameState === 'be-a-pro') {
+    return <BeAProMode onBack={() => setGameState('menu')} />;
+  }
+
+  if (gameState === 'franchise') {
+    return <FranchiseMode onBack={() => setGameState('menu')} />;
+  }
+
+  if (gameState === 'world-of-chel') {
+    return <WorldOfCHEL onBack={() => setGameState('menu')} />;
+  }
+
   // Main Menu
   return (
     <div className="min-h-screen ice-surface">
@@ -517,6 +532,54 @@ const Index = () => {
               <Star className="w-4 h-4 text-ice-blue" />
               <Star className="w-4 h-4 text-ice-blue" />
               <Star className="w-4 h-4 text-ice-blue" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => setGameState('be-a-pro')}
+          >
+            <User className="w-12 h-12 mx-auto mb-4 text-accent" />
+            <h3 className="text-xl font-bold mb-2">Be A Pro</h3>
+            <p className="text-muted-foreground mb-4">
+              Create your player and build your career from rookie to legend
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-accent" />
+              <Star className="w-4 h-4 text-accent" />
+              <Star className="w-4 h-4 text-accent" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => setGameState('franchise')}
+          >
+            <Building className="w-12 h-12 mx-auto mb-4 text-destructive" />
+            <h3 className="text-xl font-bold mb-2">Franchise Mode</h3>
+            <p className="text-muted-foreground mb-4">
+              Manage your franchise with enhanced AI and deeper tools
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-destructive" />
+              <Star className="w-4 h-4 text-destructive" />
+              <Star className="w-4 h-4 text-destructive" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => setGameState('world-of-chel')}
+          >
+            <Gamepad2 className="w-12 h-12 mx-auto mb-4 text-secondary" />
+            <h3 className="text-xl font-bold mb-2">World of CHEL</h3>
+            <p className="text-muted-foreground mb-4">
+              Arcade hockey with power-ups, 3v3, and unique game modes
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-secondary" />
+              <Star className="w-4 h-4 text-secondary" />
+              <Star className="w-4 h-4 text-secondary" />
             </div>
           </Card>
         </div>
