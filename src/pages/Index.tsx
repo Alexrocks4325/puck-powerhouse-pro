@@ -4,9 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Play, Trophy, Users, Settings, Building, Gamepad2, User, Zap, Star, Eye } from "lucide-react";
-import heroImage from "@/assets/nhl25-hero.jpg";
-import hughesCover from "@/assets/hughes-brothers-cover.jpg";
-import pwhlLogo from "@/assets/pwhl-logo.jpg";
 import { FranchiseMode } from "@/components/GameModes/FranchiseMode";
 import { BeAProMode } from "@/components/GameModes/BeAProMode";
 import { WorldOfCHEL } from "@/components/GameModes/WorldOfCHEL";
@@ -40,10 +37,7 @@ const Index = () => {
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Hughes Brothers Cover Background */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${hughesCover})` }}
-      >
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-slate-800 to-red-900">
         <div className="absolute inset-0 bg-gradient-to-b from-arena-dark/60 via-arena-dark/80 to-arena-dark/95" />
       </div>
 
@@ -184,7 +178,7 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">Face the net or puck for better positioning</p>
               </div>
               <div className="text-center">
-                <img src={pwhlLogo} alt="PWHL" className="w-8 h-8 mx-auto mb-2 rounded" />
+                <Zap className="w-8 h-8 mx-auto mb-2 text-ice-blue" />
                 <h3 className="font-display font-bold mb-2">PWHL Support</h3>
                 <p className="text-sm text-muted-foreground">First NHL game featuring women's professional hockey</p>
               </div>
