@@ -1,650 +1,578 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Play, Trophy, Users, Settings, Building, Gamepad2, User, Zap, Star, Eye } from "lucide-react";
-import { FranchiseMode } from "@/components/GameModes/FranchiseMode";
-import { BeAProMode } from "@/components/GameModes/BeAProMode";
-import { WorldOfCHEL } from "@/components/GameModes/WorldOfCHEL";
+import { Card } from "@/components/ui/card";
+import GameHeader from "@/components/game/GameHeader";
+import IntroductionScreen from "@/components/game/IntroductionScreen";
+import TeamCoachSelection from "@/components/game/TeamCoachSelection";
+import Tutorial from "@/components/game/Tutorial";
+import PackOpening from "@/components/game/PackOpening";
+import TeamManagement from "@/components/game/TeamManagement";
+import EnhancedSeasonMode from "@/components/game/EnhancedSeasonMode";
+import TasksAndChallenges from "@/components/game/TasksAndChallenges";
+import LeaguesMode from "@/components/game/LeaguesMode";
+import LiveEventsMode from "@/components/game/LiveEventsMode";
+import PackManager from "@/components/game/PackManager";
+import CoinShop from "@/components/game/CoinShop";
+import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package } from "lucide-react";
+import nhlLogo from "@/assets/nhl-ultimate-logo.png";
+import { getStarterTeam } from "@/data/nhlPlayerDatabase";
+import { addExperience, showLevelUpNotification, EXPERIENCE_REWARDS } from "@/components/game/ProgressionSystem";
 
 const Index = () => {
-  const [currentMode, setCurrentMode] = useState<'menu' | 'play-now' | 'franchise' | 'be-a-pro' | 'world-chel'>('menu');
+  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events'>('intro');
+  const [showPackManager, setShowPackManager] = useState(false);
+  const [showCoinShop, setShowCoinShop] = useState(false);
 
-  // Handle mode selection
-  const handleModeSelect = (mode: typeof currentMode) => {
-    setCurrentMode(mode);
+  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events') => {
+    setGameState(screen);
   };
 
-  // Render current mode
-  if (currentMode === 'franchise') {
-    return <FranchiseMode onBack={() => setCurrentMode('menu')} />;
-  }
-  
-  if (currentMode === 'be-a-pro') {
-    return <BeAProMode onBack={() => setCurrentMode('menu')} />;
-  }
-  
-  if (currentMode === 'world-chel') {
-    return <WorldOfCHEL onBack={() => setCurrentMode('menu')} />;
-  }
-  
-  if (currentMode === 'play-now') {
-    return <GameInterface onBack={() => setCurrentMode('menu')} />;
-  }
-
-  // Main Menu
-  return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Hughes Brothers Cover Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-slate-800 to-red-900">
-        <div className="absolute inset-0 bg-gradient-to-b from-arena-dark/60 via-arena-dark/80 to-arena-dark/95" />
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
-        {/* NHL 25 Logo with Hughes Brothers */}
-        <div className="text-center mb-12 animate-fade-in">
-          <h1 className="nhl-text-logo text-7xl md:text-8xl mb-4 text-transparent bg-gradient-to-r from-hockey-red via-ice-blue to-hockey-red bg-clip-text animate-glow-pulse">
-            NHL 25
-          </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground font-display tracking-wide mb-2">
-            FEATURING THE HUGHES BROTHERS
-          </p>
-          <div className="flex justify-center gap-4 mb-4">
-            <Badge variant="secondary" className="text-sm font-display">JACK • QUINN • LUKE</Badge>
-            <Badge variant="secondary" className="text-sm font-display">ICE-Q ENGINE</Badge>
-            <Badge variant="secondary" className="text-sm font-display">FROSTBITE</Badge>
-          </div>
-          <p className="text-lg text-muted-foreground">
-            First NHL game featuring PWHL • Enhanced with Vision Control
-          </p>
-        </div>
-
-        {/* Main Game Modes Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl w-full animate-fade-in">
-          {/* Play Now */}
-          <Card className="nhl-shadow-arena bg-card/20 backdrop-blur-sm border-border/50 hover:bg-card/30 transition-all duration-300 group">
-            <CardHeader className="text-center">
-              <Play className="w-12 h-12 mx-auto mb-4 text-ice-blue group-hover:text-ice-blue-light transition-colors" />
-              <CardTitle className="nhl-text-display text-xl">PLAY NOW</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground mb-4 text-sm">
-                Jump into a quick match with ICE-Q engine and Vision Control
-              </p>
-              <Button variant="default" size="lg" onClick={() => handleModeSelect('play-now')} className="w-full">
-                START GAME
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Franchise Mode */}
-          <Card className="nhl-shadow-arena bg-card/20 backdrop-blur-sm border-border/50 hover:bg-card/30 transition-all duration-300 group">
-            <CardHeader className="text-center">
-              <Building className="w-12 h-12 mx-auto mb-4 text-hockey-red group-hover:text-hockey-red-light transition-colors" />
-              <CardTitle className="nhl-text-display text-xl">FRANCHISE</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground mb-4 text-sm">
-                Enhanced team management with smarter AI and deeper tools
-              </p>
-              <Button variant="destructive" size="lg" onClick={() => handleModeSelect('franchise')} className="w-full">
-                MANAGE TEAM
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Be A Pro */}
-          <Card className="nhl-shadow-arena bg-card/20 backdrop-blur-sm border-border/50 hover:bg-card/30 transition-all duration-300 group">
-            <CardHeader className="text-center">
-              <User className="w-12 h-12 mx-auto mb-4 text-accent group-hover:text-accent/80 transition-colors" />
-              <CardTitle className="nhl-text-display text-xl">BE A PRO</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground mb-4 text-sm">
-                Create your career • Now featuring female players & PWHL
-              </p>
-              <Button variant="secondary" size="lg" onClick={() => handleModeSelect('be-a-pro')} className="w-full">
-                CREATE PLAYER
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* World of CHEL */}
-          <Card className="nhl-shadow-arena bg-card/20 backdrop-blur-sm border-border/50 hover:bg-card/30 transition-all duration-300 group">
-            <CardHeader className="text-center">
-              <Gamepad2 className="w-12 h-12 mx-auto mb-4 text-destructive group-hover:text-destructive/80 transition-colors" />
-              <CardTitle className="nhl-text-display text-xl">WORLD OF CHEL</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground mb-4 text-sm">
-                Arcade hockey with power-ups • 3v3, 1v1, and more
-              </p>
-              <Button variant="outline" size="lg" onClick={() => handleModeSelect('world-chel')} className="w-full">
-                ARCADE MODES
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Ultimate Team */}
-          <Card className="nhl-shadow-arena bg-card/20 backdrop-blur-sm border-border/50 hover:bg-card/30 transition-all duration-300 group opacity-75">
-            <CardHeader className="text-center">
-              <Star className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <CardTitle className="nhl-text-display text-xl">ULTIMATE TEAM</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground mb-4 text-sm">
-                Build your dream team with player cards
-              </p>
-              <Button variant="ghost" size="lg" disabled className="w-full">
-                POST-MVP
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Online Multiplayer */}
-          <Card className="nhl-shadow-arena bg-card/20 backdrop-blur-sm border-border/50 hover:bg-card/30 transition-all duration-300 group opacity-75">
-            <CardHeader className="text-center">
-              <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <CardTitle className="nhl-text-display text-xl">MULTIPLAYER</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-muted-foreground mb-4 text-sm">
-                Challenge players worldwide online
-              </p>
-              <Button variant="ghost" size="lg" disabled className="w-full">
-                COMING SOON
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* NHL 25 Key Features */}
-        <Card className="mt-12 max-w-5xl w-full nhl-shadow-ice bg-card/10 backdrop-blur-sm border-border/30">
-          <CardHeader>
-            <CardTitle className="nhl-text-display text-2xl text-center mb-4">NHL 25 KEY FEATURES</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="text-center">
-                <Zap className="w-8 h-8 mx-auto mb-2 text-ice-blue" />
-                <h3 className="font-display font-bold mb-2">ICE-Q Engine</h3>
-                <p className="text-sm text-muted-foreground">Smarter AI and realistic player movement</p>
-              </div>
-              <div className="text-center">
-                <Eye className="w-8 h-8 mx-auto mb-2 text-hockey-red" />
-                <h3 className="font-display font-bold mb-2">Vision Control</h3>
-                <p className="text-sm text-muted-foreground">Face the net or puck for better positioning</p>
-              </div>
-              <div className="text-center">
-                <Zap className="w-8 h-8 mx-auto mb-2 text-ice-blue" />
-                <h3 className="font-display font-bold mb-2">PWHL Support</h3>
-                <p className="text-sm text-muted-foreground">First NHL game featuring women's professional hockey</p>
-              </div>
-              <div className="text-center">
-                <Trophy className="w-8 h-8 mx-auto mb-2 text-accent" />
-                <h3 className="font-display font-bold mb-2">Frostbite Engine</h3>
-                <p className="text-sm text-muted-foreground">Enhanced graphics and crowd reactions</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <div className="text-center mt-8 text-muted-foreground">
-          <p className="text-sm font-display tracking-wide">
-            NEXT-GEN EXCLUSIVE • PS5 & XBOX SERIES X|S • MVP BUILD v1.0
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Enhanced Game Interface with ICE-Q and Vision Control
-const GameInterface = ({ onBack }: { onBack: () => void }) => {
-  const [selectedTeams, setSelectedTeams] = useState<{ home: string | null; away: string | null }>({
-    home: null,
-    away: null
+  const [playerData, setPlayerData] = useState({
+    coins: 2000,
+    packs: 3,
+    level: 1,
+    experience: 0,
+    experienceToNext: 100,
+    team: [],
+    completedTutorial: false,
+    seasonProgress: 0,
+    leaguePoints: 0,
+    selectedTeam: '',
+    coachName: '',
+    completedIntro: false
   });
-  const [gamePhase, setGamePhase] = useState<'team-select' | 'game' | 'post-game'>('team-select');
 
-  // Enhanced team roster with NHL and PWHL teams
-  const teams = [
-    // NHL Teams
-    { id: 1, name: "Ice Wolves", city: "Arctic", color: "ice-blue", record: "45-20-5", league: "NHL", overall: 87 },
-    { id: 2, name: "Fire Hawks", city: "Inferno", color: "hockey-red", record: "42-23-7", league: "NHL", overall: 84 },
-    { id: 3, name: "Steel Bears", city: "Industrial", color: "muted", record: "38-27-9", league: "NHL", overall: 86 },
-    { id: 4, name: "Lightning", city: "Storm", color: "accent", record: "41-24-6", league: "NHL", overall: 88 },
-    // PWHL Teams
-    { id: 5, name: "Frost", city: "Toronto", color: "ice-blue", record: "18-8-2", league: "PWHL", overall: 85 },
-    { id: 6, name: "Fleet", city: "Boston", color: "hockey-red", record: "16-10-2", league: "PWHL", overall: 83 }
-  ];
-
-  const handleTeamSelect = (teamId: number, position: 'home' | 'away') => {
-    const team = teams.find(t => t.id === teamId);
-    if (team) {
-      setSelectedTeams(prev => ({ ...prev, [position]: `${team.city} ${team.name}` }));
+  const handleExperienceGain = (amount: number, reason: string = 'Unknown') => {
+    const { newPlayerData, leveledUp, rewards } = addExperience(playerData, amount, reason);
+    setPlayerData(newPlayerData);
+    
+    if (leveledUp && rewards) {
+      showLevelUpNotification(newPlayerData.level, rewards);
     }
   };
 
-  const canStartGame = selectedTeams.home && selectedTeams.away && selectedTeams.home !== selectedTeams.away;
+  const handleGameWin = () => {
+    handleExperienceGain(EXPERIENCE_REWARDS.GAME_WIN, 'Game Win');
+  };
 
-  if (gamePhase === 'team-select') {
+  const handleTaskComplete = () => {
+    handleExperienceGain(EXPERIENCE_REWARDS.TASK_COMPLETE, 'Task Complete');
+  };
+
+  const handlePackOpen = () => {
+    handleExperienceGain(EXPERIENCE_REWARDS.PACK_OPEN, 'Pack Open');
+  };
+
+  const handleIntroComplete = () => {
+    setGameState('selection');
+  };
+
+  const handleSelectionComplete = (selectedTeam: string, coachName: string) => {
+    setPlayerData(prev => ({
+      ...prev,
+      selectedTeam,
+      coachName,
+      completedIntro: true
+    }));
+    setGameState('tutorial');
+  };
+
+  const handleStartGame = () => {
+    if (!playerData.completedIntro) {
+      setGameState('intro');
+    } else if (!playerData.completedTutorial) {
+      setGameState('tutorial');
+    } else {
+      setGameState('team');
+    }
+  };
+
+  const handleTutorialComplete = () => {
+    setPlayerData(prev => ({ 
+      ...prev, 
+      completedTutorial: true,
+      coins: prev.coins + 500, // Tutorial bonus
+      packs: prev.packs + 2, // Starter packs
+      team: getStarterTeam() // Give starter team with all positions
+    }));
+    setGameState('packs');
+  };
+
+  // Route to appropriate component
+  if (gameState === 'intro') {
+    return <IntroductionScreen onComplete={handleIntroComplete} />;
+  }
+
+  if (gameState === 'selection') {
+    return <TeamCoachSelection onComplete={handleSelectionComplete} />;
+  }
+
+  if (gameState === 'tutorial') {
+    return <Tutorial onComplete={handleTutorialComplete} />;
+  }
+
+  if (gameState === 'packs') {
     return (
-      <div className="min-h-screen p-6 nhl-gradient-arena">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <Button variant="outline" onClick={onBack} className="absolute top-6 left-6">
-              ← BACK TO MENU
-            </Button>
-            <h1 className="nhl-text-display text-4xl md:text-6xl mb-4 text-transparent bg-gradient-to-r from-ice-blue to-hockey-red bg-clip-text">
-              TEAM SELECTION
-            </h1>
-            <p className="text-muted-foreground font-display">Choose your teams • NHL & PWHL available</p>
-          </div>
-
-          {/* League Selector */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center gap-4">
-              <Badge variant="secondary" className="text-lg px-4 py-2">NHL TEAMS</Badge>
-              <Badge variant="secondary" className="text-lg px-4 py-2">PWHL TEAMS</Badge>
-            </div>
-          </div>
-
-          {/* Team Selection Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Home Team */}
-            <div>
-              <h2 className="nhl-text-display text-2xl mb-4 text-center">HOME TEAM</h2>
-              <div className="grid grid-cols-1 gap-4">
-                {teams.map((team) => (
-                  <Card 
-                    key={`home-${team.id}`}
-                    className={`cursor-pointer transition-all duration-300 hover:scale-105 ${
-                      selectedTeams.home === `${team.city} ${team.name}` 
-                        ? 'ring-2 ring-hockey-red nhl-shadow-fire' 
-                        : 'hover:nhl-shadow-ice'
-                    }`}
-                    onClick={() => handleTeamSelect(team.id, 'home')}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="nhl-text-display text-lg mb-1">{team.city} {team.name}</h3>
-                          <div className="flex gap-2">
-                            <Badge variant="secondary">{team.record}</Badge>
-                            <Badge variant={team.league === 'PWHL' ? 'default' : 'secondary'}>
-                              {team.league}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className={`w-12 h-12 rounded-full bg-${team.color} opacity-80 mb-2`} />
-                          <Badge variant="outline">OVR {team.overall}</Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-
-            {/* Away Team */}
-            <div>
-              <h2 className="nhl-text-display text-2xl mb-4 text-center">AWAY TEAM</h2>
-              <div className="grid grid-cols-1 gap-4">
-                {teams.map((team) => (
-                  <Card 
-                    key={`away-${team.id}`}
-                    className={`cursor-pointer transition-all duration-300 hover:scale-105 ${
-                      selectedTeams.away === `${team.city} ${team.name}` 
-                        ? 'ring-2 ring-ice-blue nhl-shadow-ice' 
-                        : 'hover:nhl-shadow-ice'
-                    }`}
-                    onClick={() => handleTeamSelect(team.id, 'away')}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="nhl-text-display text-lg mb-1">{team.city} {team.name}</h3>
-                          <div className="flex gap-2">
-                            <Badge variant="secondary">{team.record}</Badge>
-                            <Badge variant={team.league === 'PWHL' ? 'default' : 'secondary'}>
-                              {team.league}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className={`w-12 h-12 rounded-full bg-${team.color} opacity-80 mb-2`} />
-                          <Badge variant="outline">OVR {team.overall}</Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Start Game Button */}
-          <div className="text-center">
-            <Button 
-              variant="default" 
-              size="lg" 
-              disabled={!canStartGame}
-              onClick={() => setGamePhase('game')}
-              className="px-12 py-4 text-xl"
-            >
-              START MATCH
-            </Button>
-            {selectedTeams.home && selectedTeams.away && (
-              <p className="mt-4 text-lg font-display">
-                {selectedTeams.away} vs {selectedTeams.home}
-              </p>
-            )}
-          </div>
-        </div>
+      <div className="min-h-screen ice-surface">
+        <GameHeader 
+          playerData={playerData}
+          showBackButton 
+          onBack={() => handleNavigate('menu')}
+          title="Pack Store"
+          onCoinsClick={() => setShowCoinShop(true)}
+          onPacksClick={() => setShowPackManager(true)}
+        />
+        <PackOpening 
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+          onNavigate={handleNavigate}
+        />
+        <PackManager 
+          isOpen={showPackManager}
+          onClose={() => setShowPackManager(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+        <CoinShop 
+          isOpen={showCoinShop}
+          onClose={() => setShowCoinShop(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
       </div>
     );
   }
 
-  if (gamePhase === 'game') {
-    return <EnhancedGamePlay 
-      homeTeam={selectedTeams.home!} 
-      awayTeam={selectedTeams.away!} 
-      onGameEnd={() => setGamePhase('post-game')}
-    />;
+  if (gameState === 'team') {
+    return (
+      <div className="min-h-screen ice-surface">
+        <GameHeader 
+          playerData={playerData}
+          showBackButton 
+          onBack={() => handleNavigate('menu')}
+          title="Team Management"
+          onCoinsClick={() => setShowCoinShop(true)}
+          onPacksClick={() => setShowPackManager(true)}
+        />
+        <TeamManagement 
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+          onNavigate={handleNavigate}
+        />
+        <PackManager 
+          isOpen={showPackManager}
+          onClose={() => setShowPackManager(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+        <CoinShop 
+          isOpen={showCoinShop}
+          onClose={() => setShowCoinShop(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+      </div>
+    );
   }
 
-  return <PostGame onBack={onBack} onRestart={() => setGamePhase('team-select')} />;
-};
+  if (gameState === 'season') {
+    return (
+      <div className="min-h-screen ice-surface">
+        <GameHeader 
+          playerData={playerData}
+          showBackButton 
+          onBack={() => handleNavigate('menu')}
+          title="Season Mode"
+          onCoinsClick={() => setShowCoinShop(true)}
+          onPacksClick={() => setShowPackManager(true)}
+        />
+        <EnhancedSeasonMode 
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+          onNavigate={handleNavigate}
+        />
+        <PackManager 
+          isOpen={showPackManager}
+          onClose={() => setShowPackManager(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+        <CoinShop 
+          isOpen={showCoinShop}
+          onClose={() => setShowCoinShop(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+      </div>
+    );
+  }
 
-// Enhanced Game Play with ICE-Q engine features
-const EnhancedGamePlay = ({ homeTeam, awayTeam, onGameEnd }: { 
-  homeTeam: string; 
-  awayTeam: string; 
-  onGameEnd: () => void;
-}) => {
-  const [gameState, setGameState] = useState({
-    period: 1,
-    time: "20:00",
-    homeScore: 0,
-    awayScore: 0,
-    homeShots: 0,
-    awayShots: 0,
-    homeFaceoffWins: 0,
-    awayFaceoffWins: 0,
-    homeHits: 0,
-    awayHits: 0,
-    possession: homeTeam,
-    visionControlActive: false,
-    iceQEvent: null as string | null,
-    gameEvents: [] as string[]
-  });
+  if (gameState === 'tasks') {
+    return (
+      <div className="min-h-screen ice-surface">
+        <GameHeader 
+          playerData={playerData}
+          showBackButton 
+          onBack={() => handleNavigate('menu')}
+          title="Tasks & Challenges"
+          onCoinsClick={() => setShowCoinShop(true)}
+          onPacksClick={() => setShowPackManager(true)}
+        />
+        <TasksAndChallenges 
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+          onNavigate={handleNavigate}
+        />
+        <PackManager 
+          isOpen={showPackManager}
+          onClose={() => setShowPackManager(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+        <CoinShop 
+          isOpen={showCoinShop}
+          onClose={() => setShowCoinShop(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+      </div>
+    );
+  }
 
-  const [isPlaying, setIsPlaying] = useState(false);
+  if (gameState === 'leagues') {
+    return (
+      <div className="min-h-screen ice-surface">
+        <GameHeader 
+          playerData={playerData}
+          showBackButton 
+          onBack={() => handleNavigate('menu')}
+          title="Leagues"
+          onCoinsClick={() => setShowCoinShop(true)}
+          onPacksClick={() => setShowPackManager(true)}
+        />
+        <LeaguesMode 
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+          onNavigate={handleNavigate}
+        />
+        <PackManager 
+          isOpen={showPackManager}
+          onClose={() => setShowPackManager(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+        <CoinShop 
+          isOpen={showCoinShop}
+          onClose={() => setShowCoinShop(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+      </div>
+    );
+  }
 
-  const iceQEvents = [
-    "Smart AI positioning creates scoring chance",
-    "Goaltender reads the play with enhanced AI",
-    "Vision Control enables perfect pass",
-    "ICE-Q engine calculates optimal defensive coverage",
-    "Realistic player fatigue affects performance",
-    "AI creates natural line chemistry"
-  ];
+  if (gameState === 'live-events') {
+    return (
+      <div className="min-h-screen ice-surface">
+        <GameHeader 
+          playerData={playerData}
+          showBackButton 
+          onBack={() => handleNavigate('menu')}
+          title="Live Events"
+          onCoinsClick={() => setShowCoinShop(true)}
+          onPacksClick={() => setShowPackManager(true)}
+        />
+        <LiveEventsMode 
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+          onNavigate={handleNavigate}
+        />
+        <PackManager 
+          isOpen={showPackManager}
+          onClose={() => setShowPackManager(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+        <CoinShop 
+          isOpen={showCoinShop}
+          onClose={() => setShowCoinShop(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+      </div>
+    );
+  }
 
-  const startGame = () => {
-    setIsPlaying(true);
-    
-    const gameInterval = setInterval(() => {
-      setGameState(prev => {
-        const newTime = decreaseTime(prev.time);
-        const events = [...prev.gameEvents];
-        let newState = { ...prev, time: newTime };
-
-        // ICE-Q Engine Events
-        if (Math.random() < 0.15) {
-          const event = iceQEvents[Math.floor(Math.random() * iceQEvents.length)];
-          newState.iceQEvent = event;
-          setTimeout(() => {
-            setGameState(current => ({ ...current, iceQEvent: null }));
-          }, 3000);
-        }
-
-        // Vision Control activation
-        if (Math.random() < 0.1) {
-          newState.visionControlActive = true;
-          setTimeout(() => {
-            setGameState(current => ({ ...current, visionControlActive: false }));
-          }, 2000);
-        }
-
-        // Enhanced game events with more detail
-        if (Math.random() < 0.12) {
-          const teamInAction = Math.random() < 0.5 ? homeTeam : awayTeam;
-          const eventType = Math.random();
-          
-          if (eventType < 0.25) { // Goal
-            events.push(`🚨 GOAL! ${teamInAction} scores with help from ICE-Q positioning!`);
-            newState = {
-              ...newState,
-              homeScore: teamInAction === homeTeam ? prev.homeScore + 1 : prev.homeScore,
-              awayScore: teamInAction === awayTeam ? prev.awayScore + 1 : prev.awayScore,
-            };
-          } else if (eventType < 0.6) { // Shot
-            events.push(`🏒 Shot by ${teamInAction}`);
-            newState = {
-              ...newState,
-              homeShots: teamInAction === homeTeam ? prev.homeShots + 1 : prev.homeShots,
-              awayShots: teamInAction === awayTeam ? prev.awayShots + 1 : prev.awayShots,
-            };
-          } else if (eventType < 0.8) { // Faceoff
-            events.push(`🔄 Faceoff won by ${teamInAction}`);
-            newState = {
-              ...newState,
-              homeFaceoffWins: teamInAction === homeTeam ? prev.homeFaceoffWins + 1 : prev.homeFaceoffWins,
-              awayFaceoffWins: teamInAction === awayTeam ? prev.awayFaceoffWins + 1 : prev.awayFaceoffWins,
-            };
-          } else { // Hit
-            events.push(`💥 Big hit by ${teamInAction}`);
-            newState = {
-              ...newState,
-              homeHits: teamInAction === homeTeam ? prev.homeHits + 1 : prev.homeHits,
-              awayHits: teamInAction === awayTeam ? prev.awayHits + 1 : prev.awayHits,
-            };
-          }
-        }
-        
-        if (newTime === "00:00" && prev.period === 3) {
-          clearInterval(gameInterval);
-          setTimeout(onGameEnd, 2000);
-        }
-        
-        return {
-          ...newState,
-          period: newTime === "00:00" ? Math.min(prev.period + 1, 3) : prev.period,
-          gameEvents: events.slice(-5)
-        };
-      });
-    }, 800); // Slightly faster for more action
-
-    return () => clearInterval(gameInterval);
-  };
-
-  const decreaseTime = (time: string): string => {
-    const [minutes, seconds] = time.split(":").map(Number);
-    if (seconds > 0) {
-      return `${minutes.toString().padStart(2, '0')}:${(seconds - 1).toString().padStart(2, '0')}`;
-    } else if (minutes > 0) {
-      return `${(minutes - 1).toString().padStart(2, '0')}:59`;
-    }
-    return "00:00";
-  };
-
+  // Main Menu
   return (
-    <div className="min-h-screen p-6 nhl-gradient-arena">
-      <div className="max-w-6xl mx-auto">
-        {/* Enhanced Scoreboard */}
-        <Card className="mb-8 nhl-shadow-arena bg-card/30 backdrop-blur-sm">
-          <CardContent className="p-8">
-            <div className="grid grid-cols-3 items-center text-center">
-              {/* Away Team */}
-              <div>
-                <h2 className="nhl-text-display text-xl mb-2">{awayTeam}</h2>
-                <div className="text-5xl font-black nhl-text-logo text-ice-blue animate-score-flash">
-                  {gameState.awayScore}
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
-                  <div>Shots: {gameState.awayShots}</div>
-                  <div>Hits: {gameState.awayHits}</div>
-                  <div>FO: {gameState.awayFaceoffWins}</div>
-                </div>
-              </div>
-              
-              {/* Game Info */}
-              <div>
-                <div className="text-3xl font-black nhl-text-display mb-2">{gameState.time}</div>
-                <Badge variant="secondary" className="text-lg px-4 py-2 mb-4">
-                  Period {gameState.period}
-                </Badge>
-                
-                {/* ICE-Q Status */}
-                <div className="space-y-2">
-                  {gameState.visionControlActive && (
-                    <Badge variant="default" className="animate-glow-pulse">
-                      <Eye className="w-4 h-4 mr-2" />
-                      VISION CONTROL
-                    </Badge>
-                  )}
-                  {gameState.iceQEvent && (
-                    <div className="text-xs text-ice-blue animate-fade-in">
-                      {gameState.iceQEvent}
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Home Team */}
-              <div>
-                <h2 className="nhl-text-display text-xl mb-2">{homeTeam}</h2>
-                <div className="text-5xl font-black nhl-text-logo text-hockey-red animate-score-flash">
-                  {gameState.homeScore}
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
-                  <div>Shots: {gameState.homeShots}</div>
-                  <div>Hits: {gameState.homeHits}</div>
-                  <div>FO: {gameState.homeFaceoffWins}</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Game Controls */}
-        <div className="text-center mb-8">
-          {!isPlaying ? (
-            <Button variant="default" size="lg" onClick={startGame} className="px-12 py-4 text-xl">
-              DROP THE PUCK
+    <div className="min-h-screen ice-surface">
+      <GameHeader 
+        playerData={playerData} 
+        title="NHL Ultimate" 
+        onCoinsClick={() => setShowCoinShop(true)}
+        onPacksClick={() => setShowPackManager(true)}
+      />
+      
+      <PackManager 
+        isOpen={showPackManager}
+        onClose={() => setShowPackManager(false)}
+        playerData={playerData}
+        setPlayerData={setPlayerData}
+      />
+      
+      <CoinShop 
+        isOpen={showCoinShop}
+        onClose={() => setShowCoinShop(false)}
+        playerData={playerData}
+        setPlayerData={setPlayerData}
+      />
+      
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 pt-20 pb-12 text-center">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-center mb-8">
+            <img src={nhlLogo} alt="NHL Ultimate Mobile" className="w-32 h-32 animate-ice-glimmer" />
+          </div>
+          <h1 className="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-ice-blue via-primary to-gold bg-clip-text text-transparent">
+            NHL ULTIMATE
+          </h1>
+          <h2 className="text-3xl md:text-4xl font-semibold mb-8 text-foreground">
+            MOBILE
+          </h2>
+          <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+            Build your ultimate hockey team. Master team chemistry. Dominate seasons. 
+            Compete worldwide. Claim the Stanley Cup.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
+            <Button 
+              onClick={handleStartGame}
+              className="btn-primary text-xl px-8 py-4 h-auto shadow-lg hover:shadow-xl"
+            >
+              {!playerData.completedTutorial ? "START TUTORIAL" : "CONTINUE JOURNEY"}
             </Button>
-          ) : (
-            <div className="space-y-2">
-              <Badge variant="secondary" className="text-lg px-6 py-3 animate-glow-pulse">
-                ICE-Q ENGINE ACTIVE
-              </Badge>
-              <p className="text-sm text-muted-foreground">
-                Enhanced AI • Vision Control • Realistic Physics
-              </p>
+            <Button 
+              variant="outline" 
+              className="text-xl px-8 py-4 h-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              onClick={() => setGameState('team')}
+            >
+              QUICK PLAY
+            </Button>
+          </div>
+
+          {/* Progress Indicator for returning players */}
+          {playerData.completedTutorial && (
+            <div className="max-w-md mx-auto p-4 bg-card/50 backdrop-blur-sm rounded-lg border">
+              <div className="text-sm text-muted-foreground mb-2">Your Progress</div>
+              <div className="grid grid-cols-3 gap-4 text-xs">
+                <div>
+                  <div className="font-semibold text-gold">{playerData.coins.toLocaleString()}</div>
+                  <div className="text-muted-foreground">Coins</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-ice-blue">{playerData.team.length}</div>
+                  <div className="text-muted-foreground">Players</div>
+                </div>
+                <div>
+                  <div className="font-semibold text-primary">Lvl {playerData.level}</div>
+                  <div className="text-muted-foreground">Team Level</div>
+                </div>
+              </div>
             </div>
           )}
         </div>
-
-        {/* Game Events */}
-        <Card className="nhl-shadow-ice bg-card/20 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="nhl-text-display text-center">LIVE PLAY-BY-PLAY</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 min-h-[200px]">
-              {gameState.gameEvents.map((event, index) => (
-                <div 
-                  key={index}
-                  className="p-3 bg-muted/20 rounded border border-border/50 animate-fade-in"
-                >
-                  {event}
-                </div>
-              ))}
-              {gameState.gameEvents.length === 0 && (
-                <div className="text-center text-muted-foreground py-12">
-                  <p className="text-lg">ICE-Q engine analyzing gameplay...</p>
-                  <p className="text-sm mt-2">Enhanced AI will create realistic hockey action</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
-    </div>
-  );
-};
 
-// Enhanced Post Game Component
-const PostGame = ({ onBack, onRestart }: { onBack: () => void; onRestart: () => void }) => {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-6 nhl-gradient-arena">
-      <Card className="max-w-3xl w-full nhl-shadow-arena bg-card/30 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <CardTitle className="nhl-text-display text-4xl mb-4">GAME COMPLETE</CardTitle>
-          <p className="text-lg text-muted-foreground">
-            Amazing hockey action powered by the ICE-Q engine and Vision Control!
-          </p>
-        </CardHeader>
-        <CardContent className="text-center space-y-6">
-          {/* Game Summary */}
-          <div className="grid grid-cols-3 gap-6 p-6 bg-muted/10 rounded">
-            <div>
-              <h3 className="font-display font-bold mb-2">ICE-Q Features</h3>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>✓ Smart AI positioning</li>
-                <li>✓ Realistic player movement</li>
-                <li>✓ Enhanced goaltending</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-display font-bold mb-2">Vision Control</h3>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>✓ Face net positioning</li>
-                <li>✓ Improved passing</li>
-                <li>✓ Better puck control</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-display font-bold mb-2">Next-Gen Graphics</h3>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>✓ Frostbite engine</li>
-                <li>✓ Enhanced animations</li>
-                <li>✓ Realistic ice physics</li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-6">
-            <Button variant="default" size="lg" onClick={onRestart}>
-              PLAY AGAIN
-            </Button>
-            <Button variant="outline" size="lg" onClick={onBack}>
-              MAIN MENU
-            </Button>
-          </div>
-          
-          <div className="pt-6 border-t border-border/50">
-            <p className="text-sm text-muted-foreground font-display">
-              NHL 25 MVP • Experience Franchise Mode, Be A Pro with female players, World of CHEL arcade modes coming in full release
+      {/* Enhanced Game Features */}
+      <div className="container mx-auto px-4 py-16">
+        <h2 className="text-4xl font-bold text-center mb-12 text-foreground">Game Modes</h2>
+        
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => {
+              if (!playerData.completedTutorial) {
+                handleStartGame();
+              } else {
+                setGameState('team');
+              }
+            }}
+          >
+            <Trophy className="w-12 h-12 mx-auto mb-4 text-gold" />
+            <h3 className="text-xl font-bold mb-2">Ultimate Team</h3>
+            <p className="text-muted-foreground mb-4">
+              Collect NHL superstars and build your dream lineup with perfect chemistry
             </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-gold" />
+              <Star className="w-4 h-4 text-gold" />
+              <Star className="w-4 h-4 text-gold" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => {
+              if (!playerData.completedTutorial) {
+                handleStartGame();
+              } else {
+                setGameState('season');
+              }
+            }}
+          >
+            <Calendar className="w-12 h-12 mx-auto mb-4 text-primary" />
+            <h3 className="text-xl font-bold mb-2">Season & Playoffs</h3>
+            <p className="text-muted-foreground mb-4">
+              Play through NHL seasons with dynamic difficulty and compete for the Stanley Cup
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-primary" />
+              <Star className="w-4 h-4 text-primary" />
+              <Star className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => {
+              if (!playerData.completedTutorial) {
+                handleStartGame();
+              } else {
+                setGameState('packs');
+              }
+            }}
+          >
+            <Package className="w-12 h-12 mx-auto mb-4 text-gold" />
+            <h3 className="text-xl font-bold mb-2">Pack Opening</h3>
+            <p className="text-muted-foreground mb-4">
+              Open packs to discover new players with unique chemistry synergies
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-gold" />
+              <Star className="w-4 h-4 text-gold" />
+              <Star className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => {
+              if (!playerData.completedTutorial) {
+                handleStartGame();
+              } else {
+                setGameState('tasks');
+              }
+            }}
+          >
+            <Target className="w-12 h-12 mx-auto mb-4 text-green-500" />
+            <h3 className="text-xl font-bold mb-2">Tasks & Challenges</h3>
+            <p className="text-muted-foreground mb-4">
+              Complete daily and weekly challenges for exclusive rewards and bonuses
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-green-500" />
+              <Star className="w-4 h-4 text-green-500" />
+              <Star className="w-4 h-4 text-green-500" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => {
+              if (!playerData.completedTutorial) {
+                handleStartGame();
+              } else {
+                setGameState('leagues');
+              }
+            }}
+          >
+            <Award className="w-12 h-12 mx-auto mb-4 text-purple-500" />
+            <h3 className="text-xl font-bold mb-2">Global Leagues</h3>
+            <p className="text-muted-foreground mb-4">
+              Compete with players worldwide in ranked leagues for ultimate bragging rights
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-purple-500" />
+              <Star className="w-4 h-4 text-purple-500" />
+              <Star className="w-4 h-4 text-purple-500" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => {
+              if (!playerData.completedTutorial) {
+                handleStartGame();
+              } else {
+                setGameState('live-events');
+              }
+            }}
+          >
+            <Users className="w-12 h-12 mx-auto mb-4 text-ice-blue" />
+            <h3 className="text-xl font-bold mb-2">Live Events</h3>
+            <p className="text-muted-foreground mb-4">
+              Play real-time hockey games with interactive controls and instant rewards
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-ice-blue" />
+              <Star className="w-4 h-4 text-ice-blue" />
+              <Star className="w-4 h-4 text-ice-blue" />
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Feature Highlights */}
+      <div className="container mx-auto px-4 py-16 bg-card/30 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-8 text-foreground">Why NHL Ultimate Mobile?</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div>
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trophy className="w-8 h-8 text-primary" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Dynamic Difficulty</h4>
+              <p className="text-sm text-muted-foreground">
+                Game difficulty adapts to your team strength for balanced, challenging gameplay
+              </p>
+            </div>
+            <div>
+              <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-gold" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Team Chemistry System</h4>
+              <p className="text-sm text-muted-foreground">
+                Strategic team building with real NHL player synergies and chemistry bonuses
+              </p>
+            </div>
+            <div>
+              <div className="w-16 h-16 bg-ice-blue/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Star className="w-8 h-8 text-ice-blue" />
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Progressive Rewards</h4>
+              <p className="text-sm text-muted-foreground">
+                Earn more coins and better packs as you improve your team and skills
+              </p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-ice-dark/50 border-t border-border/30 py-8 mt-16">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-muted-foreground mb-4">
+            © 2024 NHL Ultimate Mobile. All rights reserved.
+          </p>
+          <div className="flex justify-center space-x-6 text-sm text-muted-foreground">
+            <span>Easy to learn, challenging to master</span>
+            <span>•</span>
+            <span>Accessible gameplay for all skill levels</span>
+            <span>•</span>
+            <span>Constantly updated content</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
