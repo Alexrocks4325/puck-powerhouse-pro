@@ -73,22 +73,15 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
     return 'text-gray-400';
   };
 
-  // Auto-generate image path for any player
+  // Get player image using NHL profile ID or fallback
   const getPlayerImage = (player: Player): string => {
-    // If player has a specific image path, use it
-    if (player.image && !player.image.includes('default-player')) {
+    // If player has a specific image path with NHL ID, use it directly
+    if (player.image) {
       return player.image;
     }
     
-    // Auto-generate realistic image path based on player name
-    const cleanName = player.name.toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '') // Remove special characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
-      .replace(/--+/g, '-'); // Replace multiple hyphens with single
-    
-    // Try realistic image first
-    return `/src/assets/players/${cleanName}-realistic.jpg`;
+    // Fallback to default if no image specified
+    return defaultPlayerImg;
   };
 
   return (
