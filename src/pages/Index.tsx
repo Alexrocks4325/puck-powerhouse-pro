@@ -13,17 +13,18 @@ import LeaguesMode from "@/components/game/LeaguesMode";
 import LiveEventsMode from "@/components/game/LiveEventsMode";
 import PackManager from "@/components/game/PackManager";
 import CoinShop from "@/components/game/CoinShop";
-import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package } from "lucide-react";
+import RosterCollection from "@/components/game/RosterCollection";
+import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package, Library } from "lucide-react";
 import nhlLogo from "@/assets/nhl-ultimate-logo.png";
 import { getStarterTeam } from "@/data/nhlPlayerDatabase";
 import { addExperience, showLevelUpNotification, EXPERIENCE_REWARDS } from "@/components/game/ProgressionSystem";
 
 const Index = () => {
-  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events'>('intro');
+  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'collection'>('intro');
   const [showPackManager, setShowPackManager] = useState(false);
   const [showCoinShop, setShowCoinShop] = useState(false);
 
-  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events') => {
+  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'collection') => {
     setGameState(screen);
   };
 
@@ -303,6 +304,38 @@ const Index = () => {
     );
   }
 
+  if (gameState === 'collection') {
+    return (
+      <div className="min-h-screen ice-surface">
+        <GameHeader 
+          playerData={playerData}
+          showBackButton 
+          onBack={() => handleNavigate('menu')}
+          title="Roster Collection"
+          onCoinsClick={() => setShowCoinShop(true)}
+          onPacksClick={() => setShowPackManager(true)}
+        />
+        <RosterCollection 
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+          onNavigate={handleNavigate}
+        />
+        <PackManager 
+          isOpen={showPackManager}
+          onClose={() => setShowPackManager(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+        <CoinShop 
+          isOpen={showCoinShop}
+          onClose={() => setShowCoinShop(false)}
+          playerData={playerData}
+          setPlayerData={setPlayerData}
+        />
+      </div>
+    );
+  }
+
   // Main Menu
   return (
     <div className="min-h-screen ice-surface">
@@ -387,7 +420,7 @@ const Index = () => {
       <div className="container mx-auto px-4 py-16">
         <h2 className="text-4xl font-bold text-center mb-12 text-foreground">Game Modes</h2>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           <Card 
             className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
             onClick={() => {
@@ -517,6 +550,28 @@ const Index = () => {
               <Star className="w-4 h-4 text-ice-blue" />
               <Star className="w-4 h-4 text-ice-blue" />
               <Star className="w-4 h-4 text-ice-blue" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => {
+              if (!playerData.completedTutorial) {
+                handleStartGame();
+              } else {
+                setGameState('collection');
+              }
+            }}
+          >
+            <Library className="w-12 h-12 mx-auto mb-4 text-orange-500" />
+            <h3 className="text-xl font-bold mb-2">Roster Collection</h3>
+            <p className="text-muted-foreground mb-4">
+              View complete NHL rosters and track your collection progress by team and rarity
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-orange-500" />
+              <Star className="w-4 h-4 text-orange-500" />
+              <Star className="w-4 h-4 text-orange-500" />
             </div>
           </Card>
         </div>
