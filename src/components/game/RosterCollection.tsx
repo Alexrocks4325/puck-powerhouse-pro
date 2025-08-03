@@ -15,7 +15,9 @@ import {
   Crown,
   Award,
   Medal,
-  Gem
+  Gem,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 interface RosterCollectionProps {
@@ -32,13 +34,18 @@ interface RosterCollectionProps {
 const RosterCollection = ({ playerData, setPlayerData, onNavigate }: RosterCollectionProps) => {
   const [selectedDivision, setSelectedDivision] = useState<'all' | 'atlantic' | 'metropolitan' | 'central' | 'pacific'>('all');
   const [selectedRarity, setSelectedRarity] = useState<'all' | 'bronze' | 'silver' | 'gold' | 'elite' | 'legend'>('all');
-  const [selectedTeam, setSelectedTeam] = useState<string>('all');
+  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
 
-  // Get unique teams from the database
-  const teams = useMemo(() => {
-    const uniqueTeams = [...new Set(nhlPlayerDatabase.map(player => player.team))].sort();
-    return uniqueTeams;
-  }, []);
+  // Get teams based on division filter
+  const availableTeams = useMemo(() => {
+    if (selectedDivision === 'all') {
+      return [...new Set(nhlPlayerDatabase.map(player => player.team))].sort();
+    }
+    const divisionTeams = divisions[selectedDivision as keyof typeof divisions] || [];
+    return divisionTeams.filter(team => 
+      nhlPlayerDatabase.some(player => player.team === team)
+    );
+  }, [selectedDivision]);
 
   // Organize teams by division
   const divisions = {
@@ -48,37 +55,42 @@ const RosterCollection = ({ playerData, setPlayerData, onNavigate }: RosterColle
     pacific: ['VGK', 'LAK', 'EDM', 'VAN', 'SEA', 'CGY', 'SJS', 'ANA']
   };
 
-  // Get all teams in selected division
-  const getTeamsInDivision = (division: string) => {
-    if (division === 'all') return teams;
-    return divisions[division as keyof typeof divisions] || [];
+  // Get current team
+  const currentTeam = availableTeams[currentTeamIndex] || null;
+
+  // Navigation functions
+  const goToNextTeam = () => {
+    setCurrentTeamIndex((prev) => (prev + 1) % availableTeams.length);
   };
 
-  // Filter players based on selections
-  const filteredPlayers = useMemo(() => {
-    let filtered = nhlPlayerDatabase;
+  const goToPrevTeam = () => {
+    setCurrentTeamIndex((prev) => (prev - 1 + availableTeams.length) % availableTeams.length);
+  };
 
-    // Filter by division/team
-    if (selectedDivision !== 'all') {
-      const divisionTeams = getTeamsInDivision(selectedDivision);
-      filtered = filtered.filter(player => divisionTeams.includes(player.team));
-    }
-
-    if (selectedTeam !== 'all') {
-      filtered = filtered.filter(player => player.team === selectedTeam);
-    }
-
-    // Filter by rarity
+  // Get players for current team and apply rarity filter
+  const currentTeamPlayers = useMemo(() => {
+    if (!currentTeam) return [];
+    
+    let teamPlayers = nhlPlayerDatabase.filter(player => player.team === currentTeam);
+    
+    // Apply rarity filter
     if (selectedRarity !== 'all') {
-      filtered = filtered.filter(player => player.rarity === selectedRarity);
+      teamPlayers = teamPlayers.filter(player => player.rarity === selectedRarity);
     }
-
-    return filtered;
-  }, [selectedDivision, selectedTeam, selectedRarity]);
+    
+    // Sort by overall rating (highest first)
+    return teamPlayers.sort((a, b) => b.overall - a.overall);
+  }, [currentTeam, selectedRarity]);
 
   // Check if player is owned
   const isPlayerOwned = (playerId: number) => {
     return playerData.team.some(p => p.id === playerId);
+  };
+
+  // Reset team index when division changes
+  const handleDivisionChange = (newDivision: any) => {
+    setSelectedDivision(newDivision);
+    setCurrentTeamIndex(0);
   };
 
   // Get collection stats
@@ -104,21 +116,21 @@ const RosterCollection = ({ playerData, setPlayerData, onNavigate }: RosterColle
     return { total, owned, percentage: Math.round((owned / total) * 100), byRarity };
   }, [playerData.team]);
 
-  // Get rarity color and icon
+  // Get rarity color and icon with proper colors
   const getRarityInfo = (rarity: string) => {
     switch (rarity) {
       case 'legend':
-        return { color: 'text-purple-400', icon: Crown, bgColor: 'bg-purple-500/10' };
+        return { color: 'text-purple-400', icon: Crown, bgColor: 'bg-purple-500/10', borderColor: 'border-purple-400' };
       case 'elite':
-        return { color: 'text-gold', icon: Award, bgColor: 'bg-yellow-500/10' };
+        return { color: 'text-yellow-400', icon: Award, bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-400' };
       case 'gold':
-        return { color: 'text-yellow-500', icon: Medal, bgColor: 'bg-yellow-400/10' };
+        return { color: 'text-yellow-600', icon: Medal, bgColor: 'bg-yellow-600/10', borderColor: 'border-yellow-600' };
       case 'silver':
-        return { color: 'text-gray-400', icon: Gem, bgColor: 'bg-gray-400/10' };
+        return { color: 'text-gray-300', icon: Gem, bgColor: 'bg-gray-300/10', borderColor: 'border-gray-300' };
       case 'bronze':
-        return { color: 'text-amber-600', icon: Star, bgColor: 'bg-amber-600/10' };
+        return { color: 'text-amber-700', icon: Star, bgColor: 'bg-amber-700/10', borderColor: 'border-amber-700' };
       default:
-        return { color: 'text-gray-400', icon: Star, bgColor: 'bg-gray-400/10' };
+        return { color: 'text-gray-400', icon: Star, bgColor: 'bg-gray-400/10', borderColor: 'border-gray-400' };
     }
   };
 
@@ -179,10 +191,7 @@ const RosterCollection = ({ playerData, setPlayerData, onNavigate }: RosterColle
       {/* Filters */}
       <Card className="game-card">
         <CardContent className="pt-6">
-          <Tabs value={selectedDivision} onValueChange={(value) => {
-            setSelectedDivision(value as any);
-            setSelectedTeam('all');
-          }}>
+          <Tabs value={selectedDivision} onValueChange={handleDivisionChange}>
             <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="all">All Divisions</TabsTrigger>
               <TabsTrigger value="atlantic">Atlantic</TabsTrigger>
@@ -220,58 +229,65 @@ const RosterCollection = ({ playerData, setPlayerData, onNavigate }: RosterColle
               );
             })}
           </div>
-
-          {selectedDivision !== 'all' && (
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant={selectedTeam === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedTeam('all')}
-              >
-                All Teams
-              </Button>
-              {getTeamsInDivision(selectedDivision).map(team => {
-                const teamPlayers = nhlPlayerDatabase.filter(p => p.team === team);
-                const ownedInTeam = teamPlayers.filter(p => isPlayerOwned(p.id)).length;
-                return (
-                  <Button 
-                    key={team}
-                    variant={selectedTeam === team ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedTeam(team)}
-                  >
-                    {team}
-                    <Badge variant="secondary" className="ml-2">
-                      {ownedInTeam}/{teamPlayers.length}
-                    </Badge>
-                  </Button>
-                );
-              })}
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Player Grid */}
+      {/* Team Navigation and Player Grid */}
       <Card className="game-card">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Users className="w-6 h-6" />
-              {selectedTeam !== 'all' ? `${selectedTeam} Roster` : 
-               selectedDivision !== 'all' ? `${selectedDivision.charAt(0).toUpperCase() + selectedDivision.slice(1)} Division` :
-               'All Players'}
-            </span>
-            <Badge variant="outline">
-              {filteredPlayers.length} Players
-            </Badge>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPrevTeam}
+                disabled={availableTeams.length <= 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              
+              <div className="text-center">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-6 h-6" />
+                  {currentTeam ? `${currentTeam} Roster` : 'No Teams Available'}
+                </CardTitle>
+                {availableTeams.length > 1 && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Team {currentTeamIndex + 1} of {availableTeams.length}
+                  </p>
+                )}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextTeam}
+                disabled={availableTeams.length <= 1}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {currentTeam && (
+              <div className="text-right">
+                <Badge variant="outline" className="mb-2">
+                  {currentTeamPlayers.length} Players
+                  {selectedRarity !== 'all' && ` (${selectedRarity})`}
+                </Badge>
+                <div className="text-sm text-muted-foreground">
+                  {currentTeamPlayers.filter(p => isPlayerOwned(p.id)).length} Owned
+                </div>
+              </div>
+            )}
+          </div>
         </CardHeader>
+        
         <CardContent>
-          {filteredPlayers.length > 0 ? (
+          {currentTeam && currentTeamPlayers.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-              {filteredPlayers.map(player => {
+              {currentTeamPlayers.map(player => {
                 const owned = isPlayerOwned(player.id);
+                const rarityInfo = getRarityInfo(player.rarity);
                 return (
                   <div key={player.id} className="relative group">
                     <div className={`relative ${owned ? 'animate-pulse' : 'opacity-60 grayscale'}`}>
@@ -303,7 +319,7 @@ const RosterCollection = ({ playerData, setPlayerData, onNavigate }: RosterColle
                     <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white p-2 text-xs transform translate-y-full group-hover:translate-y-0 transition-transform duration-200 rounded-b-lg">
                       <div className="font-semibold">{player.name}</div>
                       <div className="text-gray-300">{player.team} • {player.position} • {player.overall} OVR</div>
-                      <div className={`text-xs capitalize ${getRarityInfo(player.rarity).color}`}>
+                      <div className={`text-xs capitalize font-medium ${rarityInfo.color}`}>
                         {player.rarity}
                       </div>
                     </div>
@@ -311,16 +327,22 @@ const RosterCollection = ({ playerData, setPlayerData, onNavigate }: RosterColle
                 );
               })}
             </div>
-          ) : (
+          ) : currentTeam ? (
             <div className="text-center py-12">
               <Target className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground mb-4">No players found with current filters</p>
-              <Button onClick={() => {
-                setSelectedDivision('all');
-                setSelectedTeam('all');
-                setSelectedRarity('all');
-              }}>
-                Clear Filters
+              <p className="text-muted-foreground mb-4">
+                No {selectedRarity !== 'all' ? selectedRarity : ''} players found for {currentTeam}
+              </p>
+              <Button onClick={() => setSelectedRarity('all')}>
+                Show All Rarities
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">No teams available</p>
+              <Button onClick={() => setSelectedDivision('all')}>
+                Show All Divisions
               </Button>
             </div>
           )}
