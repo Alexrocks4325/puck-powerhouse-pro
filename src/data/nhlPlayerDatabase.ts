@@ -488,11 +488,30 @@ export const getStarterTeam = (): Player[] => [
   { id: 1015, name: "Calvin de Haan", team: "CAR", position: "D", overall: 72, rarity: "bronze", chemistry: ["Defensive"] },
   { id: 1016, name: "Nick Seeler", team: "PHI", position: "D", overall: 71, rarity: "bronze", chemistry: ["Stay-at-home"] },
   
-  // Defense - Pair 3
-  { id: 1017, name: "Erik Brannstrom", team: "COL", position: "D", overall: 69, rarity: "bronze", chemistry: ["Speedster"] },
-  { id: 1018, name: "Nick Jensen", team: "TBL", position: "D", overall: 68, rarity: "bronze", chemistry: ["Defensive"] },
-  
-  // Goalies
-  { id: 1019, name: "John Gibson", team: "ANA", position: "G", overall: 79, rarity: "silver", chemistry: ["Brick Wall"] },
-  { id: 1020, name: "Spencer Martin", team: "CAR", position: "G", overall: 72, rarity: "bronze", chemistry: ["Steady"] },
+  // WESTERN CONFERENCE CENTRAL DIVISION
+
+  // WINNIPEG JETS - With correct NHL Profile IDs
+  { id: 300, name: "Morgan Barron", team: "WPG", position: "C", overall: 74, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8480289.jpg" },
+  { id: 301, name: "Kyle Connor", team: "WPG", position: "LW", overall: 87, rarity: "gold", chemistry: ["Sniper", "Speedster"], image: "/src/assets/players/8478398.jpg" },
+  { id: 302, name: "David Gustafsson", team: "WPG", position: "C", overall: 73, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/8481019.jpg" },
+  { id: 303, name: "Alex Iafallo", team: "WPG", position: "LW", overall: 76, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8480113.jpg" },
+  { id: 304, name: "Rasmus Kupari", team: "WPG", position: "C", overall: 74, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/8480845.jpg" },
+  { id: 305, name: "Adam Lowry", team: "WPG", position: "C", overall: 78, rarity: "bronze", chemistry: ["Defensive", "Physical"], image: "/src/assets/players/8476392.jpg" },
+  { id: 306, name: "Vladislav Namestnikov", team: "WPG", position: "C", overall: 76, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8476480.jpg" },
+  { id: 307, name: "Nino Niederreiter", team: "WPG", position: "RW", overall: 79, rarity: "bronze", chemistry: ["Power Forward"], image: "/src/assets/players/8475799.jpg" },
+  { id: 308, name: "Tanner Pearson", team: "WPG", position: "LW", overall: 76, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8476871.jpg" },
+  { id: 309, name: "Cole Perfetti", team: "WPG", position: "C", overall: 78, rarity: "bronze", chemistry: ["Young Gun", "Playmaker"], image: "/src/assets/players/8482149.jpg" },
+  { id: 310, name: "Mark Scheifele", team: "WPG", position: "C", overall: 85, rarity: "gold", chemistry: ["Sniper", "Playmaker"], image: "/src/assets/players/8476460.jpg" },
+  { id: 311, name: "Jonathan Toews", team: "WPG", position: "C", overall: 82, rarity: "silver", chemistry: ["Leader", "Veteran"], image: "/src/assets/players/8473604.jpg" },
+  { id: 312, name: "Brayden Yager", team: "WPG", position: "C", overall: 72, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/8484242.jpg" },
+  { id: 313, name: "Dylan DeMelo", team: "WPG", position: "D", overall: 77, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/8476331.jpg" },
+  { id: 314, name: "Haydn Fleury", team: "WPG", position: "D", overall: 74, rarity: "bronze", chemistry: ["Defensive"], image: "/src/assets/players/8477938.jpg" },
+  { id: 315, name: "Ville Heinola", team: "WPG", position: "D", overall: 75, rarity: "bronze", chemistry: ["Young Gun"], image: "/src/assets/players/8481572.jpg" },
+  { id: 316, name: "Colin Miller", team: "WPG", position: "D", overall: 74, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8476525.jpg" },
+  { id: 317, name: "Josh Morrissey", team: "WPG", position: "D", overall: 83, rarity: "silver", chemistry: ["Two-Way", "Powerplay"], image: "/src/assets/players/8477504.jpg" },
+  { id: 318, name: "Neal Pionk", team: "WPG", position: "D", overall: 78, rarity: "bronze", chemistry: ["Two-Way"], image: "/src/assets/players/8480145.jpg" },
+  { id: 319, name: "Luke Schenn", team: "WPG", position: "D", overall: 75, rarity: "bronze", chemistry: ["Physical", "Veteran"], image: "/src/assets/players/8474568.jpg" },
+  { id: 320, name: "Logan Stanley", team: "WPG", position: "D", overall: 73, rarity: "bronze", chemistry: ["Physical"], image: "/src/assets/players/8479378.jpg" },
+  { id: 321, name: "Connor Hellebuyck", team: "WPG", position: "G", overall: 91, rarity: "elite", chemistry: ["Elite Goalie", "Clutch"], image: "/src/assets/players/8476945.jpg" },
+  { id: 322, name: "Eric Comrie", team: "WPG", position: "G", overall: 75, rarity: "bronze", chemistry: ["Backup"], image: "/src/assets/players/8477434.jpg" }
 ];
