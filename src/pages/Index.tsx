@@ -94,7 +94,8 @@ const Index = () => {
       completedTutorial: true,
       coins: prev.coins + 500, // Tutorial bonus
       packs: prev.packs + 2, // Starter packs
-      team: getStarterTeam() // Give starter team with all positions
+      // Only add starter team if team is empty to prevent duplicate additions
+      team: prev.team.length === 0 ? getStarterTeam() : prev.team
     }));
     setGameState('packs');
   };
