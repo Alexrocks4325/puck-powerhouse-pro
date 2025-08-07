@@ -25,10 +25,31 @@ const PackManager = ({ isOpen, onClose, playerData, setPlayerData }: PackManager
   const [showCards, setShowCards] = useState(false);
 
   const getRandomPlayers = (type: 'bronze' | 'standard' | 'premium' | 'elite' = 'standard'): Player[] => {
-    const probabilities = PACK_PROBABILITIES[type];
     let selectedPlayers: Player[] = [];
+    const probabilities = PACK_PROBABILITIES[type];
 
-    for (let i = 0; i < 5; i++) {
+    // Handle guaranteed cards based on pack type
+    if (type === 'standard') {
+      // Standard pack: Must contain at least 1 Gold player
+      const goldPlayers = nhlPlayerDatabase.filter(p => p.rarity === 'gold');
+      if (goldPlayers.length > 0) {
+        const randomGold = goldPlayers[Math.floor(Math.random() * goldPlayers.length)];
+        selectedPlayers.push(randomGold);
+      }
+    } else if (type === 'premium') {
+      // Premium pack: Must contain at least 2 Gold players
+      const goldPlayers = nhlPlayerDatabase.filter(p => p.rarity === 'gold');
+      for (let i = 0; i < 2 && goldPlayers.length > 0; i++) {
+        let randomGold;
+        do {
+          randomGold = goldPlayers[Math.floor(Math.random() * goldPlayers.length)];
+        } while (selectedPlayers.find(p => p.id === randomGold.id));
+        selectedPlayers.push(randomGold);
+      }
+    }
+
+    // Fill remaining slots with probability-based selection
+    for (let i = selectedPlayers.length; i < 5; i++) {
       const randomValue = Math.random();
       let rarity: string;
       
@@ -46,7 +67,11 @@ const PackManager = ({ isOpen, onClose, playerData, setPlayerData }: PackManager
       
       const availablePlayers = nhlPlayerDatabase.filter(p => p.rarity === rarity);
       if (availablePlayers.length > 0) {
-        const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+        let randomPlayer;
+        do {
+          randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+        } while (selectedPlayers.find(p => p.id === randomPlayer.id) && availablePlayers.length > selectedPlayers.length);
+        
         if (!selectedPlayers.find(p => p.id === randomPlayer.id)) {
           selectedPlayers.push(randomPlayer);
         } else {
@@ -146,7 +171,9 @@ const PackManager = ({ isOpen, onClose, playerData, setPlayerData }: PackManager
               <Package className={`w-16 h-16 mx-auto mb-4 text-primary ${isOpening ? 'animate-pulse' : ''}`} />
               <h3 className="text-xl font-bold mb-4">Standard Pack</h3>
               <p className="text-muted-foreground mb-6">
-                Contains 5 random players with a chance for elite cards!
+                <strong>Guaranteed:</strong> 1 Gold player (85+ OVR)<br/>
+                <strong>Other slots:</strong> Mostly Bronze & Silver players<br/>
+                <strong>Rare chance:</strong> Elite players (0.2% chance)
               </p>
               
               <Button 

@@ -29,25 +29,45 @@ const PackOpening = ({ playerData, setPlayerData, onNavigate }: PackOpeningProps
   const PREMIUM_PACK_COST = 1000;
   const ELITE_PACK_COST = 2500;
 
-  // Enhanced player pool using the massive NHL database
+  // Enhanced player pool using the massive NHL database with guaranteed cards
   const getRandomPlayers = (type: 'starter' | 'bronze' | 'standard' | 'premium' | 'elite' = 'standard'): Player[] => {
-    const probabilities = PACK_PROBABILITIES[type as keyof typeof PACK_PROBABILITIES] || PACK_PROBABILITIES.standard;
     let selectedPlayers: Player[] = [];
+    const probabilities = PACK_PROBABILITIES[type as keyof typeof PACK_PROBABILITIES] || PACK_PROBABILITIES.standard;
     
     if (type === 'starter') {
       // Guaranteed starter pack with decent players to get users started
       const starterPlayers = [
         nhlPlayerDatabase.find(p => p.name === "Connor Bedard")!,
-        nhlPlayerDatabase.find(p => p.name === "Tim Stutzle")!,
+        nhlPlayerDatabase.find(p => p.name === "Tim Stützle")!,
         nhlPlayerDatabase.find(p => p.name === "Owen Power")!,
         nhlPlayerDatabase.find(p => p.name === "Lucas Raymond")!,
         nhlPlayerDatabase.find(p => p.name === "Moritz Seider")!,
       ];
-      return starterPlayers;
+      return starterPlayers.filter(Boolean);
     }
 
-    // Generate 5 players based on pack probabilities
-    for (let i = 0; i < 5; i++) {
+    // Handle guaranteed cards based on pack type
+    if (type === 'standard') {
+      // Standard pack: Must contain at least 1 Gold player
+      const goldPlayers = nhlPlayerDatabase.filter(p => p.rarity === 'gold');
+      if (goldPlayers.length > 0) {
+        const randomGold = goldPlayers[Math.floor(Math.random() * goldPlayers.length)];
+        selectedPlayers.push(randomGold);
+      }
+    } else if (type === 'premium') {
+      // Premium pack: Must contain at least 2 Gold players
+      const goldPlayers = nhlPlayerDatabase.filter(p => p.rarity === 'gold');
+      for (let i = 0; i < 2 && goldPlayers.length > 0; i++) {
+        let randomGold;
+        do {
+          randomGold = goldPlayers[Math.floor(Math.random() * goldPlayers.length)];
+        } while (selectedPlayers.find(p => p.id === randomGold.id));
+        selectedPlayers.push(randomGold);
+      }
+    }
+
+    // Fill remaining slots with probability-based selection
+    for (let i = selectedPlayers.length; i < 5; i++) {
       const randomValue = Math.random();
       let rarity: string;
       
@@ -63,18 +83,21 @@ const PackOpening = ({ playerData, setPlayerData, onNavigate }: PackOpeningProps
         rarity = 'bronze';
       }
       
-      // Get players of the selected rarity
+      // Get players of the selected rarity from entire database
       const availablePlayers = nhlPlayerDatabase.filter(p => p.rarity === rarity);
       if (availablePlayers.length > 0) {
-        const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
-        // Avoid duplicates in the same pack
+        let randomPlayer;
+        do {
+          randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+        } while (selectedPlayers.find(p => p.id === randomPlayer.id) && availablePlayers.length > selectedPlayers.length);
+        
         if (!selectedPlayers.find(p => p.id === randomPlayer.id)) {
           selectedPlayers.push(randomPlayer);
         } else {
-          i--; // Try again if duplicate
+          i--;
         }
       } else {
-        i--; // Try again if no players available for this rarity
+        i--;
       }
     }
 
@@ -234,10 +257,9 @@ const PackOpening = ({ playerData, setPlayerData, onNavigate }: PackOpeningProps
                 <span className="font-semibold">Contains:</span>
               </div>
               <p className="text-muted-foreground">
-                • 5 Random Players<br/>
-                • Chance for Elite Cards<br/>
-                • Various NHL Teams<br/>
-                • Chemistry Synergies
+                <strong>Guaranteed:</strong> 1 Gold player (85+ OVR)<br/>
+                <strong>Other slots:</strong> Mostly Bronze & Silver players<br/>
+                <strong>Rare chance:</strong> Elite players (0.2% chance)
               </p>
             </div>
 
@@ -276,10 +298,10 @@ const PackOpening = ({ playerData, setPlayerData, onNavigate }: PackOpeningProps
                 <span className="font-semibold">Guaranteed:</span>
               </div>
               <p className="text-muted-foreground">
-                • 2 Elite Players (90+ OVR)<br/>
-                • 2 Gold Players (85+ OVR)<br/>
-                • 1 Bonus Player<br/>
-                • Perfect Chemistry Match
+                <strong>Guaranteed:</strong> 2 Gold players (85+ OVR)<br/>
+                <strong>Other slots:</strong> More Silver players<br/>
+                <strong>Better chance:</strong> Elite players (1% chance)<br/>
+                <strong>Rare chance:</strong> Legend players (0.5% chance)
               </p>
             </div>
 
