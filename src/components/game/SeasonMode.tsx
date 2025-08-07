@@ -57,25 +57,48 @@ const SeasonMode = ({ playerData, setPlayerData, onNavigate }: SeasonModeProps) 
 
   const teamStrength = calculateTeamStrength();
 
-  // Season teams with dynamic difficulty based on team strength
+  // Season teams with dynamic difficulty based on team strength - Updated to match new player database
   const getSeasonTeams = () => {
     const baseTeams = [
-      { name: "Boston Bruins", abbreviation: "BOS", baseDifficulty: 88 },
-      { name: "Toronto Maple Leafs", abbreviation: "TOR", baseDifficulty: 87 },
-      { name: "Tampa Bay Lightning", abbreviation: "TBL", baseDifficulty: 90 },
-      { name: "Florida Panthers", abbreviation: "FLA", baseDifficulty: 86 },
-      { name: "New York Rangers", abbreviation: "NYR", baseDifficulty: 85 },
-      { name: "Carolina Hurricanes", abbreviation: "CAR", baseDifficulty: 84 },
-      { name: "New Jersey Devils", abbreviation: "NJD", baseDifficulty: 83 },
-      { name: "Pittsburgh Penguins", abbreviation: "PIT", baseDifficulty: 85 },
-      { name: "Washington Capitals", abbreviation: "WSH", baseDifficulty: 82 },
-      { name: "Philadelphia Flyers", abbreviation: "PHI", baseDifficulty: 78 },
-      { name: "New York Islanders", abbreviation: "NYI", baseDifficulty: 81 },
-      { name: "Buffalo Sabres", abbreviation: "BUF", baseDifficulty: 76 },
-      { name: "Ottawa Senators", abbreviation: "OTT", baseDifficulty: 75 },
+      // Eastern Conference - Atlantic Division
+      { name: "Florida Panthers", abbreviation: "FLA", baseDifficulty: 88 },
+      { name: "Tampa Bay Lightning", abbreviation: "TBL", baseDifficulty: 87 },
+      { name: "Toronto Maple Leafs", abbreviation: "TOR", baseDifficulty: 86 },
+      { name: "Boston Bruins", abbreviation: "BOS", baseDifficulty: 85 },
+      { name: "Ottawa Senators", abbreviation: "OTT", baseDifficulty: 78 },
       { name: "Detroit Red Wings", abbreviation: "DET", baseDifficulty: 77 },
+      { name: "Buffalo Sabres", abbreviation: "BUF", baseDifficulty: 76 },
       { name: "Montreal Canadiens", abbreviation: "MTL", baseDifficulty: 74 },
-      { name: "Columbus Blue Jackets", abbreviation: "CBJ", baseDifficulty: 73 }
+      
+      // Eastern Conference - Metropolitan Division
+      { name: "Carolina Hurricanes", abbreviation: "CAR", baseDifficulty: 84 },
+      { name: "New York Rangers", abbreviation: "NYR", baseDifficulty: 83 },
+      { name: "New Jersey Devils", abbreviation: "NJD", baseDifficulty: 82 },
+      { name: "Washington Capitals", abbreviation: "WSH", baseDifficulty: 81 },
+      { name: "Pittsburgh Penguins", abbreviation: "PIT", baseDifficulty: 80 },
+      { name: "Philadelphia Flyers", abbreviation: "PHI", baseDifficulty: 79 },
+      { name: "New York Islanders", abbreviation: "NYI", baseDifficulty: 78 },
+      { name: "Columbus Blue Jackets", abbreviation: "CBJ", baseDifficulty: 73 },
+      
+      // Western Conference - Central Division
+      { name: "Winnipeg Jets", abbreviation: "WPG", baseDifficulty: 86 },
+      { name: "Colorado Avalanche", abbreviation: "COL", baseDifficulty: 85 },
+      { name: "Dallas Stars", abbreviation: "DAL", baseDifficulty: 84 },
+      { name: "Nashville Predators", abbreviation: "NSH", baseDifficulty: 82 },
+      { name: "Minnesota Wild", abbreviation: "MIN", baseDifficulty: 80 },
+      { name: "St. Louis Blues", abbreviation: "STL", baseDifficulty: 78 },
+      { name: "Utah Mammoths", abbreviation: "UTA", baseDifficulty: 76 },
+      { name: "Chicago Blackhawks", abbreviation: "CHI", baseDifficulty: 72 },
+      
+      // Western Conference - Pacific Division
+      { name: "Vegas Golden Knights", abbreviation: "VGK", baseDifficulty: 87 },
+      { name: "Edmonton Oilers", abbreviation: "EDM", baseDifficulty: 86 },
+      { name: "Los Angeles Kings", abbreviation: "LAK", baseDifficulty: 83 },
+      { name: "Vancouver Canucks", abbreviation: "VAN", baseDifficulty: 82 },
+      { name: "Calgary Flames", abbreviation: "CGY", baseDifficulty: 79 },
+      { name: "Seattle Kraken", abbreviation: "SEA", baseDifficulty: 78 },
+      { name: "Anaheim Ducks", abbreviation: "ANA", baseDifficulty: 75 },
+      { name: "San Jose Sharks", abbreviation: "SJS", baseDifficulty: 71 }
     ];
 
     // Adjust difficulty based on team strength

@@ -719,16 +719,16 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 638, name: "Stuart Skinner", team: "EDM", position: "G", overall: 81, rarity: "silver", chemistry: ["Young Gun"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8479973.png" },
 ];
 
-// Pack probabilities with starter pack support
+// Pack probabilities with starter pack support - Elite players much rarer
 export const PACK_PROBABILITIES = {
-  bronze: { bronze: 90, silver: 10, gold: 0, elite: 0, legend: 0 },
-  silver: { bronze: 70, silver: 25, gold: 5, elite: 0, legend: 0 },
-  gold: { bronze: 50, silver: 30, gold: 15, elite: 5, legend: 0 },
-  elite: { bronze: 30, silver: 30, gold: 25, elite: 13, legend: 2 },
-  legend: { bronze: 20, silver: 25, gold: 25, elite: 20, legend: 10 },
-  standard: { bronze: 75, silver: 20, gold: 4, elite: 1, legend: 0 },
-  premium: { bronze: 50, silver: 30, gold: 15, elite: 4, legend: 1 },
-  starter: { bronze: 60, silver: 30, gold: 8, elite: 2, legend: 0 }
+  bronze: { bronze: 95, silver: 5, gold: 0, elite: 0, legend: 0 },
+  silver: { bronze: 85, silver: 14, gold: 1, elite: 0, legend: 0 },
+  gold: { bronze: 75, silver: 20, gold: 4.5, elite: 0.5, legend: 0 },
+  elite: { bronze: 65, silver: 25, gold: 8, elite: 2, legend: 0 },
+  legend: { bronze: 60, silver: 25, gold: 12, elite: 2.5, legend: 0.5 },
+  standard: { bronze: 88, silver: 10, gold: 1.8, elite: 0.2, legend: 0 },
+  premium: { bronze: 78, silver: 16, gold: 4.5, elite: 1, legend: 0.5 },
+  starter: { bronze: 82, silver: 15, gold: 2.5, elite: 0.5, legend: 0 }
 };
 
 // Export starter team function
