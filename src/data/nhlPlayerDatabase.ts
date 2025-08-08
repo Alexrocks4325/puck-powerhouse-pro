@@ -728,20 +728,6 @@ export const PACK_PROBABILITIES = {
   starter: { bronze: 0.70, silver: 0.25, gold: 0.04, elite: 0.01, legend: 0.00 }
 };
 
-// Export starter team function
-export const getStarterTeam = (): Player[] => {
-  const starterPlayers = [
-    nhlPlayerDatabase.find(p => p.name === "Connor Bedard")!,
-    nhlPlayerDatabase.find(p => p.name === "Connor McDavid")!,
-    nhlPlayerDatabase.find(p => p.name === "Leon Draisaitl")!,
-    nhlPlayerDatabase.find(p => p.name === "Nathan MacKinnon")!,
-    nhlPlayerDatabase.find(p => p.name === "Cale Makar")!,
-    nhlPlayerDatabase.find(p => p.name === "Erik Karlsson")!,
-    nhlPlayerDatabase.find(p => p.name === "Connor Hellebuyck")!,
-  ].filter(Boolean);
-  
-  return starterPlayers;
-};
 
 // Coach database placeholder
 export const coachDatabase = [

@@ -16,7 +16,7 @@ import CoinShop from "@/components/game/CoinShop";
 import RosterCollection from "@/components/game/RosterCollection";
 import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package, Library } from "lucide-react";
 import nhlLogo from "@/assets/nhl-ultimate-logo.png";
-import { getStarterTeam } from "@/data/nhlPlayerDatabase";
+
 import { addExperience, showLevelUpNotification, EXPERIENCE_REWARDS } from "@/components/game/ProgressionSystem";
 
 const Index = () => {
@@ -94,8 +94,6 @@ const Index = () => {
       completedTutorial: true,
       coins: prev.coins + 500, // Tutorial bonus
       packs: prev.packs + 2, // Starter packs
-      // Only add starter team if team is empty to prevent duplicate additions
-      team: prev.team.length === 0 ? getStarterTeam() : prev.team
     }));
     setGameState('packs');
   };
