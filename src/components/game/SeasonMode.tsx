@@ -363,7 +363,7 @@ const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = 
       roster={playerData.team}
       opponent={selectedOpponent}
       onBack={() => setView('hub')}
-      onSimulateFull={() => {
+      onSimulateFull={(_opts) => {
         if (!selectedOpponent) return;
         simulateGame(selectedOpponent.difficulty, selectedOpponent.name, currentMode === 'playoffs');
         setView('hub');
