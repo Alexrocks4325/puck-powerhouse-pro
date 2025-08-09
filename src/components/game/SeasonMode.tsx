@@ -114,6 +114,8 @@ const SeasonMode = ({ playerData, setPlayerData, onNavigate }: SeasonModeProps) 
   };
 
   const seasonTeams = getSeasonTeams();
+  const nextIndex = Math.floor(seasonProgress / (100 / seasonTeams.length));
+  const nextOpponent = seasonTeams[nextIndex];
   const playoffTeams = [
     { name: "Conference Quarterfinals", round: 1, opponents: ["Tampa Bay Lightning", "Boston Bruins", "Toronto Maple Leafs"] },
     { name: "Conference Semifinals", round: 2, opponents: ["Carolina Hurricanes", "New York Rangers"] },
@@ -203,6 +205,19 @@ const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = 
         <p className="text-xl text-muted-foreground">Compete for the Stanley Cup with dynamic difficulty</p>
       </div>
 
+      <div className="flex justify-end mb-6">
+        <Button
+          className="btn-primary"
+          disabled={!nextOpponent || isPlaying}
+          onClick={() => {
+            if (!nextOpponent) return;
+            setSelectedOpponent(nextOpponent);
+            setView('setup');
+          }}
+        >
+          <Play className="w-4 h-4 mr-2" /> Play Next Game
+        </Button>
+      </div>
       {/* Team Strength Overview */}
       <Card className="game-card p-6 mb-8">
         <div className="grid md:grid-cols-4 gap-6">
