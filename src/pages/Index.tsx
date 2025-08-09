@@ -7,7 +7,7 @@ import TeamCoachSelection from "@/components/game/TeamCoachSelection";
 import Tutorial from "@/components/game/Tutorial";
 import PackOpening from "@/components/game/PackOpening";
 import TeamManagement from "@/components/game/TeamManagement";
-import EnhancedSeasonMode from "@/components/game/EnhancedSeasonMode";
+import SeasonMode from "@/components/game/SeasonMode";
 import TasksAndChallenges from "@/components/game/TasksAndChallenges";
 import LeaguesMode from "@/components/game/LeaguesMode";
 import LiveEventsMode from "@/components/game/LiveEventsMode";
@@ -177,33 +177,11 @@ const Index = () => {
 
   if (gameState === 'season') {
     return (
-      <div className="min-h-screen ice-surface">
-        <GameHeader 
-          playerData={playerData}
-          showBackButton 
-          onBack={() => handleNavigate('menu')}
-          title="Season Mode"
-          onCoinsClick={() => setShowCoinShop(true)}
-          onPacksClick={() => setShowPackManager(true)}
-        />
-        <EnhancedSeasonMode 
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-          onNavigate={handleNavigate}
-        />
-        <PackManager 
-          isOpen={showPackManager}
-          onClose={() => setShowPackManager(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-        <CoinShop 
-          isOpen={showCoinShop}
-          onClose={() => setShowCoinShop(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-      </div>
+      <SeasonMode 
+        playerData={playerData}
+        setPlayerData={setPlayerData}
+        onNavigate={handleNavigate}
+      />
     );
   }
 
