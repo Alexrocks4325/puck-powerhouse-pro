@@ -28,11 +28,10 @@ export default function GameSetup({ roster, opponent, onBack, onSimulateFull, on
   const hasGoalie = useMemo(() => roster?.some((p) => p.position === "G"), [roster]);
   const isLegal = useMemo(() => (roster?.length ?? 0) >= 6 && hasGoalie, [roster, hasGoalie]);
 
-  const bestSix = useMemo(() => {
+  const sortedRoster = useMemo(() => {
     return (roster || [])
       .slice()
-      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0))
-      .slice(0, 6);
+      .sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0));
   }, [roster]);
 
   const handleFull = () => {
@@ -56,12 +55,12 @@ export default function GameSetup({ roster, opponent, onBack, onSimulateFull, on
         {/* Lineup */}
         <Card className="p-4 md:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-semibold text-foreground">Starting Lineup</h2>
+            <h2 className="text-xl font-semibold text-foreground">Your Roster</h2>
             <Badge variant={isLegal ? "default" : "destructive"}>{isLegal ? "Valid" : "Invalid"}</Badge>
           </div>
           <Separator className="my-2" />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {bestSix.map((p) => (
+            {sortedRoster.map((p) => (
               <div key={p.id} className="animate-fade-in">
                 <PlayerCard player={p} size="small" />
               </div>

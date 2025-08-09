@@ -21,7 +21,7 @@ interface SeasonModeProps {
 }
 
 const SeasonMode = ({ playerData, setPlayerData, onNavigate }: SeasonModeProps) => {
-  const [seasonProgress, setSeasonProgress] = useState(65); // 65% through season
+  const [seasonProgress, setSeasonProgress] = useState(0); // start at Game 1
   const [playoffProgress, setPlayoffProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMode, setCurrentMode] = useState<'season' | 'playoffs'>('season');
@@ -157,7 +157,7 @@ const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = 
 
     setIsPlaying(false);
 
-    // Build lightweight result for modal
+    // Build lightweight result for modal + box score
     const yourGoals = Math.max(1, Math.round(2 + Math.random() * 3) + (isWin ? 1 : 0));
     const oppGoals = Math.max(0, yourGoals - (isWin ? Math.round(1 + Math.random() * 2) : -Math.round(Math.random() * 2)));
     const makeTeamStats = () => ({
@@ -172,13 +172,48 @@ const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = 
     teamA.goals = yourGoals;
     teamB.goals = oppGoals;
 
+    // Build simple per-player box score
+    const roster = playerData.team || [];
+    const skatersA = roster.filter((p:any) => p.position !== 'G').slice().sort((a:any,b:any)=> (b.overall??0)-(a.overall??0)).slice(0,12)
+      .map((p:any) => ({ id: p.id, name: p.name, position: p.position || 'F', g: 0, a: 0, sog: 1 + Math.round(Math.random()*4), hits: Math.round(Math.random()*3), toi: 10 + Math.round(Math.random()*10) }));
+    // distribute goals and assists
+    for (let i=0;i<yourGoals;i++) {
+      if (skatersA.length) {
+        const sIdx = Math.floor(Math.random()*skatersA.length);
+        skatersA[sIdx].g += 1;
+        const assistPool = skatersA.filter((_,idx)=> idx !== sIdx);
+        if (assistPool.length) assistPool[Math.floor(Math.random()*assistPool.length)].a += 1;
+        if (Math.random() < 0.5 && assistPool.length > 1) assistPool[Math.floor(Math.random()*assistPool.length)].a += 1;
+      }
+    }
+
+    const goalieAPlayer = roster.filter((p:any)=> p.position === 'G').slice().sort((a:any,b:any)=> (b.overall??0)-(a.overall??0))[0];
+    const goalieA = { name: goalieAPlayer?.name || 'Your Goalie', sa: teamB.sog, ga: oppGoals, sv: Math.max(0, teamB.sog - oppGoals), svPct: teamB.sog ? ((teamB.sog - oppGoals) / teamB.sog) * 100 : 100 };
+
+    // Opponent mock skaters
+    const abbr = (selectedOpponent?.abbreviation || (teamName.split(' ').map(w=>w[0]).join('').toUpperCase()) || 'OPP');
+    const skatersB = Array.from({length:12}).map((_,i)=> ({ name: `${abbr} P${i+1}`, position: i%6<3 ? 'F' : 'D', g: 0, a: 0, sog: 1 + Math.round(Math.random()*4), hits: Math.round(Math.random()*3), toi: 10 + Math.round(Math.random()*10) }));
+    for (let i=0;i<oppGoals;i++) {
+      if (skatersB.length) {
+        const sIdx = Math.floor(Math.random()*skatersB.length);
+        skatersB[sIdx].g += 1;
+        const assistPool = skatersB.filter((_,idx)=> idx !== sIdx);
+        if (assistPool.length) assistPool[Math.floor(Math.random()*assistPool.length)].a += 1;
+        if (Math.random() < 0.5 && assistPool.length > 1) assistPool[Math.floor(Math.random()*assistPool.length)].a += 1;
+      }
+    }
+    const goalieB = { name: `${abbr} G1`, sa: teamA.sog, ga: yourGoals, sv: Math.max(0, teamA.sog - yourGoals), svPct: teamA.sog ? ((teamA.sog - yourGoals) / teamA.sog) * 100 : 100 };
+
     setResultData({
       opponentName: teamName,
       isWin,
       scoreHome: yourGoals,
       scoreAway: oppGoals,
       teamA,
-      teamB
+      teamB,
+      skatersA,
+      skatersB,
+      goalies: { home: goalieA, away: goalieB }
     });
 
     if (isPlayoff && playoffProgress >= 75 && isWin) {
@@ -276,41 +311,41 @@ const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = 
           </Card>
 
           {/* Game Schedule */}
-          <Card className="game-card p-6">
-            <h3 className="text-2xl font-bold mb-6 text-foreground">Upcoming Games</h3>
-            <div className="grid gap-4">
-              {seasonTeams
-                .slice(Math.floor(seasonProgress / (100 / seasonTeams.length)), Math.floor(seasonProgress / (100 / seasonTeams.length)) + 5)
-                .map((team, index) => {
-                  const gameIndex = Math.floor(seasonProgress / (100 / seasonTeams.length)) + index;
-                  const isNext = index === 0;
-                  return (
-                    <div key={team.abbreviation} className={`p-4 rounded-lg border transition-all ${isNext ? 'bg-primary/10 border-primary/30' : 'bg-muted/10 border-muted/30'}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-3">
-                            <Calendar className="w-5 h-5 text-muted-foreground" />
-                            <span className="font-semibold text-foreground">Game {gameIndex + 1}</span>
+            <Card className="game-card p-6">
+              <h3 className="text-2xl font-bold mb-6 text-foreground">Upcoming Games</h3>
+              <div className="grid gap-4">
+                {seasonTeams
+                  .slice(nextIndex, nextIndex + 5)
+                  .map((team, index) => {
+                    const gameIndex = nextIndex + index;
+                    const isNext = index === 0;
+                    return (
+                      <div key={team.abbreviation} className={`p-4 rounded-lg border transition-all ${isNext ? 'bg-primary/10 border-primary/30' : 'bg-muted/10 border-muted/30'}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-3">
+                              <Calendar className="w-5 h-5 text-muted-foreground" />
+                              <span className="font-semibold text-foreground">Game {gameIndex + 1}</span>
+                            </div>
+                            <div className="text-lg font-bold text-foreground">vs {team.name}</div>
                           </div>
-                          <div className="text-lg font-bold text-foreground">vs {team.name}</div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right">
-                            <div className="text-sm text-muted-foreground">Difficulty</div>
-                            <div className="font-semibold text-foreground">{Math.round(team.difficulty)}/100</div>
+                          <div className="flex items-center space-x-4">
+                            <div className="text-right">
+                              <div className="text-sm text-muted-foreground">Difficulty</div>
+                              <div className="font-semibold text-foreground">{Math.round(team.difficulty)}/100</div>
+                            </div>
+                            {isNext && (
+                              <Button onClick={() => { setSelectedOpponent(team); setView('setup'); }} disabled={isPlaying} className="btn-primary">
+                                <Play className="w-4 h-4 mr-2" /> Setup Game
+                              </Button>
+                            )}
                           </div>
-                          {isNext && (
-                            <Button onClick={() => { setSelectedOpponent(team); setView('setup'); }} disabled={isPlaying} className="btn-primary">
-                              <Play className="w-4 h-4 mr-2" /> Setup Game
-                            </Button>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </Card>
+                    );
+                  })}
+              </div>
+            </Card>
         </TabsContent>
 
         <TabsContent value="playoffs" className="space-y-6">
