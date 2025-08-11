@@ -69,27 +69,57 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
   );
 
   // Visual player sim (5v5 + G each side)
-  type SimPlayer = { id: string; team: 'home' | 'away'; x: number; y: number; role: 'F' | 'D' | 'G'; label: string | number };
+  type SimPlayer = { id: string; team: 'home' | 'away'; x: number; y: number; role: 'F' | 'D' | 'G'; label: string | number; name: string };
   const [players, setPlayers] = useState<SimPlayer[]>([]);
+  const [possessorId, setPossessorId] = useState<string | null>(null);
+  const [goalSide, setGoalSide] = useState<'home'|'away'|null>(null);
+  const [shotAnim, setShotAnim] = useState<{active:boolean; sx:number; sy:number; ex:number; ey:number; goal:boolean; side:'home'|'away'|null; shooterName?:string}>({active:false, sx:50, sy:50, ex:50, ey:50, goal:false, side:null});
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const playersRef = useRef<SimPlayer[]>([]);
+  useEffect(() => { playersRef.current = players; }, [players]);
 
   const buildInitialPlayers = (): SimPlayer[] => {
-    const mk = (team: 'home' | 'away', role: SimPlayer['role'], idx: number, x: number, y: number, label: string | number) => ({ id: `${team}-${role}-${idx}` , team, role, x, y, label });
+    const mk = (team: 'home' | 'away', role: SimPlayer['role'], idx: number, x: number, y: number, label: string | number, name: string): SimPlayer => ({ id: `${team}-${role}-${idx}` , team, role, x, y, label, name });
+    
+    const pickNames = (roster: any[]) => {
+      const nameOf = (p: any, fallback: string) => (p?.name as string) || fallback;
+      const g = roster.find((p: any) => p.position === 'G');
+      const ds = roster.filter((p: any) => p.position === 'D');
+      const fs = roster.filter((p: any) => ['C','LW','RW','F'].includes(p.position));
+      const others = roster.filter((p: any) => !['G','D','C','LW','RW','F'].includes(p.position));
+      const take = <T,>(arr: T[], n: number, fb: T[]): T[] => {
+        const out = arr.slice(0, n);
+        if (out.length < n) out.push(...fb.slice(0, n - out.length));
+        return out;
+      };
+      const twoD = take(ds, 2, fs.length ? fs : others);
+      const threeF = take(fs, 3, ds.length ? ds : others);
+      return {
+        gName: nameOf(g, 'Goalie'),
+        dNames: [nameOf(twoD[0], 'D1'), nameOf(twoD[1], 'D2')],
+        fNames: [nameOf(threeF[0], 'F1'), nameOf(threeF[1], 'F2'), nameOf(threeF[2], 'F3')],
+      };
+    };
+
+    const h = pickNames(homeRoster);
+    const a = pickNames(awayRoster);
+
     // Faceoff formation
     const homeLine: SimPlayer[] = [
-      mk('home','G',1, 6, 50, 'G'),
-      mk('home','D',1, 20, 40, 2),
-      mk('home','D',2, 20, 60, 3),
-      mk('home','F',1, 35, 35, 9),
-      mk('home','F',2, 50, 50, 19), // C at dot
-      mk('home','F',3, 35, 65, 13),
+      mk('home','G',1, 6, 50, 'G', h.gName),
+      mk('home','D',1, 20, 40, 2, h.dNames[0]),
+      mk('home','D',2, 20, 60, 3, h.dNames[1]),
+      mk('home','F',1, 35, 35, 9, h.fNames[0]),
+      mk('home','F',2, 50, 50, 19, h.fNames[1]), // C at dot
+      mk('home','F',3, 35, 65, 13, h.fNames[2]),
     ];
     const awayLine: SimPlayer[] = [
-      mk('away','G',1, 94, 50, 'G'),
-      mk('away','D',1, 80, 40, 2),
-      mk('away','D',2, 80, 60, 3),
-      mk('away','F',1, 65, 35, 9),
-      mk('away','F',2, 50, 50, 19), // C at dot
-      mk('away','F',3, 65, 65, 13),
+      mk('away','G',1, 94, 50, 'G', a.gName),
+      mk('away','D',1, 80, 40, 2, a.dNames[0]),
+      mk('away','D',2, 80, 60, 3, a.dNames[1]),
+      mk('away','F',1, 65, 35, 9, a.fNames[0]),
+      mk('away','F',2, 50, 50, 19, a.fNames[1]), // C at dot
+      mk('away','F',3, 65, 65, 13, a.fNames[2]),
     ];
     return [...homeLine, ...awayLine];
   };
@@ -131,35 +161,44 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
     const iv = setInterval(() => {
       setSeconds((s) => {
         const next = s + 5; // 5s per tick
-        // Puck drift
-        setPuck((p) => ({
-          x: Math.min(96, Math.max(4, p.x + (Math.random() * 16 - 8))),
-          y: Math.min(90, Math.max(10, p.y + (Math.random() * 12 - 6))),
-          owner: Math.random() < 0.5 ? homeAbbr : awayAbbr,
-        }));
 
         // Random events (shots/goals/hits/penalties)
         const shotChance = 0.40; // per tick
-        if (Math.random() < shotChance) {
-          const isHome = Math.random() < 0.52; // slight bias to home
-          const shooterMap = isHome ? homeSkaters.current : awaySkaters.current;
-          const shooterArr = Array.from(shooterMap.values());
-          const shooter = shooterArr[Math.floor(Math.random() * Math.max(1, shooterArr.length))];
-          const assistPool = shooterArr.filter(p => p.name !== shooter?.name);
-          const isGoal = Math.random() < 0.18; // 18% of shots go in
-          if (isHome) {
-            setHome((h) => ({ ...h, sog: h.sog + 1, goals: h.goals + (isGoal ? 1 : 0) }));
-          } else {
-            setAway((a) => ({ ...a, sog: a.sog + 1, goals: a.goals + (isGoal ? 1 : 0) }));
+        if (Math.random() < shotChance && !shotAnim.active) {
+          // Determine shooter (prefer current possessor)
+          let shooter: SimPlayer | undefined = playersRef.current.find(p => p.id === possessorId && p.role !== 'G');
+          const fallbackTeam: 'home' | 'away' = shooter?.team ?? (Math.random() < 0.52 ? 'home' : 'away');
+          if (!shooter) {
+            const pool = playersRef.current.filter(p => p.team === fallbackTeam && p.role !== 'G');
+            shooter = pool[Math.floor(Math.random() * Math.max(1, pool.length))];
           }
-          if (shooter) shooter.sog += 1;
-          if (isGoal && shooter) {
-            shooter.g += 1;
-            if (assistPool.length) assistPool[Math.floor(Math.random() * assistPool.length)].a += 1;
-            if (Math.random() < 0.45 && assistPool.length > 1) assistPool[Math.floor(Math.random() * assistPool.length)].a += 1;
-            pushEvent(`${isHome ? homeAbbr : awayAbbr} GOAL — ${shooter.name}`);
-          } else if (shooter) {
-            pushEvent(`${isHome ? homeAbbr : awayAbbr} shot — ${shooter.name}`);
+          if (shooter) {
+            const isHome = shooter.team === 'home';
+            const shooterMap = isHome ? homeSkaters.current : awaySkaters.current;
+            const assistMap = isHome ? homeSkaters.current : awaySkaters.current;
+            const stat = shooterMap.get(shooter.name) ?? (() => { const s = { name: shooter.name, position: shooter.role, g:0, a:0, sog:0, hits:0, toi: 10 + Math.round(Math.random()*10)} as SkaterLine; shooterMap.set(shooter.name, s); return s; })();
+            stat.sog += 1;
+
+            // Increment team SOG
+            if (isHome) setHome(h => ({ ...h, sog: h.sog + 1 }));
+            else setAway(a => ({ ...a, sog: a.sog + 1 }));
+
+            const isGoal = Math.random() < 0.18; // 18% of shots go in
+            if (isGoal) {
+              stat.g += 1;
+              const mates = Array.from(assistMap.values()).filter(p => p.name !== shooter!.name);
+              if (mates.length) mates[Math.floor(Math.random() * mates.length)].a += 1;
+              if (Math.random() < 0.45 && mates.length > 1) mates[Math.floor(Math.random() * mates.length)].a += 1;
+            }
+
+            // Animate puck toward goalie/net
+            const goalie = playersRef.current.find(p => p.team !== shooter!.team && p.role === 'G');
+            const ex = shooter.team === 'home' ? 96 : 4;
+            const ey = goalie ? goalie.y : shooter.y;
+            setShotAnim({ active: true, sx: shooter.x, sy: shooter.y, ex, ey, goal: isGoal, side: shooter.team, shooterName: shooter.name });
+
+            // Live feed entry
+            pushEvent(`${isGoal ? (isHome ? homeAbbr : awayAbbr) + ' GOAL — ' : (isHome ? homeAbbr : awayAbbr) + ' shot — '}${shooter.name}`);
           }
         }
 
@@ -206,7 +245,7 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
     }, tickMs);
     return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running, period]);
+  }, [running, period, possessorId, shotAnim.active]);
 
   // Line change bucket (every ~45s)
   const [lineBucket, setLineBucket] = useState(0);
@@ -227,12 +266,23 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
   useEffect(() => {
     if (!running) return;
     const iv = setInterval(() => {
-      setPlayers((prev) => {
-        // Determine nearest player to puck (possession)
-        const withDist = prev.map((pl) => ({ pl, d: Math.hypot((pl.x - puck.x), (pl.y - puck.y)) }));
-        const possessor = withDist.reduce((m, c) => (c.d < m.d ? c : m), withDist[0] || { pl: undefined, d: Infinity }).pl;
-        const possTeam: 'home' | 'away' | undefined = possessor?.team;
+      // Determine nearest player to puck (possession)
+      const list = playersRef.current;
+      if (list.length) {
+        let nearest: SimPlayer | undefined = undefined;
+        let minD = Infinity;
+        for (const pl of list) {
+          const d = Math.hypot(pl.x - puck.x, pl.y - puck.y);
+          if (d < minD) { minD = d; nearest = pl; }
+        }
+        if (nearest && minD < 8 && possessorId !== nearest.id) {
+          setPossessorId(nearest.id);
+        }
+      }
 
+      const possTeam: 'home' | 'away' | undefined = playersRef.current.find(p => p.id === possessorId)?.team;
+
+      setPlayers((prev) => {
         return prev.map((pl) => {
           const isG = pl.role === 'G';
           const base = { x: pl.x, y: pl.y };
@@ -280,7 +330,84 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
       });
     }, 250);
     return () => clearInterval(iv);
-  }, [running, puck.x, puck.y, lineBucket]);
+  }, [running, puck.x, puck.y, lineBucket, possessorId]);
+
+  // Sync puck to current possessor (when not shooting)
+  useEffect(() => {
+    if (shotAnim.active) return;
+    if (!possessorId) return;
+    const pl = players.find(p => p.id === possessorId);
+    if (pl) {
+      setPuck((prev) => ({
+        ...prev,
+        x: Math.min(96, Math.max(4, pl.x + (pl.team === 'home' ? 1.2 : -1.2))),
+        y: Math.min(90, Math.max(10, pl.y)),
+        owner: pl.team === 'home' ? homeAbbr : awayAbbr,
+      }));
+    }
+  }, [players, possessorId, shotAnim.active]);
+
+  // Shot animation effect
+  useEffect(() => {
+    if (!shotAnim.active) return;
+    let raf: number;
+    const start = performance.now();
+    const duration = 700;
+
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const ease = t * t * (3 - 2 * t);
+      const x = shotAnim.sx + (shotAnim.ex - shotAnim.sx) * ease;
+      const y = shotAnim.sy + (shotAnim.ey - shotAnim.sy) * ease;
+      setPuck((p) => ({ ...p, x, y, owner: null }));
+      if (t < 1) {
+        raf = requestAnimationFrame(step);
+      } else {
+        if (shotAnim.goal && shotAnim.side) {
+          if (shotAnim.side === 'home') setHome(h => ({ ...h, goals: h.goals + 1 }));
+          else setAway(a => ({ ...a, goals: a.goals + 1 }));
+
+          // Celebration overlay and horn
+          setGoalSide(shotAnim.side);
+          try {
+            const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+            if (Ctx) {
+              if (!audioCtxRef.current) audioCtxRef.current = new Ctx();
+              const ctx = audioCtxRef.current!;
+              const o1 = ctx.createOscillator();
+              const o2 = ctx.createOscillator();
+              const g = ctx.createGain();
+              o1.type = 'square'; o2.type = 'sawtooth';
+              o1.frequency.value = 220; o2.frequency.value = 110;
+              g.gain.value = 0.0001;
+              o1.connect(g); o2.connect(g); g.connect(ctx.destination);
+              const nowt = ctx.currentTime;
+              g.gain.exponentialRampToValueAtTime(0.6, nowt + 0.05);
+              o1.frequency.exponentialRampToValueAtTime(180, nowt + 0.6);
+              o2.frequency.exponentialRampToValueAtTime(90, nowt + 0.6);
+              o1.start(); o2.start();
+              g.gain.exponentialRampToValueAtTime(0.0001, nowt + 1.0);
+              o1.stop(nowt + 1.05); o2.stop(nowt + 1.05);
+            }
+          } catch {}
+
+          setTimeout(() => setGoalSide(null), 1200);
+          setRunning(false);
+          setTimeout(() => {
+            resetToFaceoff();
+            setPossessorId(null);
+            setRunning(true);
+          }, 1100);
+        } else {
+          // No goal: drop possession for a beat
+          setTimeout(() => setPossessorId(null), 100);
+        }
+        setShotAnim((s) => ({ ...s, active: false }));
+      }
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [shotAnim.active]);
 
   const finishGame = () => {
     const toArray = (map: Map<string, SkaterLine>) => Array.from(map.values()).sort((a, b) => (b.g + b.a) - (a.g + a.a));
@@ -304,6 +431,7 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
 
   const percent = Math.min(100, Math.round(((period - 1) * totalSeconds + seconds) / (totalSeconds * 3) * 100));
   const nearestId = useMemo(() => {
+    if (possessorId) return possessorId;
     if (!players.length) return undefined;
     let minId: string | undefined = undefined;
     let minD = Infinity;
@@ -312,7 +440,7 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
       if (d < minD) { minD = d; minId = pl.id; }
     }
     return minId;
-  }, [players, puck.x, puck.y]);
+  }, [players, puck.x, puck.y, possessorId]);
 
   return (
     <div className="container mx-auto px-4 pt-20 pb-8">
@@ -346,10 +474,12 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
               y: p.y,
               variant: p.team === 'home' ? 'home' : 'away',
               label: p.label,
+              name: p.name,
               isGoalie: p.role === 'G',
-              hasPuck: p.id === nearestId,
+              hasPuck: !shotAnim.active && p.id === possessorId,
             }))}
             puck={{ x: puck.x, y: puck.y }}
+            goalSide={goalSide}
           />
 
           <div className="mt-4 flex items-center gap-2">
