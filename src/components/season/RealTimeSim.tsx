@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, SkipForward, ArrowLeft } from "lucide-react";
+import MiniRink from "./MiniRink";
 
 interface SkaterLine {
   name: string;
@@ -67,6 +68,41 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
     ]
   );
 
+  // Visual player sim (5v5 + G each side)
+  type SimPlayer = { id: string; team: 'home' | 'away'; x: number; y: number; role: 'F' | 'D' | 'G'; label: string | number };
+  const [players, setPlayers] = useState<SimPlayer[]>([]);
+
+  const buildInitialPlayers = (): SimPlayer[] => {
+    const mk = (team: 'home' | 'away', role: SimPlayer['role'], idx: number, x: number, y: number, label: string | number) => ({ id: `${team}-${role}-${idx}` , team, role, x, y, label });
+    // Faceoff formation
+    const homeLine: SimPlayer[] = [
+      mk('home','G',1, 6, 50, 'G'),
+      mk('home','D',1, 20, 40, 2),
+      mk('home','D',2, 20, 60, 3),
+      mk('home','F',1, 35, 35, 9),
+      mk('home','F',2, 50, 50, 19), // C at dot
+      mk('home','F',3, 35, 65, 13),
+    ];
+    const awayLine: SimPlayer[] = [
+      mk('away','G',1, 94, 50, 'G'),
+      mk('away','D',1, 80, 40, 2),
+      mk('away','D',2, 80, 60, 3),
+      mk('away','F',1, 65, 35, 9),
+      mk('away','F',2, 50, 50, 19), // C at dot
+      mk('away','F',3, 65, 65, 13),
+    ];
+    return [...homeLine, ...awayLine];
+  };
+
+  const resetToFaceoff = () => {
+    setPlayers(buildInitialPlayers());
+    setPuck((p) => ({ ...p, x: 50, y: 50 }));
+  };
+
+  useEffect(() => {
+    // initialize
+    resetToFaceoff();
+  }, []);
   // Build skater stat maps to accumulate game stats
   const makeSkaterMap = (roster: any[]) => {
     const map = new Map<string, SkaterLine>();
@@ -172,6 +208,80 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, period]);
 
+  // Line change bucket (every ~45s)
+  const [lineBucket, setLineBucket] = useState(0);
+  useEffect(() => {
+    setLineBucket(Math.floor(seconds / 45));
+  }, [seconds]);
+
+  // Reset to faceoff on new period or goal
+  const lastState = useRef({ h: 0, a: 0, p: 1 });
+  useEffect(() => {
+    if (home.goals !== lastState.current.h || away.goals !== lastState.current.a || period !== lastState.current.p) {
+      lastState.current = { h: home.goals, a: away.goals, p: period };
+      resetToFaceoff();
+    }
+  }, [home.goals, away.goals, period]);
+
+  // Movement/positioning tick
+  useEffect(() => {
+    if (!running) return;
+    const iv = setInterval(() => {
+      setPlayers((prev) => {
+        // Determine nearest player to puck (possession)
+        const withDist = prev.map((pl) => ({ pl, d: Math.hypot((pl.x - puck.x), (pl.y - puck.y)) }));
+        const possessor = withDist.reduce((m, c) => (c.d < m.d ? c : m), withDist[0] || { pl: undefined, d: Infinity }).pl;
+        const possTeam: 'home' | 'away' | undefined = possessor?.team;
+
+        return prev.map((pl) => {
+          const isG = pl.role === 'G';
+          const base = { x: pl.x, y: pl.y };
+          // Target anchoring by role/team
+          let targetX = base.x;
+          let targetY = base.y;
+
+          if (isG) {
+            targetX = pl.team === 'home' ? 8 : 92;
+            // Track puck vertically a bit
+            targetY = puck.y + (pl.team === 'home' ? -2 : 2);
+          } else {
+            // Skaters gravitate to puck with slight formation offset
+            const towardPuckX = puck.x + (pl.team === 'home' ? -2 : 2);
+            const towardPuckY = puck.y + (pl.role === 'D' ? (pl.team === 'home' ? -6 : 6) : 0);
+            const anchorX = pl.team === 'home' ? 30 : 70;
+            const anchorY = 30 + (pl.role === 'D' ? 40 : 0);
+            const phase = (pl.id.charCodeAt(0) + lineBucket * 13) % 10;
+            const jitterX = (phase - 5) * 0.6;
+            const jitterY = ((phase * 3) % 10 - 5) * 0.6;
+
+            const offense = possTeam === pl.team;
+            targetX = offense ? (towardPuckX * 0.7 + anchorX * 0.3) : (towardPuckX * 0.4 + anchorX * 0.6);
+            targetY = offense ? (towardPuckY * 0.7 + anchorY * 0.3) : (towardPuckY * 0.4 + anchorY * 0.6);
+
+            targetX += jitterX;
+            targetY += jitterY;
+          }
+
+          // Move a small step toward target
+          const dx = targetX - base.x;
+          const dy = targetY - base.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const maxStep = isG ? 0.6 : 1.6; // px in percentage space
+          const step = Math.min(maxStep, dist);
+          const nx = base.x + (dx / dist) * step;
+          const ny = base.y + (dy / dist) * step;
+
+          return {
+            ...pl,
+            x: Math.min(96, Math.max(4, nx)),
+            y: Math.min(90, Math.max(10, ny)),
+          };
+        });
+      });
+    }, 250);
+    return () => clearInterval(iv);
+  }, [running, puck.x, puck.y, lineBucket]);
+
   const finishGame = () => {
     const toArray = (map: Map<string, SkaterLine>) => Array.from(map.values()).sort((a, b) => (b.g + b.a) - (a.g + a.a));
     const teamA = { goals: home.goals, sog: home.sog, hits: home.hits, pp: `${Math.floor(Math.random()*2)}/${1+Math.floor(Math.random()*3)}`, foPct: 45 + Math.random()*10 };
@@ -193,6 +303,16 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
   };
 
   const percent = Math.min(100, Math.round(((period - 1) * totalSeconds + seconds) / (totalSeconds * 3) * 100));
+  const nearestId = useMemo(() => {
+    if (!players.length) return undefined;
+    let minId: string | undefined = undefined;
+    let minD = Infinity;
+    for (const pl of players) {
+      const d = Math.hypot(pl.x - puck.x, pl.y - puck.y);
+      if (d < minD) { minD = d; minId = pl.id; }
+    }
+    return minId;
+  }, [players, puck.x, puck.y]);
 
   return (
     <div className="container mx-auto px-4 pt-20 pb-8">
@@ -218,19 +338,19 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
             <span>{away.goals}</span>
           </div>
 
-          {/* Rink + Puck */}
-          <div className="relative w-full aspect-[2/1] rounded-md border bg-gradient-to-b from-background/70 to-muted/40 overflow-hidden">
-            {/* Center line */}
-            <div className="absolute inset-y-0 left-1/2 w-0.5 bg-primary/40" />
-            {/* Creases */}
-            <div className="absolute inset-y-6 left-4 right-4 rounded-lg border border-primary/20 pointer-events-none" />
-            {/* Puck */}
-            <div
-              className="absolute w-3 h-3 rounded-full bg-primary shadow"
-              style={{ left: `${puck.x}%`, top: `${puck.y}%`, transform: 'translate(-50%, -50%)' }}
-              aria-label="puck"
-            />
-          </div>
+          {/* Rink + Players + Puck */}
+          <MiniRink
+            players={players.map((p) => ({
+              id: p.id,
+              x: p.x,
+              y: p.y,
+              variant: p.team === 'home' ? 'home' : 'away',
+              label: p.label,
+              isGoalie: p.role === 'G',
+              hasPuck: p.id === nearestId,
+            }))}
+            puck={{ x: puck.x, y: puck.y }}
+          />
 
           <div className="mt-4 flex items-center gap-2">
             <Button size="sm" onClick={() => setRunning((r) => !r)}>
