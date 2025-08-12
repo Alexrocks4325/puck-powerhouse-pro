@@ -21,7 +21,7 @@ interface MiniRinkProps {
 }
 
 // A responsive 2:1 rink with basic lines; players & puck are absolutely positioned
-export default function MiniRink({ players, puck, className }: MiniRinkProps) {
+export default function MiniRink({ players, puck, className, goalSide }: MiniRinkProps) {
   return (
     <div
       className={cn(
