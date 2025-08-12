@@ -173,8 +173,9 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
             const goalX = shooter.team === 'home' ? 96 : 4;
             const goalY = goalie ? goalie.y : 50;
             const distToGoalie = goalie ? Math.hypot(shooter.x - goalie.x, shooter.y - goalie.y) : Math.abs(shooter.x - goalX);
-            const close = distToGoalie < 12;
-            const canShoot = close && (next - lastShotAtRef.current >= 5);
+            const close = distToGoalie < 14;
+            const inSlot = Math.abs(shooter.y - goalY) < 12;
+            const canShoot = close && (next - lastShotAtRef.current >= 4);
 
             if (canShoot) {
               lastShotAtRef.current = next;
@@ -184,7 +185,12 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
               stat.sog += 1;
               if (isHome) setHome(h => ({ ...h, sog: h.sog + 1 })); else setAway(a => ({ ...a, sog: a.sog + 1 }));
 
-              const isGoal = Math.random() < 0.35; // Higher when in tight
+              const base = 0.22;
+              const slotBonus = inSlot ? 0.18 : 0.06;
+              const distBonus = Math.max(0, (14 - distToGoalie)) * 0.01;
+              const goalChance = Math.min(0.6, base + slotBonus + distBonus);
+              const isGoal = Math.random() < goalChance;
+
               if (isGoal) {
                 stat.g += 1;
                 const teamMap = isHome ? homeSkaters.current : awaySkaters.current;
@@ -286,7 +292,10 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
           const d = Math.hypot(pl.x - puck.x, pl.y - puck.y);
           if (d < minD) { minD = d; nearest = pl; }
         }
-        if (nearest && minD < 8 && possessorId !== nearest.id) {
+        const currentPoss = possessorId ? list.find(p => p.id === possessorId) : undefined;
+        if (!possessorId) {
+          if (nearest && minD < 8) setPossessorId(nearest.id);
+        } else if (nearest && currentPoss && nearest.team !== currentPoss.team && minD < 4 && Math.random() < 0.25) {
           setPossessorId(nearest.id);
         }
       }
@@ -318,17 +327,21 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
             targetY = puck.y + (pl.team === 'home' ? -2 : 2);
           } else {
             const offense = possTeamLocal === pl.team;
-            const anchorOffX = pl.team === 'home' ? (pl.role === 'D' ? 45 : 60) : (pl.role === 'D' ? 55 : 40);
-            const anchorDefX = pl.team === 'home' ? (pl.role === 'D' ? 25 : 30) : (pl.role === 'D' ? 75 : 70);
+            const anchorOffX = pl.team === 'home'
+              ? (pl.role === 'D' ? 50 : 68)
+              : (pl.role === 'D' ? 50 : 32);
+            const anchorDefX = pl.team === 'home'
+              ? (pl.role === 'D' ? 22 : 32)
+              : (pl.role === 'D' ? 78 : 68);
 
             const towardX = puck.x + (pl.team === 'home' ? -1 : 1);
             const towardY = puck.y;
 
-            targetX = offense ? (towardX * 0.6 + anchorOffX * 0.4) : (towardX * 0.3 + anchorDefX * 0.7);
-            targetY = offense ? (towardY * 0.6 + laneY * 0.4) : (towardY * 0.3 + laneY * 0.7);
+            targetX = offense ? (towardX * 0.45 + anchorOffX * 0.55) : (towardX * 0.25 + anchorDefX * 0.75);
+            targetY = offense ? (towardY * 0.45 + laneY * 0.55) : (towardY * 0.25 + laneY * 0.75);
 
-            const jitterX = ((idx * 7) % 10 - 5) * 0.3;
-            const jitterY = ((idx * 11) % 10 - 5) * 0.3;
+            const jitterX = ((idx * 7) % 10 - 5) * 0.25;
+            const jitterY = ((idx * 11) % 10 - 5) * 0.25;
             targetX += jitterX;
             targetY += jitterY;
           }
@@ -337,7 +350,9 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
           const dx = targetX - base.x;
           const dy = targetY - base.y;
           const dist = Math.hypot(dx, dy) || 1;
-          const maxStep = isG ? 0.6 : 1.4;
+          const roleSpeed = pl.role === 'F' ? 2.2 : pl.role === 'D' ? 1.6 : 0.55;
+          const carryBoost = (pl.id === possessorId) ? 0.5 : 0;
+          const maxStep = roleSpeed + carryBoost;
           const step = Math.min(maxStep, dist);
           const nx = base.x + (dx / dist) * step;
           const ny = base.y + (dy / dist) * step;
@@ -350,7 +365,7 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
         });
 
         // Separation: avoid overlaps
-        const sepR = 6;
+        const sepR = 9;
         for (let i = 0; i < next.length; i++) {
           let ox = 0, oy = 0;
           for (let j = 0; j < next.length; j++) {
@@ -360,8 +375,8 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
             const d = Math.hypot(dx, dy);
             if (d > 0 && d < sepR) {
               const f = (sepR - d) / sepR;
-              ox += (dx / d) * f * 1.2;
-              oy += (dy / d) * f * 1.2;
+              ox += (dx / d) * f * 1.6;
+              oy += (dy / d) * f * 1.6;
             }
           }
           next[i].x = Math.min(96, Math.max(4, next[i].x + ox));
@@ -442,8 +457,11 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
             setRunning(true);
           }, 1100);
         } else {
-          // No goal: drop possession for a beat
-          setTimeout(() => setPossessorId(null), 100);
+          // No goal: rebound or goalie covers — give puck to opposing goalie
+          const side = shotAnim.side;
+          const oppTeam = side === 'home' ? 'away' : 'home';
+          const g = playersRef.current.find(p => p.team === oppTeam && p.role === 'G');
+          setTimeout(() => setPossessorId(g?.id || null), 120);
         }
         setShotAnim((s) => ({ ...s, active: false }));
       }
