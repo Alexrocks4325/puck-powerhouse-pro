@@ -77,6 +77,8 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
   const audioCtxRef = useRef<AudioContext | null>(null);
   const hornRef = useRef<HTMLAudioElement | null>(null);
   const playersRef = useRef<SimPlayer[]>([]);
+  const lastShotAtRef = useRef(0);
+  const lastPassAtRef = useRef(0);
   useEffect(() => { playersRef.current = players; }, [players]);
 
   const buildInitialPlayers = (): SimPlayer[] => {
@@ -163,43 +165,51 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
       setSeconds((s) => {
         const next = s + 5; // 5s per tick
 
-        // Random events (shots/goals/hits/penalties)
-        const shotChance = 0.40; // per tick
-        if (Math.random() < shotChance && !shotAnim.active) {
-          // Determine shooter (prefer current possessor)
-          let shooter: SimPlayer | undefined = playersRef.current.find(p => p.id === possessorId && p.role !== 'G');
-          const fallbackTeam: 'home' | 'away' = shooter?.team ?? (Math.random() < 0.52 ? 'home' : 'away');
-          if (!shooter) {
-            const pool = playersRef.current.filter(p => p.team === fallbackTeam && p.role !== 'G');
-            shooter = pool[Math.floor(Math.random() * Math.max(1, pool.length))];
-          }
+        // Shot/pass decision based on proximity and possession (no random long bombs)
+        if (!shotAnim.active && possessorId) {
+          const shooter = playersRef.current.find(p => p.id === possessorId && p.role !== 'G');
           if (shooter) {
-            const isHome = shooter.team === 'home';
-            const shooterMap = isHome ? homeSkaters.current : awaySkaters.current;
-            const assistMap = isHome ? homeSkaters.current : awaySkaters.current;
-            const stat = shooterMap.get(shooter.name) ?? (() => { const s = { name: shooter.name, position: shooter.role, g:0, a:0, sog:0, hits:0, toi: 10 + Math.round(Math.random()*10)} as SkaterLine; shooterMap.set(shooter.name, s); return s; })();
-            stat.sog += 1;
+            const goalie = playersRef.current.find(p => p.team !== shooter.team && p.role === 'G');
+            const goalX = shooter.team === 'home' ? 96 : 4;
+            const goalY = goalie ? goalie.y : 50;
+            const distToGoalie = goalie ? Math.hypot(shooter.x - goalie.x, shooter.y - goalie.y) : Math.abs(shooter.x - goalX);
+            const close = distToGoalie < 12;
+            const canShoot = close && (next - lastShotAtRef.current >= 5);
 
-            // Increment team SOG
-            if (isHome) setHome(h => ({ ...h, sog: h.sog + 1 }));
-            else setAway(a => ({ ...a, sog: a.sog + 1 }));
+            if (canShoot) {
+              lastShotAtRef.current = next;
+              const isHome = shooter.team === 'home';
+              const shooterMap = isHome ? homeSkaters.current : awaySkaters.current;
+              const stat = shooterMap.get(shooter.name) ?? (() => { const s = { name: shooter.name, position: shooter.role, g:0, a:0, sog:0, hits:0, toi: 10 + Math.round(Math.random()*10)} as SkaterLine; shooterMap.set(shooter.name, s); return s; })();
+              stat.sog += 1;
+              if (isHome) setHome(h => ({ ...h, sog: h.sog + 1 })); else setAway(a => ({ ...a, sog: a.sog + 1 }));
 
-            const isGoal = Math.random() < 0.18; // 18% of shots go in
-            if (isGoal) {
-              stat.g += 1;
-              const mates = Array.from(assistMap.values()).filter(p => p.name !== shooter!.name);
-              if (mates.length) mates[Math.floor(Math.random() * mates.length)].a += 1;
-              if (Math.random() < 0.45 && mates.length > 1) mates[Math.floor(Math.random() * mates.length)].a += 1;
+              const isGoal = Math.random() < 0.35; // Higher when in tight
+              if (isGoal) {
+                stat.g += 1;
+                const teamMap = isHome ? homeSkaters.current : awaySkaters.current;
+                const mates = Array.from(teamMap.values()).filter(p => p.name !== shooter!.name);
+                if (mates.length) mates[Math.floor(Math.random() * mates.length)].a += 1;
+              }
+
+              const ex = shooter.team === 'home' ? 96 : 4;
+              const ey = goalY;
+              setShotAnim({ active: true, sx: shooter.x, sy: shooter.y, ex, ey, goal: isGoal, side: shooter.team, shooterName: shooter.name });
+              pushEvent(`${isGoal ? (isHome ? homeAbbr : awayAbbr) + ' GOAL — ' : (isHome ? homeAbbr : awayAbbr) + ' shot — '}${shooter.name}`);
+            } else if (next - lastPassAtRef.current >= 4) {
+              // Smart pass to move up-ice
+              const mates = playersRef.current.filter(p => p.team === shooter.team && p.role !== 'G' && p.id !== shooter.id);
+              const ahead = mates
+                .filter(m => shooter.team === 'home' ? m.x > shooter.x + 6 : m.x < shooter.x - 6)
+                .sort((m1, m2) => shooter.team === 'home' ? m2.x - m1.x : m1.x - m2.x);
+              const receiver = ahead[0] || mates[Math.floor(Math.random() * Math.max(1, mates.length))];
+              if (receiver) {
+                lastPassAtRef.current = next;
+                setPossessorId(receiver.id);
+                setPuck((p) => ({ ...p, x: receiver.x, y: receiver.y, owner: shooter.team === 'home' ? homeAbbr : awayAbbr }));
+                pushEvent(`Pass — ${shooter.name} to ${receiver.name}`);
+              }
             }
-
-            // Animate puck toward goalie/net
-            const goalie = playersRef.current.find(p => p.team !== shooter!.team && p.role === 'G');
-            const ex = shooter.team === 'home' ? 96 : 4;
-            const ey = goalie ? goalie.y : shooter.y;
-            setShotAnim({ active: true, sx: shooter.x, sy: shooter.y, ex, ey, goal: isGoal, side: shooter.team, shooterName: shooter.name });
-
-            // Live feed entry
-            pushEvent(`${isGoal ? (isHome ? homeAbbr : awayAbbr) + ' GOAL — ' : (isHome ? homeAbbr : awayAbbr) + ' shot — '}${shooter.name}`);
           }
         }
 
@@ -284,31 +294,41 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
       const possTeam: 'home' | 'away' | undefined = playersRef.current.find(p => p.id === possessorId)?.team;
 
       setPlayers((prev) => {
-        return prev.map((pl) => {
+        const possTeamLocal: 'home' | 'away' | undefined = possTeam;
+        const next = prev.map((pl) => {
           const isG = pl.role === 'G';
           const base = { x: pl.x, y: pl.y };
-          // Target anchoring by role/team
+
+          // Derive lane index from id (home-F-1, etc.)
+          const parts = pl.id.split('-');
+          const idx = Number(parts[2]) || 1;
+
+          // Lanes for spacing
+          const laneY = isG
+            ? 50
+            : pl.role === 'F'
+              ? ([0, 35, 50, 65][idx] || 50)
+              : ([0, 40, 60][idx] || 50);
+
           let targetX = base.x;
           let targetY = base.y;
 
           if (isG) {
             targetX = pl.team === 'home' ? 8 : 92;
-            // Track puck vertically a bit
             targetY = puck.y + (pl.team === 'home' ? -2 : 2);
           } else {
-            // Skaters gravitate to puck with slight formation offset
-            const towardPuckX = puck.x + (pl.team === 'home' ? -2 : 2);
-            const towardPuckY = puck.y + (pl.role === 'D' ? (pl.team === 'home' ? -6 : 6) : 0);
-            const anchorX = pl.team === 'home' ? 30 : 70;
-            const anchorY = 30 + (pl.role === 'D' ? 40 : 0);
-            const phase = (pl.id.charCodeAt(0) + lineBucket * 13) % 10;
-            const jitterX = (phase - 5) * 0.6;
-            const jitterY = ((phase * 3) % 10 - 5) * 0.6;
+            const offense = possTeamLocal === pl.team;
+            const anchorOffX = pl.team === 'home' ? (pl.role === 'D' ? 45 : 60) : (pl.role === 'D' ? 55 : 40);
+            const anchorDefX = pl.team === 'home' ? (pl.role === 'D' ? 25 : 30) : (pl.role === 'D' ? 75 : 70);
 
-            const offense = possTeam === pl.team;
-            targetX = offense ? (towardPuckX * 0.7 + anchorX * 0.3) : (towardPuckX * 0.4 + anchorX * 0.6);
-            targetY = offense ? (towardPuckY * 0.7 + anchorY * 0.3) : (towardPuckY * 0.4 + anchorY * 0.6);
+            const towardX = puck.x + (pl.team === 'home' ? -1 : 1);
+            const towardY = puck.y;
 
+            targetX = offense ? (towardX * 0.6 + anchorOffX * 0.4) : (towardX * 0.3 + anchorDefX * 0.7);
+            targetY = offense ? (towardY * 0.6 + laneY * 0.4) : (towardY * 0.3 + laneY * 0.7);
+
+            const jitterX = ((idx * 7) % 10 - 5) * 0.3;
+            const jitterY = ((idx * 11) % 10 - 5) * 0.3;
             targetX += jitterX;
             targetY += jitterY;
           }
@@ -317,7 +337,7 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
           const dx = targetX - base.x;
           const dy = targetY - base.y;
           const dist = Math.hypot(dx, dy) || 1;
-          const maxStep = isG ? 0.6 : 1.6; // px in percentage space
+          const maxStep = isG ? 0.6 : 1.4;
           const step = Math.min(maxStep, dist);
           const nx = base.x + (dx / dist) * step;
           const ny = base.y + (dy / dist) * step;
@@ -328,6 +348,26 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
             y: Math.min(90, Math.max(10, ny)),
           };
         });
+
+        // Separation: avoid overlaps
+        const sepR = 6;
+        for (let i = 0; i < next.length; i++) {
+          let ox = 0, oy = 0;
+          for (let j = 0; j < next.length; j++) {
+            if (i === j) continue;
+            const dx = next[i].x - next[j].x;
+            const dy = next[i].y - next[j].y;
+            const d = Math.hypot(dx, dy);
+            if (d > 0 && d < sepR) {
+              const f = (sepR - d) / sepR;
+              ox += (dx / d) * f * 1.2;
+              oy += (dy / d) * f * 1.2;
+            }
+          }
+          next[i].x = Math.min(96, Math.max(4, next[i].x + ox));
+          next[i].y = Math.min(90, Math.max(10, next[i].y + oy));
+        }
+        return next;
       });
     }, 250);
     return () => clearInterval(iv);
@@ -487,10 +527,10 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
           />
 
           <div className="mt-4 flex items-center gap-2">
-            <Button size="sm" onClick={() => setRunning((r) => !r)}>
+            <Button size="sm" onClick={() => setRunning((r) => !r)} className="hover-scale">
               {running ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />} {running ? 'Pause' : 'Resume'}
             </Button>
-            <Button size="sm" variant="secondary" onClick={finishGame}>
+            <Button size="sm" variant="secondary" onClick={finishGame} className="hover-scale">
               <SkipForward className="w-4 h-4 mr-2" /> Skip to Final
             </Button>
             <div className="text-sm text-muted-foreground ml-auto">Progress {percent}%</div>
