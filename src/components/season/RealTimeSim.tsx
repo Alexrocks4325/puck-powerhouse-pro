@@ -75,6 +75,7 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
   const [goalSide, setGoalSide] = useState<'home'|'away'|null>(null);
   const [shotAnim, setShotAnim] = useState<{active:boolean; sx:number; sy:number; ex:number; ey:number; goal:boolean; side:'home'|'away'|null; shooterName?:string}>({active:false, sx:50, sy:50, ex:50, ey:50, goal:false, side:null});
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const hornRef = useRef<HTMLAudioElement | null>(null);
   const playersRef = useRef<SimPlayer[]>([]);
   useEffect(() => { playersRef.current = players; }, [players]);
 
@@ -369,6 +370,8 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
 
           // Celebration overlay and horn
           setGoalSide(shotAnim.side);
+          try { hornRef.current && (hornRef.current.pause(), hornRef.current.currentTime = 0); } catch {}
+          hornRef.current?.play?.().catch(() => {});
           try {
             const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
             if (Ctx) {
@@ -444,6 +447,7 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
 
   return (
     <div className="container mx-auto px-4 pt-20 pb-8">
+      <audio ref={hornRef} src="/sounds/goal-horn.mp3" preload="auto" />
       <div className="mb-4 flex items-center gap-3">
         <Button variant="outline" onClick={onExit}>
           <ArrowLeft className="w-4 h-4 mr-2" /> Back
