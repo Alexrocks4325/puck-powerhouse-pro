@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, SkipForward, ArrowLeft } from "lucide-react";
+import { Play, Pause, SkipForward, ArrowLeft, ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
 import MiniRink from "./MiniRink";
 
 interface SkaterLine {
@@ -59,6 +59,13 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
   const [events, setEvents] = useState<string[]>([]);
   const [puck, setPuck] = useState({ x: 50, y: 50, owner: homeAbbr as string | null });
 
+  // Jump-In mode and visibility
+  const [jumpIn, setJumpIn] = useState(false);
+  const [controls, setControls] = useState({ up: false, down: false, left: false, right: false });
+  const [puckTrail, setPuckTrail] = useState<{ x: number; y: number }[]>([]);
+  const [shootReq, setShootReq] = useState(0);
+  const [passReq, setPassReq] = useState(0);
+
   // Simple "around the league" ticker
   const [ticker, setTicker] = useState(
     () => [
@@ -80,6 +87,35 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
   const lastShotAtRef = useRef(0);
   const lastPassAtRef = useRef(0);
   useEffect(() => { playersRef.current = players; }, [players]);
+
+  // Keyboard controls for Jump-In
+  useEffect(() => {
+    if (!jumpIn) return;
+    const onDown = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if (k === 'w' || k === 'arrowup') setControls(c => ({ ...c, up: true }));
+      if (k === 's' || k === 'arrowdown') setControls(c => ({ ...c, down: true }));
+      if (k === 'a' || k === 'arrowleft') setControls(c => ({ ...c, left: true }));
+      if (k === 'd' || k === 'arrowright') setControls(c => ({ ...c, right: true }));
+      if (k === 'x') setPassReq(n => n + 1);
+      if (k === 'c' || k === ' ') setShootReq(n => n + 1);
+    };
+    const onUp = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if (k === 'w' || k === 'arrowup') setControls(c => ({ ...c, up: false }));
+      if (k === 's' || k === 'arrowdown') setControls(c => ({ ...c, down: false }));
+      if (k === 'a' || k === 'arrowleft') setControls(c => ({ ...c, left: false }));
+      if (k === 'd' || k === 'arrowright') setControls(c => ({ ...c, right: false }));
+    };
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    return () => { window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); };
+  }, [jumpIn]);
+
+  // Puck trail for visibility
+  useEffect(() => {
+    setPuckTrail((t) => [{ x: puck.x, y: puck.y }, ...t].slice(0, 10));
+  }, [puck.x, puck.y]);
 
   const buildInitialPlayers = (): SimPlayer[] => {
     const mk = (team: 'home' | 'away', role: SimPlayer['role'], idx: number, x: number, y: number, label: string | number, name: string): SimPlayer => ({ id: `${team}-${role}-${idx}` , team, role, x, y, label, name });
@@ -177,7 +213,12 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
             const inSlot = Math.abs(shooter.y - goalY) < 12;
             const canShoot = close && (next - lastShotAtRef.current >= 4);
 
-            if (canShoot) {
+            const isHomeControlled = jumpIn && shooter.team === 'home';
+            const wantShoot = isHomeControlled && shootReq > 0 && close;
+            const wantPass = isHomeControlled && passReq > 0;
+
+            if (wantShoot || canShoot) {
+              if (wantShoot) setShootReq(0);
               lastShotAtRef.current = next;
               const isHome = shooter.team === 'home';
               const shooterMap = isHome ? homeSkaters.current : awaySkaters.current;
@@ -202,7 +243,8 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
               const ey = goalY;
               setShotAnim({ active: true, sx: shooter.x, sy: shooter.y, ex, ey, goal: isGoal, side: shooter.team, shooterName: shooter.name });
               pushEvent(`${isGoal ? (isHome ? homeAbbr : awayAbbr) + ' GOAL — ' : (isHome ? homeAbbr : awayAbbr) + ' shot — '}${shooter.name}`);
-            } else if (next - lastPassAtRef.current >= 4) {
+            } else if (wantPass || next - lastPassAtRef.current >= 4) {
+              if (wantPass) setPassReq(0);
               // Smart pass to move up-ice
               const mates = playersRef.current.filter(p => p.team === shooter.team && p.role !== 'G' && p.id !== shooter.id);
               const ahead = mates
@@ -354,8 +396,17 @@ export default function RealTimeSim({ homeName, homeAbbr, awayName, awayAbbr, pe
           const carryBoost = (pl.id === possessorId) ? 0.5 : 0;
           const maxStep = roleSpeed + carryBoost;
           const step = Math.min(maxStep, dist);
-          const nx = base.x + (dx / dist) * step;
-          const ny = base.y + (dy / dist) * step;
+          let nx = base.x + (dx / dist) * step;
+          let ny = base.y + (dy / dist) * step;
+
+          // Jump-In: direct control of home puck carrier
+          if (jumpIn && pl.id === possessorId && pl.team === 'home') {
+            const vx = (controls.right ? 1 : 0) - (controls.left ? 1 : 0);
+            const vy = (controls.down ? 1 : 0) - (controls.up ? 1 : 0);
+            const speed = 2.8;
+            nx = base.x + vx * speed;
+            ny = base.y + vy * speed;
+          }
 
           return {
             ...pl,

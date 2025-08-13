@@ -16,12 +16,13 @@ export interface MiniRinkPlayer {
 interface MiniRinkProps {
   players: MiniRinkPlayer[];
   puck: { x: number; y: number };
+  puckTrail?: { x: number; y: number }[];
   goalSide?: "home" | "away" | null;
   className?: string;
 }
 
 // A responsive 2:1 rink with basic lines; players & puck are absolutely positioned
-export default function MiniRink({ players, puck, className, goalSide }: MiniRinkProps) {
+export default function MiniRink({ players, puck, puckTrail, className, goalSide }: MiniRinkProps) {
   return (
     <div
       className={cn(
@@ -60,9 +61,19 @@ export default function MiniRink({ players, puck, className, goalSide }: MiniRin
         />
       )}
 
+      {/* Puck trail for visibility */}
+      {puckTrail?.map((pt, i) => (
+        <div
+          key={`trail-${i}`}
+          className="absolute w-2.5 h-2.5 rounded-full bg-foreground/60"
+          style={{ left: `${pt.x}%`, top: `${pt.y}%`, transform: 'translate(-50%, -50%)', opacity: Math.max(0.15, 0.6 - i * 0.08) }}
+          aria-hidden
+        />
+      ))}
+
       {/* Puck */}
       <div
-        className="absolute w-2.5 h-2.5 rounded-full bg-foreground shadow"
+        className="absolute w-3 h-3 rounded-full bg-foreground ring-2 ring-primary border border-background shadow"
         style={{ left: `${puck.x}%`, top: `${puck.y}%`, transform: "translate(-50%, -50%)" }}
         aria-label="Puck"
       />
