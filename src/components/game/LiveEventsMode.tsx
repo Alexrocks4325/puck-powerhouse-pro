@@ -66,6 +66,12 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
     ]
   });
 
+  // Jump-In and simulation state
+  const [jumpIn, setJumpIn] = useState(false);
+  const [controls, setControls] = useState({ up: false, down: false, left: false, right: false });
+  const [puckTrail, setPuckTrail] = useState<{ x: number; y: number }[]>([]);
+  const [puckCarrier, setPuckCarrier] = useState<{ team: 'player' | 'opponent'; id: number } | null>(null);
+
   // Game timer
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -103,35 +109,60 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
   };
 
   const handleShoot = () => {
-    const accuracy = Math.random();
+    if (possession !== 'player') return;
+    // Only allow quality shots from the slot/in-close
+    const inClose = puckPosition.x > 80 && Math.abs(puckPosition.y - 50) < 12;
+    if (!inClose) {
+      addGameEvent('📍 Too far out — drive the net for a better look.');
+      return;
+    }
+
     const playerSkill = playerData.team.length > 0 ? 
       playerData.team.reduce((sum, p) => sum + p.overall, 0) / playerData.team.length / 100 : 0.7;
-    
+
     setShots(prev => ({ ...prev, player: prev.player + 1 }));
-    
-    if (accuracy < playerSkill * 0.25) { // Goal chance
+
+    // Quick shot animation: puck darts to goal mouth
+    setPuckPosition(prev => ({ x: Math.min(96, prev.x + 8), y: prev.y + (Math.random() - 0.5) * 6 }));
+
+    const goalChance = Math.min(0.55, 0.25 + playerSkill * 0.35); // better in-tight
+    if (Math.random() < goalChance) {
       setScore(prev => ({ ...prev, player: prev.player + 1 }));
       setPossession('opponent');
-      addGameEvent("⚡ GOAL! Amazing shot finds the back of the net!");
-      
-      // Reward coins for scoring
+      addGameEvent('⚡ GOAL! Quick release beats the goalie!');
       setPlayerData(prev => ({ ...prev, coins: prev.coins + 50 }));
-    } else if (accuracy < playerSkill * 0.5) { // Save
-      addGameEvent("🥅 Great save by the goalie!");
+      const carrier = players.opponent[0];
+      setPuckCarrier({ team: 'opponent', id: carrier.id });
+    } else {
+      addGameEvent('🥅 Goalie gets a piece of it!');
       setPossession('opponent');
-    } else { // Miss
-      addGameEvent("📍 Shot goes wide of the net");
-      setPossession('opponent');
+      const carrier = players.opponent[0];
+      setPuckCarrier({ team: 'opponent', id: carrier.id });
     }
   };
 
   const handlePass = () => {
-    const success = Math.random() < 0.8;
+    if (possession !== 'player') return;
+    // Mostly successful passes with rare interceptions
+    const success = Math.random() < 0.85;
     if (success) {
-      addGameEvent("✅ Successful pass, maintaining possession");
+      const team = players.yourTeam;
+      const currentId = puckCarrier?.id ?? -1;
+      const options = team.filter(p => p.id !== currentId);
+      const receiver = options[Math.floor(Math.random() * options.length)] ?? team[0];
+      addGameEvent("✅ Tape-to-tape pass! You keep possession.");
+      setPuckCarrier({ team: 'player', id: receiver.id });
+      setPossession('player');
     } else {
-      addGameEvent("❌ Pass intercepted!");
+      addGameEvent("❌ Picked off! Turnover at the blue line.");
       setPossession('opponent');
+      // Give the puck to the nearest opponent
+      const opp = players.opponent.reduce((best, p) => {
+        const bd = Math.hypot(p.x - puckPosition.x, p.y - puckPosition.y);
+        if (!best) return { p, d: bd };
+        return bd < best.d ? { p, d: bd } : best;
+      }, null as null | { p: typeof players.opponent[number]; d: number });
+      if (opp) setPuckCarrier({ team: 'opponent', id: opp.p.id });
     }
   };
 
@@ -139,10 +170,16 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
     if (possession === 'opponent') {
       const success = Math.random() < 0.6;
       if (success) {
-        addGameEvent("🛡️ Great defensive play! Steal the puck!");
+        addGameEvent("🛡️ Great defensive play! You take the puck.");
         setPossession('player');
+        const nearest = players.yourTeam.reduce((best, p) => {
+          const d = Math.hypot(p.x - puckPosition.x, p.y - puckPosition.y);
+          if (!best) return { p, d };
+          return d < best.d ? { p, d } : best;
+        }, null as null | { p: typeof players.yourTeam[number]; d: number });
+        if (nearest) setPuckCarrier({ team: 'player', id: nearest.p.id });
       } else {
-        addGameEvent("⚠️ Opponent maintains possession");
+        addGameEvent("⚠️ Couldn’t strip it. Stay tight!");
       }
     }
   };
@@ -151,31 +188,144 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
     setGameEvents(prev => [event, ...prev.slice(0, 4)]);
   };
 
-  // AI opponent actions
+  // AI opponent actions (only shoot when in-close)
   useEffect(() => {
     if (gameState === 'playing' && possession === 'opponent') {
       const timer = setTimeout(() => {
-        const action = Math.random();
-        if (action < 0.3) { // Opponent shoots
+        const inClose = puckPosition.x < 20 && Math.abs(puckPosition.y - 50) < 12;
+        if (inClose && Math.random() < 0.45) { // Attempt a quality chance
           setShots(prev => ({ ...prev, opponent: prev.opponent + 1 }));
-          if (Math.random() < 0.15) { // Goal chance
+          const goalChance = 0.28; // Realistic but dangerous in-tight
+          if (Math.random() < goalChance) {
             setScore(prev => ({ ...prev, opponent: prev.opponent + 1 }));
-            addGameEvent("🔥 Opponent scores!");
-          } else {
-            addGameEvent("🥅 Your goalie makes the save!");
-          }
-          setPossession('player');
-        } else { // Opponent passes/maintains possession
-          if (Math.random() < 0.4) {
+            addGameEvent("🔥 Opponent buries it in-tight!");
             setPossession('player');
-            addGameEvent("🎯 Intercepted the pass!");
+            const carrier = players.yourTeam[0];
+            setPuckCarrier({ team: 'player', id: carrier.id });
+          } else {
+            addGameEvent("🥅 Big save by your goalie!");
+            setPossession('player');
+            const carrier = players.yourTeam[0];
+            setPuckCarrier({ team: 'player', id: carrier.id });
+          }
+        } else {
+          // Cycle/pass to another opponent skater to get closer
+          const options = players.opponent.slice(0, 5); // exclude goalie
+          const receiver = options[Math.floor(Math.random() * options.length)];
+          setPuckCarrier({ team: 'opponent', id: receiver.id });
+          if (puckPosition.x > 18) {
+            // Nudge puck toward your net
+            setPuckPosition(prev => ({ x: Math.max(prev.x - 6, 8), y: prev.y + (Math.random() - 0.5) * 6 }));
           }
         }
-      }, 2000 + Math.random() * 3000);
-      
+      }, 900 + Math.random() * 800);
+
       return () => clearTimeout(timer);
     }
-  }, [gameState, possession]);
+  }, [gameState, possession, puckPosition, players]);
+
+  // Keyboard controls for Jump-In
+  useEffect(() => {
+    if (!jumpIn) return;
+    const down = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if (k === 'arrowup' || k === 'w') setControls(c => ({ ...c, up: true }));
+      if (k === 'arrowdown' || k === 's') setControls(c => ({ ...c, down: true }));
+      if (k === 'arrowleft' || k === 'a') setControls(c => ({ ...c, left: true }));
+      if (k === 'arrowright' || k === 'd') setControls(c => ({ ...c, right: true }));
+      if (k === 'x') handlePass();
+      if (k === 'c' || k === ' ') handleShoot();
+    };
+    const up = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if (k === 'arrowup' || k === 'w') setControls(c => ({ ...c, up: false }));
+      if (k === 'arrowdown' || k === 's') setControls(c => ({ ...c, down: false }));
+      if (k === 'arrowleft' || k === 'a') setControls(c => ({ ...c, left: false }));
+      if (k === 'arrowright' || k === 'd') setControls(c => ({ ...c, right: false }));
+    };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, [jumpIn]);
+
+  // Skating, spacing, and pace simulation
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    const id = setInterval(() => {
+      setPlayers(prev => {
+        const next = {
+          yourTeam: prev.yourTeam.map(p => ({ ...p })),
+          opponent: prev.opponent.map(p => ({ ...p }))
+        };
+
+        const stepTeam = (teamKey: 'yourTeam' | 'opponent', attackDir: number) => {
+          const team = next[teamKey];
+          const laneYs = [35, 50, 65, 42, 58, 50];
+          team.forEach((p, idx) => {
+            const isGoalie = idx === 5;
+            const targetY = laneYs[idx] ?? 50;
+            let targetX = isGoalie
+              ? (teamKey === 'yourTeam' ? 12 : 88)
+              : Math.max(10, Math.min(90, puckPosition.x + attackDir * (idx < 3 ? (10 + idx * 3) : -10 + (idx - 3) * 2)));
+
+            // Jump-In: control the puck carrier on your team
+            if (
+              jumpIn &&
+              teamKey === 'yourTeam' &&
+              puckCarrier?.team === 'player' &&
+              puckCarrier.id === p.id
+            ) {
+              const speed = 1.6;
+              const dx = (controls.right ? 1 : 0) - (controls.left ? 1 : 0);
+              const dy = (controls.down ? 1 : 0) - (controls.up ? 1 : 0);
+              p.x = Math.max(5, Math.min(95, p.x + dx * speed));
+              p.y = Math.max(5, Math.min(95, p.y + dy * speed));
+            } else {
+              // Separation to reduce clustering
+              let sepX = 0, sepY = 0;
+              team.forEach(o => {
+                if (o.id === p.id) return;
+                const dx = p.x - o.x;
+                const dy = p.y - o.y;
+                const d = Math.hypot(dx, dy);
+                if (d < 6) {
+                  const f = (6 - d) / 6;
+                  sepX += (dx / (d || 1)) * f * 2.5;
+                  sepY += (dy / (d || 1)) * f * 2.5;
+                }
+              });
+              p.x = Math.max(5, Math.min(95, p.x + (targetX - p.x) * 0.06 + sepX));
+              p.y = Math.max(5, Math.min(95, p.y + (targetY - p.y) * 0.06 + sepY));
+            }
+          });
+        };
+
+        stepTeam('yourTeam', +1);
+        stepTeam('opponent', -1);
+        return next;
+      });
+    }, 50); // faster, smoother pace
+
+    return () => clearInterval(id);
+  }, [gameState, jumpIn, controls, puckPosition, puckCarrier]);
+
+  // Keep puck attached to carrier for clarity
+  useEffect(() => {
+    if (!puckCarrier) return;
+    const teamArr = puckCarrier.team === 'player' ? players.yourTeam : players.opponent;
+    const carrier = teamArr.find(p => p.id === puckCarrier.id);
+    if (carrier) {
+      setPuckPosition({ x: carrier.x, y: carrier.y });
+    }
+  }, [players, puckCarrier]);
+
+  // Trail for puck visibility
+  useEffect(() => {
+    setPuckTrail(t => [{ ...puckPosition }, ...t].slice(0, 8));
+  }, [puckPosition]);
 
   const startGame = () => {
     setGameState('playing');
@@ -185,6 +335,10 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
     setShots({ player: 0, opponent: 0 });
     setPossession('player');
     setGameEvents([]);
+    setPuckTrail([]);
+    const carrier = players.yourTeam[0];
+    setPuckCarrier({ team: 'player', id: carrier.id });
+    setPuckPosition({ x: carrier.x, y: carrier.y });
     addGameEvent("🏒 Game begins! You have possession!");
   };
 
@@ -371,9 +525,18 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
                   />
                 ))}
                 
+                {/* Puck trail for visibility */}
+                {puckTrail.map((p, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-2 h-2 bg-black/60 rounded-full transform -translate-x-1/2 -translate-y-1/2"
+                    style={{ left: `${p.x}%`, top: `${p.y}%`, opacity: Math.max(0.15, 0.6 - i * 0.07) }}
+                  />
+                ))}
+
                 {/* Puck */}
                 <div
-                  className="absolute w-2 h-2 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg"
+                  className="absolute w-4 h-4 bg-black rounded-full border-2 border-white ring-2 ring-yellow-300 transform -translate-x-1/2 -translate-y-1/2 shadow-[0_0_12px_rgba(255,215,0,0.9)]"
                   style={{
                     left: `${puckPosition.x}%`,
                     top: `${puckPosition.y}%`,
@@ -383,6 +546,49 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
                 {/* Goal Areas */}
                 <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-16 border-2 border-hockey-red rounded opacity-60" />
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-16 border-2 border-ice-blue rounded opacity-60" />
+
+                {/* Jump-In on-screen controls */}
+                {jumpIn && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute bottom-2 left-2 flex gap-2 pointer-events-auto">
+                      <Button size="icon" variant="outline"
+                        onMouseDown={() => setControls(c => ({ ...c, left: true }))}
+                        onMouseUp={() => setControls(c => ({ ...c, left: false }))}
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button size="icon" variant="outline"
+                          onMouseDown={() => setControls(c => ({ ...c, up: true }))}
+                          onMouseUp={() => setControls(c => ({ ...c, up: false }))}
+                        >
+                          <ArrowUp className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="outline"
+                          onMouseDown={() => setControls(c => ({ ...c, down: true }))}
+                          onMouseUp={() => setControls(c => ({ ...c, down: false }))}
+                        >
+                          <ArrowDown className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <Button size="icon" variant="outline"
+                        onMouseDown={() => setControls(c => ({ ...c, right: true }))}
+                        onMouseUp={() => setControls(c => ({ ...c, right: false }))}
+                      >
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="absolute bottom-2 right-2 flex gap-2 pointer-events-auto">
+                      <Button onClick={handlePass} variant="outline">Pass (X)</Button>
+                      <Button onClick={handleShoot} className="bg-hockey-red hover:bg-hockey-red/80 text-white">Shoot (C/Space)</Button>
+                    </div>
+
+                    <div className="absolute bottom-20 right-2 text-xs text-foreground/80 pointer-events-none">
+                      WASD/Arrows to move
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Action Buttons */}
@@ -524,6 +730,12 @@ const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsMod
               )}
               
               <div className="flex gap-2">
+                <Button 
+                  onClick={() => setJumpIn(j => !j)}
+                  className="flex-1"
+                >
+                  {jumpIn ? 'Exit Jump-In' : 'Jump-In'}
+                </Button>
                 <Button 
                   onClick={pauseGame}
                   variant="outline"
