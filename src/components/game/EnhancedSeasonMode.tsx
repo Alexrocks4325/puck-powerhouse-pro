@@ -32,7 +32,7 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
   const [seasonProgress, setSeasonProgress] = useState(0); // Always start from 0
   const [playoffProgress, setPlayoffProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentMode, setCurrentMode] = useState<'season' | 'playoffs'>('season');
+  const [currentMode, setCurrentMode] = useState<'season' | 'playoffs' | 'league-stats' | 'standings' | 'scoreboard' | 'my-team'>('season');
   const [stanleyCupWins, setStanleyCupWins] = useState(playerData.seasonData?.cupWins || 0);
   const [showStanleyCupAnimation, setShowStanleyCupAnimation] = useState(false);
   const [playoffSeries, setPlayoffSeries] = useState({ round: 1, wins: 0, losses: 0, games: [] });
@@ -350,12 +350,16 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
           </div>
         </Card>
 
-        <Tabs value={currentMode} onValueChange={(value) => setCurrentMode(value as 'season' | 'playoffs')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="season">Regular Season</TabsTrigger>
+        <Tabs value={currentMode} onValueChange={(value) => setCurrentMode(value as 'season' | 'playoffs' | 'league-stats' | 'standings' | 'scoreboard' | 'my-team')} className="w-full">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
+            <TabsTrigger value="season">Season</TabsTrigger>
             <TabsTrigger value="playoffs" disabled={currentGameNumber < 16}>
-              Stanley Cup Playoffs {currentGameNumber < 16 && <Badge className="ml-2 text-xs">Locked</Badge>}
+              Playoffs {currentGameNumber < 16 && <Badge className="ml-2 text-xs">Locked</Badge>}
             </TabsTrigger>
+            <TabsTrigger value="league-stats">League Stats</TabsTrigger>
+            <TabsTrigger value="standings">Standings</TabsTrigger>
+            <TabsTrigger value="scoreboard">Scoreboard</TabsTrigger>
+            <TabsTrigger value="my-team">My Team</TabsTrigger>
           </TabsList>
 
           <TabsContent value="season" className="space-y-6">
@@ -463,6 +467,58 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
                 </Card>
               )}
             </Card>
+          </TabsContent>
+
+          <TabsContent value="league-stats" className="space-y-6">
+            <PlayerLeaderboards 
+              playerLeaders={leagueData.leaders.playerLeaders}
+              goalieLeaders={leagueData.leaders.goalieLeaders}
+            />
+          </TabsContent>
+
+          <TabsContent value="standings" className="space-y-6">
+            <EnhancedLeagueStandings standings={leagueData.standings} />
+          </TabsContent>
+
+          <TabsContent value="scoreboard" className="space-y-6">
+            <LeagueScoreboard 
+              recentGames={leagueData.recentGames}
+              todaysGames={leagueData.todaysGames}
+            />
+          </TabsContent>
+
+          <TabsContent value="my-team" className="space-y-6">
+            <TeamComparison 
+              userTeam={leagueData.standings[0] || { 
+                team: "Your Team", 
+                wins: 0, 
+                losses: 0, 
+                otLosses: 0, 
+                points: 0, 
+                gamesPlayed: 0, 
+                goalsFor: 0, 
+                goalsAgainst: 0, 
+                goalDifferential: 0, 
+                powerPlayPercentage: 0.20, 
+                penaltyKillPercentage: 0.82, 
+                homeRecord: { wins: 0, losses: 0, ot: 0 }, 
+                awayRecord: { wins: 0, losses: 0, ot: 0 }, 
+                streak: { type: 'W', count: 0 }, 
+                lastTenRecord: { wins: 0, losses: 0, ot: 0 }, 
+                divisionRank: 1, 
+                conferenceRank: 1 
+              }}
+              leagueAverage={{
+                points: leagueData.standings.length > 0 ? leagueData.standings.reduce((sum, t) => sum + t.points, 0) / leagueData.standings.length : 82,
+                goalsFor: leagueData.standings.length > 0 ? leagueData.standings.reduce((sum, t) => sum + (t.goalsFor/t.gamesPlayed), 0) / leagueData.standings.length : 3.1,
+                goalsAgainst: leagueData.standings.length > 0 ? leagueData.standings.reduce((sum, t) => sum + (t.goalsAgainst/t.gamesPlayed), 0) / leagueData.standings.length : 3.1,
+                powerPlayPercentage: 0.20,
+                penaltyKillPercentage: 0.82,
+                wins: leagueData.standings.length > 0 ? leagueData.standings.reduce((sum, t) => sum + t.wins, 0) / leagueData.standings.length : 41
+              }}
+              leagueRank={Math.floor(Math.random() * 16) + 1}
+              totalTeams={32}
+            />
           </TabsContent>
         </Tabs>
       </div>
