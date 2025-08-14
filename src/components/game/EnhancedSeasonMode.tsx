@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,11 @@ import GameHeader from "./GameHeader";
 import StanleyCupAnimation from "./StanleyCupAnimation";
 import SeasonStatsTracker from "./SeasonStatsTracker";
 import PlayoffBracket from "./PlayoffBracket";
+import LeagueScoreboard from "@/components/league/LeagueScoreboard";
+import EnhancedLeagueStandings from "@/components/league/EnhancedLeagueStandings";
+import PlayerLeaderboards from "@/components/league/PlayerLeaderboards";
+import TeamComparison from "@/components/league/TeamComparison";
+import { globalLeague } from "@/utils/leagueSimulation";
 import { Trophy, Star, Coins, Calendar, Play, Crown, Target, Zap, ArrowLeft, BarChart3 } from "lucide-react";
 
 interface EnhancedSeasonModeProps {
@@ -34,6 +39,26 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
   const [gameStats, setGameStats] = useState([]);
   const [currentGameNumber, setCurrentGameNumber] = useState(0); // Start from game 0
   const [playoffBracket, setPlayoffBracket] = useState(generateInitialBracket());
+  const [leagueData, setLeagueData] = useState({
+    standings: globalLeague.getStandings(),
+    leaders: globalLeague.getLeagueLeaders(),
+    recentGames: globalLeague.getRecentGames(10),
+    todaysGames: []
+  });
+
+  // Simulate league games when season progresses
+  useEffect(() => {
+    if (currentGameNumber > 0 && currentGameNumber % 5 === 0) {
+      // Simulate league games every 5 user games
+      const newGames = globalLeague.simulateGameDay(8);
+      setLeagueData({
+        standings: globalLeague.getStandings(),
+        leaders: globalLeague.getLeagueLeaders(),
+        recentGames: globalLeague.getRecentGames(10),
+        todaysGames: newGames
+      });
+    }
+  }, [currentGameNumber]);
 
   // Calculate team strength for dynamic difficulty  
   const calculateTeamStrength = () => {
