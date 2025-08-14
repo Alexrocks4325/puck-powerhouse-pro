@@ -9,8 +9,6 @@ import { Trophy, Star, Coins, Calendar, Play, Crown, Target, Zap } from "lucide-
 import GameSetup from "@/components/season/GameSetup";
 import ResultModal from "@/components/season/ResultModal";
 import { useToast } from "@/hooks/use-toast";
-import RealTimeSim from "@/components/season/RealTimeSim";
-import { nhlPlayerDatabase } from "@/data/nhlPlayerDatabase";
 interface SeasonModeProps {
   playerData: {
     coins: number;
@@ -30,9 +28,8 @@ const SeasonMode = ({ playerData, setPlayerData, onNavigate }: SeasonModeProps) 
   const [stanleyCupWins, setStanleyCupWins] = useState(0);
   const [view, setView] = useState<'hub' | 'setup' | 'live'>("hub");
   const [selectedOpponent, setSelectedOpponent] = useState<any | null>(null);
-const [resultData, setResultData] = useState<any | null>(null);
-const [liveConfig, setLiveConfig] = useState<any | null>(null);
-const { toast } = useToast();
+  const [resultData, setResultData] = useState<any | null>(null);
+  const { toast } = useToast();
   // Calculate team strength for dynamic difficulty
   const calculateTeamStrength = () => {
     if (playerData.team.length === 0) return 75;
@@ -193,17 +190,9 @@ const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = 
     const goalieAPlayer = roster.filter((p:any)=> p.position === 'G').slice().sort((a:any,b:any)=> (b.overall??0)-(a.overall??0))[0];
     const goalieA = { name: goalieAPlayer?.name || 'Your Goalie', sa: teamB.sog, ga: oppGoals, sv: Math.max(0, teamB.sog - oppGoals), svPct: teamB.sog ? ((teamB.sog - oppGoals) / teamB.sog) * 100 : 100 };
 
-    // Opponent roster from database if available
-    const abbr = (selectedOpponent?.abbreviation || seasonTeams.find(t => t.name === teamName)?.abbreviation || (teamName.split(' ').map(w=>w[0]).join('').toUpperCase()) || 'OPP');
-    const oppDb = (nhlPlayerDatabase || []).filter((p: any) => p.team === abbr);
-    const skatersB = (oppDb.length
-      ? oppDb.filter((p: any) => p.position !== 'G')
-          .slice()
-          .sort((a: any, b: any) => (b.overall ?? 0) - (a.overall ?? 0))
-          .slice(0, 12)
-          .map((p: any) => ({ name: p.name, position: p.position || 'F', g: 0, a: 0, sog: 1 + Math.round(Math.random()*4), hits: Math.round(Math.random()*3), toi: 10 + Math.round(Math.random()*10) }))
-      : Array.from({length:12}).map((_,i)=> ({ name: `${abbr} P${i+1}`, position: i%6<3 ? 'F' : 'D', g: 0, a: 0, sog: 1 + Math.round(Math.random()*4), hits: Math.round(Math.random()*3), toi: 10 + Math.round(Math.random()*10) }))
-    );
+    // Opponent mock skaters
+    const abbr = (selectedOpponent?.abbreviation || (teamName.split(' ').map(w=>w[0]).join('').toUpperCase()) || 'OPP');
+    const skatersB = Array.from({length:12}).map((_,i)=> ({ name: `${abbr} P${i+1}`, position: i%6<3 ? 'F' : 'D', g: 0, a: 0, sog: 1 + Math.round(Math.random()*4), hits: Math.round(Math.random()*3), toi: 10 + Math.round(Math.random()*10) }));
     for (let i=0;i<oppGoals;i++) {
       if (skatersB.length) {
         const sIdx = Math.floor(Math.random()*skatersB.length);
@@ -213,8 +202,7 @@ const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = 
         if (Math.random() < 0.5 && assistPool.length > 1) assistPool[Math.floor(Math.random()*assistPool.length)].a += 1;
       }
     }
-    const oppGoalie = oppDb.filter((p: any) => p.position === 'G').slice().sort((a: any, b: any) => (b.overall ?? 0) - (a.overall ?? 0))[0];
-    const goalieB = { name: oppGoalie?.name || `${abbr} G1`, sa: teamA.sog, ga: yourGoals, sv: Math.max(0, teamA.sog - yourGoals), svPct: teamA.sog ? ((teamA.sog - yourGoals) / teamA.sog) * 100 : 100 };
+    const goalieB = { name: `${abbr} G1`, sa: teamA.sog, ga: yourGoals, sv: Math.max(0, teamA.sog - yourGoals), svPct: teamA.sog ? ((teamA.sog - yourGoals) / teamA.sog) * 100 : 100 };
 
     setResultData({
       opponentName: teamName,
@@ -420,45 +408,6 @@ const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = 
         </div>
       </Card>
     </>
-  ) : view === 'live' && selectedOpponent ? (
-    <RealTimeSim
-      homeName={"Your Team"}
-      homeAbbr={playerData.team?.[0]?.team || "YOU"}
-      awayName={selectedOpponent.name}
-      awayAbbr={selectedOpponent.abbreviation}
-      periodLength={liveConfig?.periodLength || 5}
-      mode={liveConfig?.mode || 'realtime'}
-      homeRoster={playerData.team}
-      awayRoster={nhlPlayerDatabase.filter((p:any)=> p.team === selectedOpponent.abbreviation)}
-      onExit={() => setView('setup')}
-      onFinish={(result) => {
-        setResultData(result);
-        // Award progress and coins similar to instant sim
-        const opponentDifficulty = selectedOpponent.difficulty;
-        const strengthDiff = teamStrength - opponentDifficulty;
-        const baseWinChance = 0.5 + (strengthDiff * 0.015);
-        const isPlayoff = currentMode === 'playoffs';
-        const baseCoins = isPlayoff ? 200 : 120;
-        const difficultyBonus = Math.floor(opponentDifficulty / 3);
-        const winBonus = result.isWin ? (isPlayoff ? 200 : 120) : 0;
-        const strengthBonus = Math.floor(teamStrength / 10);
-        const randomBonus = Math.floor(Math.random() * (isPlayoff ? 100 : 50));
-        const coinsEarned = baseCoins + difficultyBonus + winBonus + strengthBonus + randomBonus;
-        const packReward = result.isWin ? (Math.random() < (isPlayoff ? 0.5 : 0.25) ? 1 : 0) : 0;
-        setPlayerData(prev => ({ ...prev, coins: prev.coins + coinsEarned, packs: prev.packs + packReward }));
-        if (currentMode === 'season') {
-          setSeasonProgress(prev => Math.min(100, prev + (100 / seasonTeams.length)));
-        } else {
-          setPlayoffProgress(prev => Math.min(100, prev + 25));
-        }
-        if (currentMode === 'playoffs' && playoffProgress >= 75 && result.isWin) {
-          setStanleyCupWins(prev => prev + 1);
-          setPlayerData(prev => ({ ...prev, coins: prev.coins + 2000, packs: prev.packs + 5 }));
-          toast({ title: "Stanley Cup Champions!", description: "Bonus 2000 coins + 5 packs awarded." });
-        }
-        setView('hub');
-      }}
-    />
   ) : (
     <GameSetup
       roster={playerData.team}
@@ -468,10 +417,6 @@ const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = 
         if (!selectedOpponent) return;
         simulateGame(selectedOpponent.difficulty, selectedOpponent.name, currentMode === 'playoffs');
         setView('hub');
-      }}
-      onSimulateInteractive={(opts) => {
-        setLiveConfig(opts);
-        setView('live');
       }}
     />
   )}

@@ -13,7 +13,7 @@ interface GameSetupProps {
   opponent: { name: string; difficulty: number } | null;
   onBack: () => void;
   onSimulateFull: (opts: { difficulty: string; periodLength: number; venue: string; jerseys: string }) => void;
-  onSimulateInteractive?: (opts: { mode: 'realtime' | 'period'; periodLength: number }) => void;
+  onSimulateInteractive?: () => void; // placeholder for future step
 }
 
 const difficulties = ["Rookie", "Pro", "All-Star", "Superstar"] as const;
@@ -145,21 +145,10 @@ export default function GameSetup({ roster, opponent, onBack, onSimulateFull, on
 
           <div className="mt-5 grid gap-2">
             <Button onClick={handleFull} className="btn-primary">
-              <Play className="w-4 h-4 mr-2" /> Full Game Simulation (Instant)
+              <Play className="w-4 h-4 mr-2" /> Full Game Simulation
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() => onSimulateInteractive?.({ mode: 'realtime', periodLength })}
-              disabled={!isLegal}
-            >
-              Real-Time Full Game Simulation
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => onSimulateInteractive?.({ mode: 'period', periodLength })}
-              disabled={!isLegal}
-            >
-              Simulate One Period
+            <Button variant="secondary" onClick={onSimulateInteractive} disabled>
+              Interactive Period Simulation (soon)
             </Button>
           </div>
         </Card>
