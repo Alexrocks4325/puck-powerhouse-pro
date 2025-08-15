@@ -5,9 +5,10 @@ import { TeamStandings } from "@/utils/leagueSimulation";
 
 interface EnhancedLeagueStandingsProps {
   standings: TeamStandings[];
+  userTeam?: string;
 }
 
-const EnhancedLeagueStandings = ({ standings }: EnhancedLeagueStandingsProps) => {
+const EnhancedLeagueStandings = ({ standings, userTeam }: EnhancedLeagueStandingsProps) => {
   // NHL Divisions and Conferences
   const divisions = {
     atlantic: ['BOS', 'TOR', 'FLA', 'TBL', 'BUF', 'OTT', 'DET', 'MTL'],
@@ -59,7 +60,9 @@ const EnhancedLeagueStandings = ({ standings }: EnhancedLeagueStandingsProps) =>
           )}
           
           <div className={showRank ? "col-span-2" : "col-span-3"}>
-            <div className="font-medium">{team.team}</div>
+            <div className="font-medium">
+              {team.team === userTeam ? `(${team.team})` : team.team}
+            </div>
             <div className="text-xs text-muted-foreground flex items-center space-x-1">
               <span className={`w-2 h-2 rounded-full ${team.streak.type === 'W' ? 'bg-green-500' : team.streak.type === 'L' ? 'bg-red-500' : 'bg-yellow-500'}`}></span>
               <span>{team.streak.type}{team.streak.count}</span>

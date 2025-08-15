@@ -4,16 +4,17 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import GameHeader from "./GameHeader";
-import StanleyCupAnimation from "./StanleyCupAnimation";
-import SeasonStatsTracker from "./SeasonStatsTracker";
-import PlayoffBracket from "./PlayoffBracket";
+import { Trophy, Star, Coins, Calendar, Play, Crown, Target, Zap, TrendingUp, Users, Award, BarChart3 } from "lucide-react";
+import { globalLeague } from "@/utils/leagueSimulation";
+import { useToast } from "@/hooks/use-toast";
 import LeagueScoreboard from "@/components/league/LeagueScoreboard";
 import EnhancedLeagueStandings from "@/components/league/EnhancedLeagueStandings";
 import PlayerLeaderboards from "@/components/league/PlayerLeaderboards";
 import TeamComparison from "@/components/league/TeamComparison";
-import { globalLeague } from "@/utils/leagueSimulation";
-import { Trophy, Star, Coins, Calendar, Play, Crown, Target, Zap, ArrowLeft, BarChart3 } from "lucide-react";
+import GameSetup from "@/components/season/GameSetup";
+import ResultModal from "@/components/season/ResultModal";
 
 interface EnhancedSeasonModeProps {
   playerData: {
@@ -21,509 +22,583 @@ interface EnhancedSeasonModeProps {
     level: number;
     team: any[];
     packs: number;
-    playerStats?: any;
-    seasonData?: any;
   };
   setPlayerData: (data: any) => void;
   onNavigate: (screen: 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues') => void;
 }
 
-const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedSeasonModeProps) => {
-  const [seasonProgress, setSeasonProgress] = useState(0); // Always start from 0
+export default function EnhancedSeasonMode({ playerData, setPlayerData, onNavigate }: EnhancedSeasonModeProps) {
+  const [seasonProgress, setSeasonProgress] = useState(0);
   const [playoffProgress, setPlayoffProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentMode, setCurrentMode] = useState<'season' | 'playoffs' | 'league-stats' | 'standings' | 'scoreboard' | 'my-team'>('season');
-  const [stanleyCupWins, setStanleyCupWins] = useState(playerData.seasonData?.cupWins || 0);
-  const [showStanleyCupAnimation, setShowStanleyCupAnimation] = useState(false);
-  const [playoffSeries, setPlayoffSeries] = useState({ round: 1, wins: 0, losses: 0, games: [] });
-  const [gameStats, setGameStats] = useState([]);
-  const [currentGameNumber, setCurrentGameNumber] = useState(0); // Start from game 0
-  const [playoffBracket, setPlayoffBracket] = useState(generateInitialBracket());
+  const [currentMode, setCurrentMode] = useState<'season' | 'playoffs'>('season');
+  const [stanleyCupWins, setStanleyCupWins] = useState(0);
+  const [view, setView] = useState<'hub' | 'setup' | 'live'>("hub");
+  const [selectedOpponent, setSelectedOpponent] = useState<any | null>(null);
+  const [resultData, setResultData] = useState<any | null>(null);
+  const { toast } = useToast();
+
   const [leagueData, setLeagueData] = useState({
     standings: globalLeague.getStandings(),
     leaders: globalLeague.getLeagueLeaders(),
     recentGames: globalLeague.getRecentGames(10),
-    todaysGames: []
+    todaysGames: globalLeague.simulateGameDay(6)
   });
 
-  // Simulate league games when season progresses
-  useEffect(() => {
-    if (currentGameNumber > 0 && currentGameNumber % 5 === 0) {
-      // Simulate league games every 5 user games
-      const newGames = globalLeague.simulateGameDay(8);
-      setLeagueData({
-        standings: globalLeague.getStandings(),
-        leaders: globalLeague.getLeagueLeaders(),
-        recentGames: globalLeague.getRecentGames(10),
-        todaysGames: newGames
-      });
-    }
-  }, [currentGameNumber]);
+  // Simulate league games periodically
+  const simulateLeagueGames = (count: number) => {
+    const newGames = globalLeague.simulateGameDay(count);
+    setLeagueData({
+      standings: globalLeague.getStandings(),
+      leaders: globalLeague.getLeagueLeaders(),
+      recentGames: globalLeague.getRecentGames(10),
+      todaysGames: newGames
+    });
+  };
 
-  // Calculate team strength for dynamic difficulty  
+  // Calculate team strength for dynamic difficulty
   const calculateTeamStrength = () => {
-    if (playerData.team.length === 0) return 65; // Start lower
-
+    if (playerData.team.length === 0) return 75;
+    
     const averageOverall = playerData.team.reduce((sum, player) => sum + player.overall, 0) / playerData.team.length;
     
-    // Much harder team chemistry calculation
+    // Factor in team chemistry
     const teamGroups: Record<string, number> = {};
-    const playStyleGroups: Record<string, number> = {};
+    const chemistryTypes: Record<string, number> = {};
     
     playerData.team.forEach(player => {
       teamGroups[player.team] = (teamGroups[player.team] || 0) + 1;
-      if (player.playStyle) {
-        playStyleGroups[player.playStyle] = (playStyleGroups[player.playStyle] || 0) + 1;
+      if (player.chemistry) {
+        player.chemistry.forEach((chem: string) => {
+          chemistryTypes[chem] = (chemistryTypes[chem] || 0) + 1;
+        });
       }
     });
     
     let chemistryBonus = 0;
-    // Need 3+ players from same team for bonus
     Object.values(teamGroups).forEach((count: number) => {
-      if (count >= 3) chemistryBonus += (count - 2) * 0.5;
+      if (count >= 2) chemistryBonus += count;
+    });
+    Object.values(chemistryTypes).forEach((count: number) => {
+      if (count >= 2) chemistryBonus += count * 0.5;
     });
     
-    // Need 4+ players with same play style
-    Object.values(playStyleGroups).forEach((count: number) => {
-      if (count >= 4) chemistryBonus += (count - 3) * 0.3;
-    });
-    
-    return Math.min(85, Math.max(65, averageOverall + chemistryBonus)); // Cap at 85, min 65
+    return Math.min(99, averageOverall + chemistryBonus);
   };
 
   const teamStrength = calculateTeamStrength();
 
-  function generateInitialBracket() {
-    const teams = [
-      "Boston Bruins", "Toronto Maple Leafs", "Tampa Bay Lightning", "Florida Panthers",
-      "New York Rangers", "New Jersey Devils", "Carolina Hurricanes", "New York Islanders",
-      "Vegas Golden Knights", "Edmonton Oilers", "Los Angeles Kings", "Seattle Kraken",
-      "Colorado Avalanche", "Dallas Stars", "Minnesota Wild", "Winnipeg Jets"
-    ];
-    
-    return {
-      round1: teams.reduce((acc, team, index) => {
-        if (index % 2 === 0 && teams[index + 1]) {
-          acc.push([
-            { name: teams[index], seed: index + 1, wins: 0 },
-            { name: teams[index + 1], seed: index + 2, wins: 0 }
-          ]);
-        }
-        return acc;
-      }, [] as any[]),
-      round2: [],
-      round3: [],
-      finals: []
-    };
-  }
-
-  // Season teams with progressive difficulty
+  // Season teams with dynamic difficulty based on team strength
   const getSeasonTeams = () => {
     const baseTeams = [
-      { name: "Montreal Canadiens", abbreviation: "MTL", baseDifficulty: 72 },
-      { name: "Ottawa Senators", abbreviation: "OTT", baseDifficulty: 74 },
-      { name: "Buffalo Sabres", abbreviation: "BUF", baseDifficulty: 76 },
+      // Eastern Conference - Atlantic Division
+      { name: "Florida Panthers", abbreviation: "FLA", baseDifficulty: 88 },
+      { name: "Tampa Bay Lightning", abbreviation: "TBL", baseDifficulty: 87 },
+      { name: "Toronto Maple Leafs", abbreviation: "TOR", baseDifficulty: 86 },
+      { name: "Boston Bruins", abbreviation: "BOS", baseDifficulty: 85 },
+      { name: "Ottawa Senators", abbreviation: "OTT", baseDifficulty: 78 },
       { name: "Detroit Red Wings", abbreviation: "DET", baseDifficulty: 77 },
-      { name: "Columbus Blue Jackets", abbreviation: "CBJ", baseDifficulty: 78 },
+      { name: "Buffalo Sabres", abbreviation: "BUF", baseDifficulty: 76 },
+      { name: "Montreal Canadiens", abbreviation: "MTL", baseDifficulty: 74 },
+      
+      // Eastern Conference - Metropolitan Division
+      { name: "Carolina Hurricanes", abbreviation: "CAR", baseDifficulty: 84 },
+      { name: "New York Rangers", abbreviation: "NYR", baseDifficulty: 83 },
+      { name: "New Jersey Devils", abbreviation: "NJD", baseDifficulty: 82 },
+      { name: "Washington Capitals", abbreviation: "WSH", baseDifficulty: 81 },
+      { name: "Pittsburgh Penguins", abbreviation: "PIT", baseDifficulty: 80 },
       { name: "Philadelphia Flyers", abbreviation: "PHI", baseDifficulty: 79 },
-      { name: "New York Islanders", abbreviation: "NYI", baseDifficulty: 81 },
-      { name: "Washington Capitals", abbreviation: "WSH", baseDifficulty: 82 },
-      { name: "New Jersey Devils", abbreviation: "NJD", baseDifficulty: 83 },
-      { name: "Pittsburgh Penguins", abbreviation: "PIT", baseDifficulty: 84 },
-      { name: "Carolina Hurricanes", abbreviation: "CAR", baseDifficulty: 85 },
-      { name: "New York Rangers", abbreviation: "NYR", baseDifficulty: 86 },
-      { name: "Florida Panthers", abbreviation: "FLA", baseDifficulty: 87 },
-      { name: "Toronto Maple Leafs", abbreviation: "TOR", baseDifficulty: 88 },
-      { name: "Boston Bruins", abbreviation: "BOS", baseDifficulty: 89 },
-      { name: "Tampa Bay Lightning", abbreviation: "TBL", baseDifficulty: 90 }
+      { name: "New York Islanders", abbreviation: "NYI", baseDifficulty: 78 },
+      { name: "Columbus Blue Jackets", abbreviation: "CBJ", baseDifficulty: 73 },
+      
+      // Western Conference - Central Division
+      { name: "Winnipeg Jets", abbreviation: "WPG", baseDifficulty: 86 },
+      { name: "Colorado Avalanche", abbreviation: "COL", baseDifficulty: 85 },
+      { name: "Dallas Stars", abbreviation: "DAL", baseDifficulty: 84 },
+      { name: "Nashville Predators", abbreviation: "NSH", baseDifficulty: 82 },
+      { name: "Minnesota Wild", abbreviation: "MIN", baseDifficulty: 80 },
+      { name: "St. Louis Blues", abbreviation: "STL", baseDifficulty: 78 },
+      { name: "Utah Mammoths", abbreviation: "UTA", baseDifficulty: 76 },
+      { name: "Chicago Blackhawks", abbreviation: "CHI", baseDifficulty: 72 },
+      
+      // Western Conference - Pacific Division
+      { name: "Vegas Golden Knights", abbreviation: "VGK", baseDifficulty: 87 },
+      { name: "Edmonton Oilers", abbreviation: "EDM", baseDifficulty: 86 },
+      { name: "Los Angeles Kings", abbreviation: "LAK", baseDifficulty: 83 },
+      { name: "Vancouver Canucks", abbreviation: "VAN", baseDifficulty: 82 },
+      { name: "Calgary Flames", abbreviation: "CGY", baseDifficulty: 79 },
+      { name: "Seattle Kraken", abbreviation: "SEA", baseDifficulty: 78 },
+      { name: "Anaheim Ducks", abbreviation: "ANA", baseDifficulty: 75 },
+      { name: "San Jose Sharks", abbreviation: "SJS", baseDifficulty: 71 }
     ];
 
+    // Adjust difficulty based on team strength
     return baseTeams.map(team => ({
       ...team,
-      difficulty: Math.max(70, Math.min(95, team.baseDifficulty + (teamStrength - 75) * 0.2))
+      difficulty: Math.max(70, Math.min(95, team.baseDifficulty + (teamStrength - 80) * 0.3))
     }));
   };
 
   const seasonTeams = getSeasonTeams();
+  const nextIndex = Math.floor(seasonProgress / (100 / seasonTeams.length));
+  const nextOpponent = seasonTeams[nextIndex];
   const playoffTeams = [
-    { name: "Wild Card Round", round: 1, difficulty: 88 },
-    { name: "Conference Quarterfinals", round: 2, difficulty: 90 },
-    { name: "Conference Semifinals", round: 3, difficulty: 92 },
-    { name: "Stanley Cup Finals", round: 4, difficulty: 95 }
+    { name: "Conference Quarterfinals", round: 1, opponents: ["Tampa Bay Lightning", "Boston Bruins", "Toronto Maple Leafs"] },
+    { name: "Conference Semifinals", round: 2, opponents: ["Carolina Hurricanes", "New York Rangers"] },
+    { name: "Conference Finals", round: 3, opponents: ["Florida Panthers"] },
+    { name: "Stanley Cup Finals", round: 4, opponents: ["Colorado Avalanche"] }
   ];
 
   const simulatePlayoffGame = (opponent: any) => {
     setIsPlaying(true);
-    
     setTimeout(() => {
-      const strengthDiff = teamStrength - opponent.difficulty;
-      const baseWinChance = 0.4 + (strengthDiff * 0.01); // Much harder
-      const winChance = Math.max(0.1, Math.min(0.7, baseWinChance));
+      const strengthDiff = teamStrength - 90; // Playoff difficulty
+      const baseWinChance = 0.5 + (strengthDiff * 0.015);
+      const winChance = Math.max(0.15, Math.min(0.85, baseWinChance));
       const isWin = Math.random() < winChance;
-      
-      // Generate player stats
-      const topPlayers = playerData.team.slice(0, 12); // Top 12 players
-      const playerGameStats = topPlayers.map(player => ({
-        ...player,
-        goals: Math.floor(Math.random() * 3),
-        assists: Math.floor(Math.random() * 4),
-        hits: Math.floor(Math.random() * 8) + 1,
-        saves: player.position === 'G' ? Math.floor(Math.random() * 30) + 15 : 0,
-        goalsAgainst: player.position === 'G' ? Math.floor(Math.random() * 4) + 1 : 0
-      }));
 
-      setGameStats(prev => [...prev, {
-        opponent: opponent.name,
-        result: isWin ? 'W' : 'L',
-        players: playerGameStats,
-        date: new Date().toLocaleDateString()
-      }]);
+      const coinsEarned = 300 + Math.floor(90 / 3) + (isWin ? 300 : 0);
+      const packReward = isWin && Math.random() < 0.5 ? 1 : 0;
 
-      if (isWin) {
-        setPlayoffSeries(prev => ({ 
-          ...prev, 
-          wins: prev.wins + 1,
-          games: [...prev.games, { result: 'W', opponent: opponent.name }]
-        }));
-        
-        // Check if series won (4 wins)
-        const newWins = playoffSeries.wins + 1;
-        if (newWins >= 4) {
-          if (opponent.round === 4) {
-            // Stanley Cup won!
-            setShowStanleyCupAnimation(true);
-            setStanleyCupWins(prev => prev + 1);
-            setPlayerData(prev => ({
-              ...prev,
-              coins: prev.coins + 5000,
-              packs: prev.packs + 10
-            }));
-          } else {
-            // Advance to next round
-            setPlayoffProgress(prev => prev + 25);
-            setPlayoffSeries({ round: opponent.round + 1, wins: 0, losses: 0, games: [] });
-          }
-        }
-      } else {
-        setPlayoffSeries(prev => ({ 
-          ...prev, 
-          losses: prev.losses + 1,
-          games: [...prev.games, { result: 'L', opponent: opponent.name }]
-        }));
-        
-        // Check if series lost (4 losses)
-        const newLosses = playoffSeries.losses + 1;
-        if (newLosses >= 4) {
-          alert(`Series Lost! Better luck next season. You'll need to improve your team to advance further.`);
-          setCurrentMode('season');
-          setPlayoffProgress(0);
-          setPlayoffSeries({ round: 1, wins: 0, losses: 0, games: [] });
-        }
-      }
-
-      const coinsEarned = 150 + (opponent.difficulty * 2) + (isWin ? 200 : 50);
-      setPlayerData(prev => ({
-        ...prev,
-        coins: prev.coins + coinsEarned
-      }));
-
-      setIsPlaying(false);
-      
-      const newWins = playoffSeries.wins + (isWin ? 1 : 0);
-      const newLosses = playoffSeries.losses + (isWin ? 0 : 1);
-      const gameResult = `${isWin ? '🏆 WIN' : '💔 LOSS'} vs ${opponent.name}\n💰 Earned ${coinsEarned} coins\nSeries: ${newWins}-${newLosses}`;
-      alert(gameResult);
-    }, 3000);
-  };
-
-  const simulateGame = (opponentDifficulty: number, teamName: string) => {
-    setIsPlaying(true);
-    
-    setTimeout(() => {
-      const strengthDiff = teamStrength - opponentDifficulty;
-      const baseWinChance = 0.45 + (strengthDiff * 0.012); // Harder than before
-      const winChance = Math.max(0.15, Math.min(0.75, baseWinChance));
-      const isWin = Math.random() < winChance;
-      
-      const coinsEarned = 80 + Math.floor(opponentDifficulty / 2) + (isWin ? 80 : 20);
-      let packReward = 0;
-      
-      if (isWin && Math.random() < 0.2) { // 20% chance for pack
-        packReward = 1;
-      }
-      
       setPlayerData(prev => ({
         ...prev,
         coins: prev.coins + coinsEarned,
         packs: prev.packs + packReward
       }));
-      
-      const newProgress = Math.min(100, seasonProgress + (100 / 16));
-      setSeasonProgress(newProgress);
-      setCurrentGameNumber(Math.floor(newProgress / (100 / 16)));
-      
-      // Save season data
+
+      setPlayoffProgress(prev => Math.min(100, prev + 25));
+      setIsPlaying(false);
+
+      if (playoffProgress >= 75 && isWin) {
+        setStanleyCupWins(prev => prev + 1);
+        setPlayerData(prev => ({ ...prev, coins: prev.coins + 2000, packs: prev.packs + 5 }));
+        toast({ title: "Stanley Cup Champions!", description: "Bonus 2000 coins + 5 packs awarded." });
+      }
+
+      toast({
+        title: isWin ? "Series Victory!" : "Series Defeat",
+        description: `${isWin ? "Won" : "Lost"} vs ${opponent.name}. Earned ${coinsEarned} coins${packReward ? " + 1 pack" : ""}.`,
+      });
+    }, 2000);
+  };
+
+  const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = false) => {
+    setIsPlaying(true);
+    setTimeout(() => {
+      const strengthDiff = teamStrength - opponentDifficulty;
+      const baseWinChance = 0.5 + (strengthDiff * 0.015);
+      const winChance = Math.max(0.15, Math.min(0.85, baseWinChance));
+      const isWin = Math.random() < winChance;
+
+      const baseCoins = isPlayoff ? 200 : 120;
+      const difficultyBonus = Math.floor(opponentDifficulty / 3);
+      const winBonus = isWin ? (isPlayoff ? 200 : 120) : 0;
+      const strengthBonus = Math.floor(teamStrength / 10);
+      const randomBonus = Math.floor(Math.random() * (isPlayoff ? 100 : 50));
+      const coinsEarned = baseCoins + difficultyBonus + winBonus + strengthBonus + randomBonus;
+
+      let packReward = 0;
+      if (isWin) {
+        packReward = Math.random() < (isPlayoff ? 0.5 : 0.25) ? 1 : 0;
+      }
+
       setPlayerData(prev => ({
         ...prev,
-        seasonData: {
-          ...prev.seasonData,
-          progress: newProgress,
-          cupWins: stanleyCupWins
-        }
+        coins: prev.coins + coinsEarned,
+        packs: prev.packs + packReward
       }));
-      
+
+      if (currentMode === 'season') {
+        setSeasonProgress(prev => Math.min(100, prev + (100 / seasonTeams.length)));
+      } else {
+        setPlayoffProgress(prev => Math.min(100, prev + 25));
+      }
+
       setIsPlaying(false);
-      
-      const resultMessage = `${isWin ? '🏆 WIN' : '💔 LOSS'} vs ${teamName}\n💰 Earned ${coinsEarned} coins${packReward ? '\n🎁 Bonus pack!' : ''}`;
-      alert(resultMessage);
-    }, 3000);
+
+      // Build detailed result for modal + box score
+      const yourGoals = Math.max(1, Math.round(2 + Math.random() * 3) + (isWin ? 1 : 0));
+      const oppGoals = Math.max(0, yourGoals - (isWin ? Math.round(1 + Math.random() * 2) : -Math.round(Math.random() * 2)));
+      const makeTeamStats = () => ({
+        goals: 0,
+        sog: 20 + Math.round(Math.random() * 20),
+        hits: 10 + Math.round(Math.random() * 20),
+        pp: `${Math.round(Math.random()*2)}/${1+Math.round(Math.random()*3)}`,
+        foPct: 40 + Math.random() * 20
+      });
+      const teamA = makeTeamStats();
+      const teamB = makeTeamStats();
+      teamA.goals = yourGoals;
+      teamB.goals = oppGoals;
+
+      // Build detailed per-player box score
+      const roster = playerData.team || [];
+      const skatersA = roster.filter((p:any) => p.position !== 'G').slice().sort((a:any,b:any)=> (b.overall??0)-(a.overall??0)).slice(0,12)
+        .map((p:any) => ({ id: p.id, name: p.name, position: p.position || 'F', g: 0, a: 0, sog: 1 + Math.round(Math.random()*4), hits: Math.round(Math.random()*3), toi: 10 + Math.round(Math.random()*10) }));
+      // distribute goals and assists
+      for (let i=0;i<yourGoals;i++) {
+        if (skatersA.length) {
+          const sIdx = Math.floor(Math.random()*skatersA.length);
+          skatersA[sIdx].g += 1;
+          const assistPool = skatersA.filter((_,idx)=> idx !== sIdx);
+          if (assistPool.length) assistPool[Math.floor(Math.random()*assistPool.length)].a += 1;
+          if (Math.random() < 0.5 && assistPool.length > 1) assistPool[Math.floor(Math.random()*assistPool.length)].a += 1;
+        }
+      }
+
+      const goalieAPlayer = roster.filter((p:any)=> p.position === 'G').slice().sort((a:any,b:any)=> (b.overall??0)-(a.overall??0))[0];
+      const goalieA = { name: goalieAPlayer?.name || 'Your Goalie', sa: teamB.sog, ga: oppGoals, sv: Math.max(0, teamB.sog - oppGoals), svPct: teamB.sog ? ((teamB.sog - oppGoals) / teamB.sog) * 100 : 100 };
+
+      // Opponent mock skaters
+      const abbr = (selectedOpponent?.abbreviation || (teamName.split(' ').map(w=>w[0]).join('').toUpperCase()) || 'OPP');
+      const skatersB = Array.from({length:12}).map((_,i)=> ({ name: `${abbr} P${i+1}`, position: i%6<3 ? 'F' : 'D', g: 0, a: 0, sog: 1 + Math.round(Math.random()*4), hits: Math.round(Math.random()*3), toi: 10 + Math.round(Math.random()*10) }));
+      for (let i=0;i<oppGoals;i++) {
+        if (skatersB.length) {
+          const sIdx = Math.floor(Math.random()*skatersB.length);
+          skatersB[sIdx].g += 1;
+          const assistPool = skatersB.filter((_,idx)=> idx !== sIdx);
+          if (assistPool.length) assistPool[Math.floor(Math.random()*assistPool.length)].a += 1;
+          if (Math.random() < 0.5 && assistPool.length > 1) assistPool[Math.floor(Math.random()*assistPool.length)].a += 1;
+        }
+      }
+      const goalieB = { name: `${abbr} G1`, sa: teamA.sog, ga: yourGoals, sv: Math.max(0, teamA.sog - yourGoals), svPct: teamA.sog ? ((teamA.sog - yourGoals) / teamA.sog) * 100 : 100 };
+
+      setResultData({
+        opponentName: teamName,
+        isWin,
+        scoreHome: yourGoals,
+        scoreAway: oppGoals,
+        teamA,
+        teamB,
+        skatersA,
+        skatersB,
+        goalies: { home: goalieA, away: goalieB }
+      });
+
+      // Update league stats with this game
+      const gameResult = {
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        homeTeam: "Your Team",
+        awayTeam: teamName,
+        homeScore: yourGoals,
+        awayScore: oppGoals,
+        homeStats: { sog: teamA.sog, hits: teamA.hits, blocks: 10 + Math.floor(Math.random() * 15) },
+        awayStats: { sog: teamB.sog, hits: teamB.hits, blocks: 8 + Math.floor(Math.random() * 12) },
+        homeTopPerformer: { name: skatersA.find(p => p.g > 0)?.name || skatersA[0]?.name || "Player 1", points: Math.max(1, skatersA.reduce((max, p) => Math.max(max, p.g + p.a), 0)) },
+        awayTopPerformer: { name: skatersB.find(p => p.g > 0)?.name || skatersB[0]?.name || "Opponent Player", points: Math.max(1, skatersB.reduce((max, p) => Math.max(max, p.g + p.a), 0)) },
+        isCompleted: true,
+        playerStats: [...skatersA.map(p => ({ ...p, id: p.id || 1, team: "Your Team" })), ...skatersB.map(p => ({ ...p, id: Math.random(), team: teamName }))],
+        goalieStats: [
+          { ...goalieA, team: "Your Team" },
+          { ...goalieB, team: teamName }
+        ]
+      };
+
+      // Skip league stats update for now - just update display data
+
+      if (isPlayoff && playoffProgress >= 75 && isWin) {
+        setStanleyCupWins(prev => prev + 1);
+        setPlayerData(prev => ({ ...prev, coins: prev.coins + 2000, packs: prev.packs + 5 }));
+        toast({ title: "Stanley Cup Champions!", description: "Bonus 2000 coins + 5 packs awarded." });
+      }
+
+      // Simulate other league games every few user games
+      if (seasonProgress % 15 === 0) {
+        simulateLeagueGames(5);
+      }
+
+      // Update league data after every game
+      setLeagueData({
+        standings: globalLeague.getStandings(),
+        leaders: globalLeague.getLeagueLeaders(),
+        recentGames: globalLeague.getRecentGames(10),
+        todaysGames: leagueData.todaysGames
+      });
+    }, 1200);
   };
+
+  // Get team comparison data
+  const userTeam = leagueData.standings.find(team => team.team === "Your Team") || leagueData.standings[0];
+  const leagueAverage = {
+    points: leagueData.standings.reduce((sum, team) => sum + team.points, 0) / leagueData.standings.length,
+    wins: leagueData.standings.reduce((sum, team) => sum + team.wins, 0) / leagueData.standings.length,
+    goalsFor: leagueData.standings.reduce((sum, team) => sum + team.goalsFor, 0) / leagueData.standings.length,
+    goalsAgainst: leagueData.standings.reduce((sum, team) => sum + team.goalsAgainst, 0) / leagueData.standings.length,
+    powerPlayPercentage: leagueData.standings.reduce((sum, team) => sum + team.powerPlayPercentage, 0) / leagueData.standings.length,
+    penaltyKillPercentage: leagueData.standings.reduce((sum, team) => sum + team.penaltyKillPercentage, 0) / leagueData.standings.length
+  };
+
+  const leagueRank = leagueData.standings.findIndex(team => team.team === "Your Team") + 1;
 
   return (
     <div className="min-h-screen ice-surface">
-      {showStanleyCupAnimation && (
-        <StanleyCupAnimation onClose={() => setShowStanleyCupAnimation(false)} />
-      )}
-      
       <GameHeader 
         playerData={playerData}
         showBackButton 
         onBack={() => onNavigate('team')}
-        title="Season & Playoffs"
+        title="Enhanced Season Mode"
       />
       
-        <div className="container mx-auto px-4 pt-20 pb-8">
-        <div className="flex items-center mb-8">
-          <Button 
-            variant="outline" 
-            onClick={() => onNavigate('team')}
-            className="mr-4 border-primary text-primary"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Team HQ
-          </Button>
-          <div>
-            <h1 className="text-4xl font-bold text-foreground">Enhanced Season Mode</h1>
-            <p className="text-xl text-muted-foreground">Compete for the Stanley Cup with best-of-7 playoffs</p>
-          </div>
-        </div>
-
-        {/* League Stats and Bracket */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <SeasonStatsTracker currentGame={currentGameNumber} />
-          {currentMode === 'playoffs' && (
-            <PlayoffBracket currentRound={playoffSeries.round} bracketData={playoffBracket} />
-          )}
-        </div>
-
-        {/* Team Overview */}
-        <Card className="game-card p-6 mb-8">
-          <div className="grid md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Zap className="w-6 h-6 text-primary mr-2" />
-                <span className="text-2xl font-bold text-primary">{Math.round(teamStrength)}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">Team Strength</div>
+      <div className="container mx-auto px-4 pt-20 pb-8">
+        {view === 'hub' ? (
+          <>
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-foreground">Enhanced Season & Playoffs</h1>
+              <p className="text-xl text-muted-foreground">Complete season with full league simulation and statistics</p>
             </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Trophy className="w-6 h-6 text-gold mr-2" />
-                <span className="text-2xl font-bold text-gold">{stanleyCupWins}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">Stanley Cups Won</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Star className="w-6 h-6 text-ice-blue mr-2" />
-                <span className="text-2xl font-bold text-ice-blue">{currentGameNumber}/16</span>
-              </div>
-              <div className="text-sm text-muted-foreground">Games Played</div>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Crown className="w-6 h-6 text-purple-500 mr-2" />
-                <span className="text-2xl font-bold text-purple-500">Round {playoffSeries.round}</span>
-              </div>
-              <div className="text-sm text-muted-foreground">Playoff Round</div>
-            </div>
-          </div>
-        </Card>
 
-        <Tabs value={currentMode} onValueChange={(value) => setCurrentMode(value as 'season' | 'playoffs' | 'league-stats' | 'standings' | 'scoreboard' | 'my-team')} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
-            <TabsTrigger value="season">Season</TabsTrigger>
-            <TabsTrigger value="playoffs" disabled={currentGameNumber < 16}>
-              Playoffs {currentGameNumber < 16 && <Badge className="ml-2 text-xs">Locked</Badge>}
-            </TabsTrigger>
-            <TabsTrigger value="league-stats">League Stats</TabsTrigger>
-            <TabsTrigger value="standings">Standings</TabsTrigger>
-            <TabsTrigger value="scoreboard">Scoreboard</TabsTrigger>
-            <TabsTrigger value="my-team">My Team</TabsTrigger>
-          </TabsList>
+            <div className="flex justify-end mb-6">
+              <Button
+                className="btn-primary"
+                disabled={!nextOpponent || isPlaying}
+                onClick={() => {
+                  if (!nextOpponent) return;
+                  setSelectedOpponent(nextOpponent);
+                  setView('setup');
+                }}
+              >
+                <Play className="w-4 h-4 mr-2" /> Play Next Game
+              </Button>
+            </div>
 
-          <TabsContent value="season" className="space-y-6">
-            <Card className="game-card p-6">
-              <h3 className="text-2xl font-bold mb-4 text-foreground">Regular Season Games</h3>
-              <Progress value={(currentGameNumber / 16) * 100} className="h-3 mb-4" />
-              <p className="text-sm text-muted-foreground mb-6">
-                Play all 16 games to unlock playoffs. Games get progressively harder!
-              </p>
-              
-              <div className="grid gap-4">
-                {seasonTeams.slice(currentGameNumber, currentGameNumber + 4).map((team, index) => {
-                  const gameIndex = currentGameNumber + index;
-                  const isNext = index === 0 && currentGameNumber < 16;
-                  
-                  return (
-                    <div
-                      key={`${team.abbreviation}-${gameIndex}`}
-                      className={`p-4 rounded-lg border transition-all ${
-                        isNext ? 'bg-primary/10 border-primary/30' : 'bg-muted/10 border-muted/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <span className="font-semibold text-foreground">Game {gameIndex + 1}</span>
-                          <div className="text-lg font-bold text-foreground">vs {team.name}</div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-4">
-                          <div className="text-right">
-                            <div className="text-sm text-muted-foreground">Difficulty</div>
-                            <div className="font-semibold text-foreground">{Math.round(team.difficulty)}</div>
-                          </div>
-                          
-                          {isNext && (
-                            <Button 
-                              onClick={() => simulateGame(team.difficulty, team.name)}
-                              disabled={isPlaying}
-                              className="btn-primary"
-                            >
-                              {isPlaying ? "Playing..." : "Play Game"}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+            {/* Team Strength Overview */}
+            <Card className="game-card p-6 mb-8">
+              <div className="grid md:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <Zap className="w-6 h-6 text-primary mr-2" />
+                    <span className="text-2xl font-bold text-primary">{Math.round(teamStrength)}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">Team Strength</div>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <Trophy className="w-6 h-6 text-gold mr-2" />
+                    <span className="text-2xl font-bold text-gold">{stanleyCupWins}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">Stanley Cups</div>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <Star className="w-6 h-6 text-ice-blue mr-2" />
+                    <span className="text-2xl font-bold text-ice-blue">{Math.round(seasonProgress)}%</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">Season Progress</div>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <Crown className="w-6 h-6 text-purple-500 mr-2" />
+                    <span className="text-2xl font-bold text-purple-500">{Math.round(playoffProgress)}%</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">Playoff Progress</div>
+                </div>
               </div>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="playoffs" className="space-y-6">
-            <Card className="game-card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold text-foreground flex items-center">
-                  <Crown className="w-8 h-8 mr-3 text-gold" />
-                  Stanley Cup Playoffs
-                </h3>
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Current Series</div>
-                  <div className="text-lg font-semibold text-gold">{playoffSeries.wins}-{playoffSeries.losses}</div>
-                </div>
-              </div>
-              
-              <p className="text-sm text-muted-foreground mb-6">
-                Best of 7 series! Win 4 games to advance. Lose 4 and you're eliminated!
-              </p>
+            <Tabs value={currentMode} onValueChange={(value) => setCurrentMode(value as 'season' | 'playoffs')} className="w-full">
+              <TabsList className="grid w-full grid-cols-6 mb-6">
+                <TabsTrigger value="season">Season</TabsTrigger>
+                <TabsTrigger value="playoffs" disabled={seasonProgress < 80}>
+                  Playoffs {seasonProgress < 80 && <Badge className="ml-2">Locked</Badge>}
+                </TabsTrigger>
+                <TabsTrigger value="league-stats" onClick={() => setCurrentMode('season')}>
+                  <Users className="w-4 h-4 mr-2" />League Stats
+                </TabsTrigger>
+                <TabsTrigger value="standings" onClick={() => setCurrentMode('season')}>
+                  <BarChart3 className="w-4 h-4 mr-2" />Standings
+                </TabsTrigger>
+                <TabsTrigger value="scoreboard" onClick={() => setCurrentMode('season')}>
+                  <Calendar className="w-4 h-4 mr-2" />Scoreboard
+                </TabsTrigger>
+                <TabsTrigger value="my-team" onClick={() => setCurrentMode('season')}>
+                  <Target className="w-4 h-4 mr-2" />My Team
+                </TabsTrigger>
+              </TabsList>
 
-              {playoffTeams.filter(round => round.round === playoffSeries.round).map(round => (
-                <div key={round.round} className="p-4 bg-gold/10 border border-gold/30 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-lg font-bold text-foreground">{round.name}</h4>
-                      <p className="text-sm text-muted-foreground">Difficulty: {round.difficulty}</p>
-                    </div>
-                    
-                    <Button 
-                      onClick={() => simulatePlayoffGame(round)}
-                      disabled={isPlaying || playoffSeries.wins >= 4 || playoffSeries.losses >= 4}
-                      className="btn-gold"
-                    >
-                      {isPlaying ? "Playing..." : `Play Game ${playoffSeries.wins + playoffSeries.losses + 1}`}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-              {gameStats.length > 0 && (
-                <Card className="game-card p-6 mt-6">
-                  <h4 className="text-lg font-bold mb-4 flex items-center">
-                    <BarChart3 className="w-5 h-5 mr-2" />
-                    Recent Game Stats
-                  </h4>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {gameStats.slice(-3).map((game, index) => (
-                      <div key={index} className="text-sm p-2 bg-muted/20 rounded">
-                        <div className="font-semibold">{game.result} vs {game.opponent}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Top scorers: {game.players.filter(p => p.goals > 0).slice(0, 3).map(p => `${p.name} (${p.goals}G ${p.assists}A)`).join(', ')}
-                        </div>
+              <TabsContent value="season" className="space-y-6">
+                {/* Season Progress */}
+                <Card className="game-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-2xl font-bold text-foreground">Regular Season</h3>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-primary">
+                        {Math.floor(seasonProgress / (100 / seasonTeams.length))} / {seasonTeams.length} Games
                       </div>
-                    ))}
+                    </div>
+                  </div>
+                  <Progress value={seasonProgress} className="h-3 mb-4" />
+                  <p className="text-sm text-muted-foreground">Complete 80% of season games to unlock Stanley Cup Playoffs</p>
+                </Card>
+
+                {/* Game Schedule */}
+                <Card className="game-card p-6">
+                  <h3 className="text-2xl font-bold mb-6 text-foreground">Upcoming Games</h3>
+                  <div className="grid gap-4">
+                    {seasonTeams
+                      .slice(nextIndex, nextIndex + 5)
+                      .map((team, index) => {
+                        const gameIndex = nextIndex + index;
+                        const isNext = index === 0;
+                        return (
+                          <div key={team.abbreviation} className={`p-4 rounded-lg border transition-all ${isNext ? 'bg-primary/10 border-primary/30' : 'bg-muted/10 border-muted/30'}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-3">
+                                  <Calendar className="w-5 h-5 text-muted-foreground" />
+                                  <span className="font-semibold text-foreground">Game {gameIndex + 1}</span>
+                                </div>
+                                <div className="text-lg font-bold text-foreground">vs {team.name}</div>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                <div className="text-right">
+                                  <div className="text-sm text-muted-foreground">Difficulty</div>
+                                  <div className="font-semibold text-foreground">{Math.round(team.difficulty)}/100</div>
+                                </div>
+                                {isNext && (
+                                  <Button onClick={() => { setSelectedOpponent(team); setView('setup'); }} disabled={isPlaying} className="btn-primary">
+                                    <Play className="w-4 h-4 mr-2" /> Setup Game
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </Card>
-              )}
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="league-stats" className="space-y-6">
-            <PlayerLeaderboards 
-              playerLeaders={leagueData.leaders.playerLeaders}
-              goalieLeaders={leagueData.leaders.goalieLeaders}
-            />
-          </TabsContent>
+                {/* Nested Tabs for League Features */}
+                <Tabs defaultValue="league-stats" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="league-stats">League Stats</TabsTrigger>
+                    <TabsTrigger value="standings">Standings</TabsTrigger>
+                    <TabsTrigger value="scoreboard">Scoreboard</TabsTrigger>
+                    <TabsTrigger value="my-team">My Team</TabsTrigger>
+                  </TabsList>
 
-          <TabsContent value="standings" className="space-y-6">
-            <EnhancedLeagueStandings standings={leagueData.standings} />
-          </TabsContent>
+                  <TabsContent value="league-stats" className="space-y-6">
+                    <PlayerLeaderboards 
+                      playerLeaders={leagueData.leaders.playerLeaders} 
+                      goalieLeaders={leagueData.leaders.goalieLeaders} 
+                    />
+                  </TabsContent>
 
-          <TabsContent value="scoreboard" className="space-y-6">
-            <LeagueScoreboard 
-              recentGames={leagueData.recentGames}
-              todaysGames={leagueData.todaysGames}
-            />
-          </TabsContent>
+                  <TabsContent value="standings" className="space-y-6">
+                    <EnhancedLeagueStandings standings={leagueData.standings} userTeam="Your Team" />
+                  </TabsContent>
 
-          <TabsContent value="my-team" className="space-y-6">
-            <TeamComparison 
-              userTeam={leagueData.standings[0] || { 
-                team: "Your Team", 
-                wins: 0, 
-                losses: 0, 
-                otLosses: 0, 
-                points: 0, 
-                gamesPlayed: 0, 
-                goalsFor: 0, 
-                goalsAgainst: 0, 
-                goalDifferential: 0, 
-                powerPlayPercentage: 0.20, 
-                penaltyKillPercentage: 0.82, 
-                homeRecord: { wins: 0, losses: 0, ot: 0 }, 
-                awayRecord: { wins: 0, losses: 0, ot: 0 }, 
-                streak: { type: 'W', count: 0 }, 
-                lastTenRecord: { wins: 0, losses: 0, ot: 0 }, 
-                divisionRank: 1, 
-                conferenceRank: 1 
-              }}
-              leagueAverage={{
-                points: leagueData.standings.length > 0 ? leagueData.standings.reduce((sum, t) => sum + t.points, 0) / leagueData.standings.length : 82,
-                goalsFor: leagueData.standings.length > 0 ? leagueData.standings.reduce((sum, t) => sum + (t.goalsFor/t.gamesPlayed), 0) / leagueData.standings.length : 3.1,
-                goalsAgainst: leagueData.standings.length > 0 ? leagueData.standings.reduce((sum, t) => sum + (t.goalsAgainst/t.gamesPlayed), 0) / leagueData.standings.length : 3.1,
-                powerPlayPercentage: 0.20,
-                penaltyKillPercentage: 0.82,
-                wins: leagueData.standings.length > 0 ? leagueData.standings.reduce((sum, t) => sum + t.wins, 0) / leagueData.standings.length : 41
-              }}
-              leagueRank={Math.floor(Math.random() * 16) + 1}
-              totalTeams={32}
-            />
-          </TabsContent>
-        </Tabs>
+                  <TabsContent value="scoreboard" className="space-y-6">
+                    <LeagueScoreboard 
+                      recentGames={leagueData.recentGames} 
+                      todaysGames={leagueData.todaysGames} 
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="my-team" className="space-y-6">
+                    <TeamComparison
+                      userTeam={userTeam}
+                      leagueAverage={leagueAverage}
+                      leagueRank={leagueRank}
+                      totalTeams={leagueData.standings.length}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+
+              <TabsContent value="playoffs" className="space-y-6">
+                {/* Stanley Cup Playoffs */}
+                <Card className="game-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-2xl font-bold text-foreground flex items-center">
+                      <Crown className="w-8 h-8 mr-3 text-gold" /> Stanley Cup Playoffs
+                    </h3>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-gold">Round {Math.floor(playoffProgress / 25) + 1} of 4</div>
+                    </div>
+                  </div>
+                  <Progress value={playoffProgress} className="h-4 mb-4" />
+                  <p className="text-sm text-muted-foreground">Win 4 rounds to claim the Stanley Cup! Higher rewards and tougher competition.</p>
+                </Card>
+
+                {/* Playoff Bracket */}
+                <Card className="game-card p-6">
+                  <h3 className="text-2xl font-bold mb-6 text-foreground">Playoff Bracket</h3>
+                  <div className="space-y-6">
+                    {playoffTeams.map((round, index) => {
+                      const isUnlocked = index <= Math.floor(playoffProgress / 25);
+                      const isActive = index === Math.floor(playoffProgress / 25) && playoffProgress < 100;
+                      const isCompleted = index < Math.floor(playoffProgress / 25);
+
+                      return (
+                        <div key={round.name} className={`p-4 rounded-lg border ${
+                          isCompleted ? 'bg-primary/20 border-primary/50' : 
+                          isActive ? 'bg-accent/10 border-accent/30' : 
+                          'bg-muted/5 border-muted/20'
+                        }`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                isCompleted ? 'bg-primary text-primary-foreground' :
+                                isActive ? 'bg-accent text-accent-foreground' :
+                                'bg-muted text-muted-foreground'
+                              }`}>
+                                {isCompleted ? <Crown className="w-4 h-4" /> : round.round}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-foreground">{round.name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Round {round.round} of 4 • Best of 7 Series
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-4">
+                              {isActive && (
+                                <Button
+                                  onClick={() => { setSelectedOpponent(round); setView('setup'); }}
+                                  disabled={isPlaying}
+                                  className="btn-primary"
+                                >
+                                  <Play className="w-4 h-4 mr-2" /> Setup Series
+                                </Button>
+                              )}
+                              {isCompleted && (
+                                <Badge className="bg-primary/20 text-primary">Won</Badge>
+                              )}
+                              {!isUnlocked && (
+                                <Badge variant="secondary">Locked</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </>
+        ) : view === 'setup' ? (
+          <GameSetup
+            roster={playerData.team}
+            opponent={selectedOpponent}
+            onBack={() => setView('hub')}
+            onSimulateFull={(opts) => {
+              if (selectedOpponent) {
+                const isPlayoffMode = currentMode === 'playoffs';
+                simulateGame(selectedOpponent.difficulty || selectedOpponent.baseDifficulty, selectedOpponent.name, isPlayoffMode);
+                setView('hub');
+              }
+            }}
+          />
+        ) : null}
+
+        <ResultModal
+          open={!!resultData}
+          onOpenChange={(open) => !open && setResultData(null)}
+          data={resultData}
+        />
       </div>
     </div>
   );
-};
-
-export default EnhancedSeasonMode;
+}
