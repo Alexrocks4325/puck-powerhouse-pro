@@ -7,7 +7,7 @@ import TeamCoachSelection from "@/components/game/TeamCoachSelection";
 import Tutorial from "@/components/game/Tutorial";
 import PackOpening from "@/components/game/PackOpening";
 import TeamManagement from "@/components/game/TeamManagement";
-import SeasonMode from "@/components/game/SeasonMode";
+import EnhancedSeasonMode from "@/components/game/EnhancedSeasonMode";
 import TasksAndChallenges from "@/components/game/TasksAndChallenges";
 import LeaguesMode from "@/components/game/LeaguesMode";
 import LiveEventsMode from "@/components/game/LiveEventsMode";
@@ -177,7 +177,7 @@ const Index = () => {
 
   if (gameState === 'season') {
     return (
-      <SeasonMode 
+      <EnhancedSeasonMode 
         playerData={playerData}
         setPlayerData={setPlayerData}
         onNavigate={handleNavigate}
