@@ -64,7 +64,18 @@ export default {
         },
         "ice-blue": "hsl(var(--ice-blue))",
         "ice-dark": "hsl(var(--ice-dark))",
-        "gold": "hsl(var(--gold))",
+        "gold": {
+          DEFAULT: "hsl(var(--gold))",
+          foreground: "hsl(var(--gold-foreground))",
+        },
+        "silver": {
+          DEFAULT: "hsl(var(--silver))",
+          foreground: "hsl(var(--silver-foreground))",
+        },
+        "bronze": {
+          DEFAULT: "hsl(var(--bronze))",
+          foreground: "hsl(var(--bronze-foreground))",
+        },
         "hockey-red": "hsl(var(--hockey-red))",
         "nhl-navy": "hsl(var(--nhl-navy))",
         "nhl-orange": "hsl(var(--nhl-orange))",

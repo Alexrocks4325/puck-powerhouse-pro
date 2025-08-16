@@ -271,7 +271,8 @@ export class LeagueSimulation {
     };
   }
 
-  private updateLeagueStats(game: GameResult) {
+  // Make this public so user games can update league stats
+  updateLeagueStats(game: GameResult) {
     // Update player stats
     [...game.homePlayers, ...game.awayPlayers].forEach(({ player, stats }) => {
       const currentStats = this.playerStats.get(player.id)!;
@@ -421,6 +422,11 @@ export class LeagueSimulation {
       leagueRank: teamRank,
       totalTeams: allTeams.length
     };
+  }
+
+  // Add a game result directly (for user games)
+  addGameResult(game: GameResult) {
+    this.gameResults.push(game);
   }
 
   // Get recent games

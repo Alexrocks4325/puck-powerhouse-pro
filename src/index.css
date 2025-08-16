@@ -41,13 +41,20 @@ All colors MUST be HSL.
     /* NHL Theme Colors - Enhanced */
     --ice-blue: 195 100% 85%;
     --ice-dark: 220 25% 15%;
-    --gold: 45 95% 55%;
     --hockey-red: 0 85% 60%;
     --nhl-navy: 220 70% 25%;
     --nhl-orange: 25 100% 55%;
     --pack-bronze: 30 60% 35%;
     --pack-silver: 210 15% 70%;
     --pack-gold: 45 95% 55%;
+    
+    /* Medal Colors */
+    --gold: 45 95% 55%;
+    --gold-foreground: 45 95% 15%;
+    --silver: 210 15% 70%;
+    --silver-foreground: 210 15% 15%;
+    --bronze: 30 60% 35%;
+    --bronze-foreground: 30 60% 95%;
     --pack-elite: 280 85% 65%;
     
     /* Game-specific design tokens */

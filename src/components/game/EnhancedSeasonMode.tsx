@@ -42,17 +42,42 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
     standings: globalLeague.getStandings(),
     leaders: globalLeague.getLeagueLeaders(),
     recentGames: globalLeague.getRecentGames(10),
-    todaysGames: globalLeague.simulateGameDay(6)
+    todaysGames: []
   });
 
-  // Simulate league games periodically
+  // Track user team games
+  const [userTeamStats, setUserTeamStats] = useState({
+    wins: 0,
+    losses: 0,
+    otLosses: 0,
+    points: 0,
+    gamesPlayed: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    topPlayers: []
+  });
+
+  // Initialize league games only once
+  useEffect(() => {
+    // Only simulate initial games if none exist
+    if (globalLeague.getRecentGames(1).length === 0) {
+      const initialGames = globalLeague.simulateGameDay(6);
+      setLeagueData(prev => ({
+        ...prev,
+        todaysGames: initialGames,
+        recentGames: globalLeague.getRecentGames(10)
+      }));
+    }
+  }, []);
+
+  // Simulate league games periodically (only when user plays)
   const simulateLeagueGames = (count: number) => {
     const newGames = globalLeague.simulateGameDay(count);
     setLeagueData({
       standings: globalLeague.getStandings(),
       leaders: globalLeague.getLeagueLeaders(),
-      recentGames: globalLeague.getRecentGames(10),
-      todaysGames: newGames
+      recentGames: globalLeague.getRecentGames(15), // Show more games
+      todaysGames: [...leagueData.todaysGames, ...newGames] // Accumulate games
     });
   };
 
@@ -275,27 +300,110 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
         goalies: { home: goalieA, away: goalieB }
       });
 
-      // Update league stats with this game
-      const gameResult = {
-        id: Date.now(),
-        date: new Date().toISOString().split('T')[0],
+      // Create accurate user team game result with proper Player type
+      const userGameResult = {
         homeTeam: "Your Team",
         awayTeam: teamName,
         homeScore: yourGoals,
         awayScore: oppGoals,
-        homeStats: { sog: teamA.sog, hits: teamA.hits, blocks: 10 + Math.floor(Math.random() * 15) },
-        awayStats: { sog: teamB.sog, hits: teamB.hits, blocks: 8 + Math.floor(Math.random() * 12) },
-        homeTopPerformer: { name: skatersA.find(p => p.g > 0)?.name || skatersA[0]?.name || "Player 1", points: Math.max(1, skatersA.reduce((max, p) => Math.max(max, p.g + p.a), 0)) },
-        awayTopPerformer: { name: skatersB.find(p => p.g > 0)?.name || skatersB[0]?.name || "Opponent Player", points: Math.max(1, skatersB.reduce((max, p) => Math.max(max, p.g + p.a), 0)) },
-        isCompleted: true,
-        playerStats: [...skatersA.map(p => ({ ...p, id: p.id || 1, team: "Your Team" })), ...skatersB.map(p => ({ ...p, id: Math.random(), team: teamName }))],
-        goalieStats: [
-          { ...goalieA, team: "Your Team" },
-          { ...goalieB, team: teamName }
-        ]
+        gameType: 'regulation' as const,
+        homePlayers: skatersA.map(p => ({
+          player: { 
+            id: p.id || 1, 
+            name: p.name, 
+            team: "Your Team", 
+            position: p.position as 'C' | 'LW' | 'RW' | 'D' | 'G', 
+            overall: 85,
+            rarity: 'gold' as const,
+            chemistry: []
+          },
+          stats: {
+            goals: p.g, assists: p.a, points: p.g + p.a, gamesPlayed: 1,
+            plusMinus: Math.floor(Math.random() * 5) - 2, pim: 0, shots: p.sog,
+            hits: p.hits, blockedShots: 0, faceoffWins: 0, faceoffAttempts: 0,
+            powerPlayGoals: 0, shorthandedGoals: 0, gameWinningGoals: isWin && p.g > 0 ? 1 : 0
+          }
+        })),
+        awayPlayers: skatersB.map(p => ({
+          player: { 
+            id: Math.floor(Math.random() * 10000), 
+            name: p.name, 
+            team: teamName, 
+            position: p.position as 'C' | 'LW' | 'RW' | 'D' | 'G', 
+            overall: 82,
+            rarity: 'gold' as const,
+            chemistry: []
+          },
+          stats: {
+            goals: p.g, assists: p.a, points: p.g + p.a, gamesPlayed: 1,
+            plusMinus: Math.floor(Math.random() * 5) - 2, pim: 0, shots: p.sog,
+            hits: p.hits, blockedShots: 0, faceoffWins: 0, faceoffAttempts: 0,
+            powerPlayGoals: 0, shorthandedGoals: 0, gameWinningGoals: !isWin && p.g > 0 ? 1 : 0
+          }
+        })),
+        homeGoalie: {
+          player: { 
+            id: 99999, 
+            name: goalieA.name, 
+            team: "Your Team", 
+            position: 'G' as const, 
+            overall: 85,
+            rarity: 'gold' as const,
+            chemistry: []
+          },
+          stats: { 
+            wins: isWin ? 1 : 0, 
+            losses: !isWin ? 1 : 0, 
+            otLosses: 0, 
+            saves: goalieA.sv, 
+            goalsAgainst: goalieA.ga, 
+            shotsAgainst: goalieA.sa, 
+            shutouts: goalieA.ga === 0 ? 1 : 0, 
+            gamesPlayed: 1, 
+            savePercentage: goalieA.svPct / 100, 
+            gaa: goalieA.ga 
+          }
+        },
+        awayGoalie: {
+          player: { 
+            id: Math.floor(Math.random() * 10000), 
+            name: goalieB.name, 
+            team: teamName, 
+            position: 'G' as const, 
+            overall: 82,
+            rarity: 'gold' as const,
+            chemistry: []
+          },
+          stats: { 
+            wins: !isWin ? 1 : 0, 
+            losses: isWin ? 1 : 0, 
+            otLosses: 0, 
+            saves: goalieB.sv, 
+            goalsAgainst: goalieB.ga, 
+            shotsAgainst: goalieB.sa, 
+            shutouts: goalieB.ga === 0 ? 1 : 0, 
+            gamesPlayed: 1, 
+            savePercentage: goalieB.svPct / 100, 
+            gaa: goalieB.ga 
+          }
+        }
       };
 
-      // Skip league stats update for now - just update display data
+      // Update league stats with user game  
+      globalLeague.updateLeagueStats(userGameResult);
+      globalLeague.addGameResult(userGameResult);
+
+      // Update user team stats
+      setUserTeamStats(prev => ({
+        wins: prev.wins + (isWin ? 1 : 0),
+        losses: prev.losses + (!isWin ? 1 : 0),
+        otLosses: prev.otLosses,
+        points: prev.points + (isWin ? 2 : 0),
+        gamesPlayed: prev.gamesPlayed + 1,
+        goalsFor: prev.goalsFor + yourGoals,
+        goalsAgainst: prev.goalsAgainst + oppGoals,
+        topPlayers: skatersA.sort((a, b) => (b.g + b.a) - (a.g + a.a)).slice(0, 5)
+      }));
 
       if (isPlayoff && playoffProgress >= 75 && isWin) {
         setStanleyCupWins(prev => prev + 1);
@@ -303,33 +411,52 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
         toast({ title: "Stanley Cup Champions!", description: "Bonus 2000 coins + 5 packs awarded." });
       }
 
-      // Simulate other league games every few user games
-      if (seasonProgress % 15 === 0) {
-        simulateLeagueGames(5);
+      // Simulate other league games only occasionally to avoid inflation
+      if (seasonProgress % 20 === 0) { // Less frequent simulation
+        simulateLeagueGames(3); // Fewer games
       }
 
-      // Update league data after every game
-      setLeagueData({
+      // Update league data after every user game
+      setLeagueData(prev => ({
         standings: globalLeague.getStandings(),
         leaders: globalLeague.getLeagueLeaders(),
-        recentGames: globalLeague.getRecentGames(10),
-        todaysGames: leagueData.todaysGames
-      });
+        recentGames: globalLeague.getRecentGames(15),
+        todaysGames: prev.todaysGames // Keep existing games
+      }));
     }, 1200);
   };
 
-  // Get team comparison data
-  const userTeam = leagueData.standings.find(team => team.team === "Your Team") || leagueData.standings[0];
-  const leagueAverage = {
-    points: leagueData.standings.reduce((sum, team) => sum + team.points, 0) / leagueData.standings.length,
-    wins: leagueData.standings.reduce((sum, team) => sum + team.wins, 0) / leagueData.standings.length,
-    goalsFor: leagueData.standings.reduce((sum, team) => sum + team.goalsFor, 0) / leagueData.standings.length,
-    goalsAgainst: leagueData.standings.reduce((sum, team) => sum + team.goalsAgainst, 0) / leagueData.standings.length,
-    powerPlayPercentage: leagueData.standings.reduce((sum, team) => sum + team.powerPlayPercentage, 0) / leagueData.standings.length,
-    penaltyKillPercentage: leagueData.standings.reduce((sum, team) => sum + team.penaltyKillPercentage, 0) / leagueData.standings.length
+  // Get team comparison data with accurate user team tracking
+  const userTeam = leagueData.standings.find(team => team.team === "Your Team") || {
+    team: "Your Team",
+    wins: userTeamStats.wins,
+    losses: userTeamStats.losses,
+    otLosses: userTeamStats.otLosses,
+    points: userTeamStats.points,
+    gamesPlayed: userTeamStats.gamesPlayed,
+    goalsFor: userTeamStats.goalsFor,
+    goalsAgainst: userTeamStats.goalsAgainst,
+    goalDifferential: userTeamStats.goalsFor - userTeamStats.goalsAgainst,
+    powerPlayPercentage: 0.22,
+    penaltyKillPercentage: 0.81,
+    homeRecord: { wins: Math.floor(userTeamStats.wins * 0.6), losses: Math.floor(userTeamStats.losses * 0.6), ot: 0 },
+    awayRecord: { wins: userTeamStats.wins - Math.floor(userTeamStats.wins * 0.6), losses: userTeamStats.losses - Math.floor(userTeamStats.losses * 0.6), ot: 0 },
+    streak: { type: 'W' as const, count: 1 },
+    lastTenRecord: { wins: Math.min(userTeamStats.wins, 10), losses: Math.min(userTeamStats.losses, 10), ot: 0 },
+    divisionRank: 1,
+    conferenceRank: 1
   };
 
-  const leagueRank = leagueData.standings.findIndex(team => team.team === "Your Team") + 1;
+  const leagueAverage = {
+    points: leagueData.standings.reduce((sum, team) => sum + team.points, 0) / Math.max(leagueData.standings.length, 1),
+    wins: leagueData.standings.reduce((sum, team) => sum + team.wins, 0) / Math.max(leagueData.standings.length, 1),
+    goalsFor: leagueData.standings.reduce((sum, team) => sum + team.goalsFor, 0) / Math.max(leagueData.standings.length, 1),
+    goalsAgainst: leagueData.standings.reduce((sum, team) => sum + team.goalsAgainst, 0) / Math.max(leagueData.standings.length, 1),
+    powerPlayPercentage: leagueData.standings.reduce((sum, team) => sum + team.powerPlayPercentage, 0) / Math.max(leagueData.standings.length, 1),
+    penaltyKillPercentage: leagueData.standings.reduce((sum, team) => sum + team.penaltyKillPercentage, 0) / Math.max(leagueData.standings.length, 1)
+  };
+
+  const leagueRank = leagueData.standings.findIndex(team => team.team === "Your Team") + 1 || 1;
 
   return (
     <div className="min-h-screen ice-surface">
@@ -496,6 +623,92 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
                   </TabsContent>
 
                   <TabsContent value="my-team" className="space-y-6">
+                    <Card className="game-card p-6">
+                      <h3 className="text-2xl font-bold mb-6 text-foreground flex items-center">
+                        <Award className="w-6 h-6 mr-2 text-primary" />
+                        Your Team Performance
+                      </h3>
+                      
+                      {/* Team Record */}
+                      <div className="grid md:grid-cols-4 gap-4 mb-8">
+                        <div className="text-center p-4 bg-primary/10 rounded-lg">
+                          <div className="text-2xl font-bold text-primary">{userTeamStats.wins}</div>
+                          <div className="text-sm text-muted-foreground">Wins</div>
+                        </div>
+                        <div className="text-center p-4 bg-destructive/10 rounded-lg">
+                          <div className="text-2xl font-bold text-destructive">{userTeamStats.losses}</div>
+                          <div className="text-sm text-muted-foreground">Losses</div>
+                        </div>
+                        <div className="text-center p-4 bg-accent/10 rounded-lg">
+                          <div className="text-2xl font-bold text-accent">{userTeamStats.points}</div>
+                          <div className="text-sm text-muted-foreground">Points</div>
+                        </div>
+                        <div className="text-center p-4 bg-muted/10 rounded-lg">
+                          <div className="text-2xl font-bold text-foreground">{leagueRank}</div>
+                          <div className="text-sm text-muted-foreground">League Rank</div>
+                        </div>
+                      </div>
+
+                      {/* Goals For/Against */}
+                      <div className="grid md:grid-cols-2 gap-4 mb-8">
+                        <div className="p-4 bg-green-500/10 rounded-lg">
+                          <div className="text-xl font-bold text-green-500">{userTeamStats.goalsFor}</div>
+                          <div className="text-sm text-muted-foreground">Goals For</div>
+                          <div className="text-xs text-muted-foreground">
+                            Avg: {userTeamStats.gamesPlayed > 0 ? (userTeamStats.goalsFor / userTeamStats.gamesPlayed).toFixed(1) : '0.0'} per game
+                          </div>
+                        </div>
+                        <div className="p-4 bg-red-500/10 rounded-lg">
+                          <div className="text-xl font-bold text-red-500">{userTeamStats.goalsAgainst}</div>
+                          <div className="text-sm text-muted-foreground">Goals Against</div>
+                          <div className="text-xs text-muted-foreground">
+                            Avg: {userTeamStats.gamesPlayed > 0 ? (userTeamStats.goalsAgainst / userTeamStats.gamesPlayed).toFixed(1) : '0.0'} per game
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Top Performers from Last Game */}
+                      {userTeamStats.topPlayers.length > 0 && (
+                        <div>
+                          <h4 className="text-lg font-semibold mb-4 text-foreground flex items-center">
+                            <Star className="w-5 h-5 mr-2 text-primary" />
+                            Top Performers (Last Game)
+                          </h4>
+                          <div className="grid gap-3">
+                            {userTeamStats.topPlayers.slice(0, 5).map((player: any, index: number) => (
+                              <div key={index} className="flex items-center justify-between p-3 bg-muted/5 rounded-lg border border-muted/20">
+                                <div className="flex items-center space-x-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                    index === 0 ? 'bg-gold text-gold-foreground' :
+                                    index === 1 ? 'bg-silver text-silver-foreground' :
+                                    index === 2 ? 'bg-bronze text-bronze-foreground' :
+                                    'bg-muted text-muted-foreground'
+                                  }`}>
+                                    {index + 1}
+                                  </div>
+                                  <div>
+                                    <div className="font-semibold text-foreground">{player.name}</div>
+                                    <div className="text-sm text-muted-foreground">{player.position}</div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-bold text-primary">{player.g + player.a} pts</div>
+                                  <div className="text-sm text-muted-foreground">{player.g}G {player.a}A</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {userTeamStats.gamesPlayed === 0 && (
+                        <div className="text-center py-8">
+                          <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">Play your first game to see team statistics!</p>
+                        </div>
+                      )}
+                    </Card>
+                    
                     <TeamComparison
                       userTeam={userTeam}
                       leagueAverage={leagueAverage}
