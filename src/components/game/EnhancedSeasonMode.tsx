@@ -1,83 +1,60 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import GameHeader from "./GameHeader";
-import { Trophy, Star, Coins, Calendar, Play, Crown, Target, Zap, TrendingUp, Users, Award, BarChart3 } from "lucide-react";
-import { globalLeague } from "@/utils/leagueSimulation";
-import { useToast } from "@/hooks/use-toast";
-import LeagueScoreboard from "@/components/league/LeagueScoreboard";
-import EnhancedLeagueStandings from "@/components/league/EnhancedLeagueStandings";
-import PlayerLeaderboards from "@/components/league/PlayerLeaderboards";
-import TeamComparison from "@/components/league/TeamComparison";
-import GameSetup from "@/components/season/GameSetup";
-import ResultModal from "@/components/season/ResultModal";
+import React, { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Play, Trophy, Star, Zap, Crown, Calendar, BarChart3, Users, Target } from 'lucide-react';
+import GameHeader from './GameHeader';
+import GameSetup from '@/components/season/GameSetup';
+import ResultModal from '@/components/season/ResultModal';
+import PlayerLeaderboards from '@/components/league/PlayerLeaderboards';
+import EnhancedLeagueStandings from '@/components/league/EnhancedLeagueStandings';
+import LeagueScoreboard from '@/components/league/LeagueScoreboard';
+import TeamComparison from '@/components/league/TeamComparison';
+import { globalLeague } from '@/utils/leagueSimulation';
+import { toast } from 'sonner';
 
 interface EnhancedSeasonModeProps {
-  playerData: {
-    coins: number;
-    level: number;
-    team: any[];
-    packs: number;
-  };
+  playerData: any;
   setPlayerData: (data: any) => void;
-  onNavigate: (screen: 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues') => void;
+  onNavigate: (screen: string) => void;
 }
 
-export default function EnhancedSeasonMode({ playerData, setPlayerData, onNavigate }: EnhancedSeasonModeProps) {
+const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedSeasonModeProps) => {
+  const [view, setView] = useState<'hub' | 'setup' | 'result'>('hub');
+  const [currentMode, setCurrentMode] = useState<'season' | 'playoffs'>('season');
   const [seasonProgress, setSeasonProgress] = useState(0);
   const [playoffProgress, setPlayoffProgress] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentMode, setCurrentMode] = useState<'season' | 'playoffs'>('season');
   const [stanleyCupWins, setStanleyCupWins] = useState(0);
-  const [view, setView] = useState<'hub' | 'setup' | 'live'>("hub");
-  const [selectedOpponent, setSelectedOpponent] = useState<any | null>(null);
-  const [resultData, setResultData] = useState<any | null>(null);
-  const { toast } = useToast();
-
-  const [leagueData, setLeagueData] = useState({
-    standings: globalLeague.getStandings(),
-    leaders: globalLeague.getLeagueLeaders(),
-    recentGames: globalLeague.getRecentGames(10),
-    todaysGames: []
-  });
-
-  // Track user team games
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedOpponent, setSelectedOpponent] = useState<any>(null);
+  const [resultData, setResultData] = useState<any>(null);
   const [userTeamStats, setUserTeamStats] = useState({
     wins: 0,
     losses: 0,
     otLosses: 0,
     points: 0,
-    gamesPlayed: 0,
     goalsFor: 0,
-    goalsAgainst: 0,
-    topPlayers: []
+    goalsAgainst: 0
   });
 
-  // Initialize league games only once
-  useEffect(() => {
-    // Only simulate initial games if none exist
-    if (globalLeague.getRecentGames(1).length === 0) {
-      const initialGames = globalLeague.simulateGameDay(6);
-      setLeagueData(prev => ({
-        ...prev,
-        todaysGames: initialGames,
-        recentGames: globalLeague.getRecentGames(10)
-      }));
-    }
-  }, []);
+  // Initialize league data
+  const [leagueData, setLeagueData] = useState({
+    standings: globalLeague.getStandings(),
+    leaders: globalLeague.getLeagueLeaders(),
+    recentGames: globalLeague.getRecentGames(10),
+    todaysGames: globalLeague.simulateGameDay(6)
+  });
 
-  // Simulate league games periodically (only when user plays)
+  // Simulate league games periodically 
   const simulateLeagueGames = (count: number) => {
     const newGames = globalLeague.simulateGameDay(count);
     setLeagueData({
       standings: globalLeague.getStandings(),
       leaders: globalLeague.getLeagueLeaders(),
-      recentGames: globalLeague.getRecentGames(15), // Show more games
-      todaysGames: [...leagueData.todaysGames, ...newGames] // Accumulate games
+      recentGames: globalLeague.getRecentGames(15),
+      todaysGames: newGames
     });
   };
 
@@ -90,7 +67,6 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
     // Factor in team chemistry
     const teamGroups: Record<string, number> = {};
     const chemistryTypes: Record<string, number> = {};
-    
     playerData.team.forEach(player => {
       teamGroups[player.team] = (teamGroups[player.team] || 0) + 1;
       if (player.chemistry) {
@@ -167,6 +143,7 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
   const seasonTeams = getSeasonTeams();
   const nextIndex = Math.floor(seasonProgress / (100 / seasonTeams.length));
   const nextOpponent = seasonTeams[nextIndex];
+
   const playoffTeams = [
     { name: "Conference Quarterfinals", round: 1, opponents: ["Tampa Bay Lightning", "Boston Bruins", "Toronto Maple Leafs"] },
     { name: "Conference Semifinals", round: 2, opponents: ["Carolina Hurricanes", "New York Rangers"] },
@@ -197,13 +174,10 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
       if (playoffProgress >= 75 && isWin) {
         setStanleyCupWins(prev => prev + 1);
         setPlayerData(prev => ({ ...prev, coins: prev.coins + 2000, packs: prev.packs + 5 }));
-        toast({ title: "Stanley Cup Champions!", description: "Bonus 2000 coins + 5 packs awarded." });
+      toast("Stanley Cup Champions! Bonus 2000 coins + 5 packs awarded.");
       }
 
-      toast({
-        title: isWin ? "Series Victory!" : "Series Defeat",
-        description: `${isWin ? "Won" : "Lost"} vs ${opponent.name}. Earned ${coinsEarned} coins${packReward ? " + 1 pack" : ""}.`,
-      });
+      toast(`${isWin ? "Series Victory!" : "Series Defeat"}: ${isWin ? "Won" : "Lost"} vs ${opponent.name}. Earned ${coinsEarned} coins${packReward ? " + 1 pack" : ""}.`);
     }, 2000);
   };
 
@@ -260,6 +234,7 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
       const roster = playerData.team || [];
       const skatersA = roster.filter((p:any) => p.position !== 'G').slice().sort((a:any,b:any)=> (b.overall??0)-(a.overall??0)).slice(0,12)
         .map((p:any) => ({ id: p.id, name: p.name, position: p.position || 'F', g: 0, a: 0, sog: 1 + Math.round(Math.random()*4), hits: Math.round(Math.random()*3), toi: 10 + Math.round(Math.random()*10) }));
+      
       // distribute goals and assists
       for (let i=0;i<yourGoals;i++) {
         if (skatersA.length) {
@@ -399,64 +374,43 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
         losses: prev.losses + (!isWin ? 1 : 0),
         otLosses: prev.otLosses,
         points: prev.points + (isWin ? 2 : 0),
-        gamesPlayed: prev.gamesPlayed + 1,
         goalsFor: prev.goalsFor + yourGoals,
-        goalsAgainst: prev.goalsAgainst + oppGoals,
-        topPlayers: skatersA.sort((a, b) => (b.g + b.a) - (a.g + a.a)).slice(0, 5)
+        goalsAgainst: prev.goalsAgainst + oppGoals
       }));
+
+      // Simulate other league games after each user game
+      simulateLeagueGames(3);
+
+      // Update league data after every game
+      setLeagueData({
+        standings: globalLeague.getStandings(),
+        leaders: globalLeague.getLeagueLeaders(),
+        recentGames: globalLeague.getRecentGames(15),
+        todaysGames: globalLeague.getRecentGames(8)
+      });
 
       if (isPlayoff && playoffProgress >= 75 && isWin) {
         setStanleyCupWins(prev => prev + 1);
         setPlayerData(prev => ({ ...prev, coins: prev.coins + 2000, packs: prev.packs + 5 }));
-        toast({ title: "Stanley Cup Champions!", description: "Bonus 2000 coins + 5 packs awarded." });
+        toast("Stanley Cup Champions! Bonus 2000 coins + 5 packs awarded.");
       }
 
-      // Simulate other league games only occasionally to avoid inflation
-      if (seasonProgress % 20 === 0) { // Less frequent simulation
-        simulateLeagueGames(3); // Fewer games
-      }
-
-      // Update league data after every user game
-      setLeagueData(prev => ({
-        standings: globalLeague.getStandings(),
-        leaders: globalLeague.getLeagueLeaders(),
-        recentGames: globalLeague.getRecentGames(15),
-        todaysGames: prev.todaysGames // Keep existing games
-      }));
+      toast(`${isWin ? "Victory!" : "Defeat"}: ${isWin ? "Won" : "Lost"} vs ${teamName}. Earned ${coinsEarned} coins${packReward ? " + 1 pack" : ""}.`);
     }, 1200);
   };
 
-  // Get team comparison data with accurate user team tracking
-  const userTeam = leagueData.standings.find(team => team.team === "Your Team") || {
-    team: "Your Team",
-    wins: userTeamStats.wins,
-    losses: userTeamStats.losses,
-    otLosses: userTeamStats.otLosses,
-    points: userTeamStats.points,
-    gamesPlayed: userTeamStats.gamesPlayed,
-    goalsFor: userTeamStats.goalsFor,
-    goalsAgainst: userTeamStats.goalsAgainst,
-    goalDifferential: userTeamStats.goalsFor - userTeamStats.goalsAgainst,
-    powerPlayPercentage: 0.22,
-    penaltyKillPercentage: 0.81,
-    homeRecord: { wins: Math.floor(userTeamStats.wins * 0.6), losses: Math.floor(userTeamStats.losses * 0.6), ot: 0 },
-    awayRecord: { wins: userTeamStats.wins - Math.floor(userTeamStats.wins * 0.6), losses: userTeamStats.losses - Math.floor(userTeamStats.losses * 0.6), ot: 0 },
-    streak: { type: 'W' as const, count: 1 },
-    lastTenRecord: { wins: Math.min(userTeamStats.wins, 10), losses: Math.min(userTeamStats.losses, 10), ot: 0 },
-    divisionRank: 1,
-    conferenceRank: 1
-  };
-
+  // Get team comparison data
+  const userTeam = leagueData.standings.find(team => team.team === "Your Team") || leagueData.standings[0];
   const leagueAverage = {
-    points: leagueData.standings.reduce((sum, team) => sum + team.points, 0) / Math.max(leagueData.standings.length, 1),
-    wins: leagueData.standings.reduce((sum, team) => sum + team.wins, 0) / Math.max(leagueData.standings.length, 1),
-    goalsFor: leagueData.standings.reduce((sum, team) => sum + team.goalsFor, 0) / Math.max(leagueData.standings.length, 1),
-    goalsAgainst: leagueData.standings.reduce((sum, team) => sum + team.goalsAgainst, 0) / Math.max(leagueData.standings.length, 1),
-    powerPlayPercentage: leagueData.standings.reduce((sum, team) => sum + team.powerPlayPercentage, 0) / Math.max(leagueData.standings.length, 1),
-    penaltyKillPercentage: leagueData.standings.reduce((sum, team) => sum + team.penaltyKillPercentage, 0) / Math.max(leagueData.standings.length, 1)
+    points: leagueData.standings.reduce((sum, team) => sum + team.points, 0) / leagueData.standings.length,
+    wins: leagueData.standings.reduce((sum, team) => sum + team.wins, 0) / leagueData.standings.length,
+    goalsFor: leagueData.standings.reduce((sum, team) => sum + team.goalsFor, 0) / leagueData.standings.length,
+    goalsAgainst: leagueData.standings.reduce((sum, team) => sum + team.goalsAgainst, 0) / leagueData.standings.length,
+    powerPlayPercentage: leagueData.standings.reduce((sum, team) => sum + team.powerPlayPercentage, 0) / leagueData.standings.length,
+    penaltyKillPercentage: leagueData.standings.reduce((sum, team) => sum + team.penaltyKillPercentage, 0) / leagueData.standings.length
   };
 
-  const leagueRank = leagueData.standings.findIndex(team => team.team === "Your Team") + 1 || 1;
+  const leagueRank = leagueData.standings.findIndex(team => team.team === "Your Team") + 1;
 
   return (
     <div className="min-h-screen ice-surface">
@@ -623,171 +577,86 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
                   </TabsContent>
 
                   <TabsContent value="my-team" className="space-y-6">
-                    <Card className="game-card p-6">
-                      <h3 className="text-2xl font-bold mb-6 text-foreground flex items-center">
-                        <Award className="w-6 h-6 mr-2 text-primary" />
-                        Your Team Performance
-                      </h3>
-                      
-                      {/* Team Record */}
-                      <div className="grid md:grid-cols-4 gap-4 mb-8">
-                        <div className="text-center p-4 bg-primary/10 rounded-lg">
-                          <div className="text-2xl font-bold text-primary">{userTeamStats.wins}</div>
-                          <div className="text-sm text-muted-foreground">Wins</div>
-                        </div>
-                        <div className="text-center p-4 bg-destructive/10 rounded-lg">
-                          <div className="text-2xl font-bold text-destructive">{userTeamStats.losses}</div>
-                          <div className="text-sm text-muted-foreground">Losses</div>
-                        </div>
-                        <div className="text-center p-4 bg-accent/10 rounded-lg">
-                          <div className="text-2xl font-bold text-accent">{userTeamStats.points}</div>
-                          <div className="text-sm text-muted-foreground">Points</div>
-                        </div>
-                        <div className="text-center p-4 bg-muted/10 rounded-lg">
-                          <div className="text-2xl font-bold text-foreground">{leagueRank}</div>
-                          <div className="text-sm text-muted-foreground">League Rank</div>
-                        </div>
-                      </div>
-
-                      {/* Goals For/Against */}
-                      <div className="grid md:grid-cols-2 gap-4 mb-8">
-                        <div className="p-4 bg-green-500/10 rounded-lg">
-                          <div className="text-xl font-bold text-green-500">{userTeamStats.goalsFor}</div>
-                          <div className="text-sm text-muted-foreground">Goals For</div>
-                          <div className="text-xs text-muted-foreground">
-                            Avg: {userTeamStats.gamesPlayed > 0 ? (userTeamStats.goalsFor / userTeamStats.gamesPlayed).toFixed(1) : '0.0'} per game
-                          </div>
-                        </div>
-                        <div className="p-4 bg-red-500/10 rounded-lg">
-                          <div className="text-xl font-bold text-red-500">{userTeamStats.goalsAgainst}</div>
-                          <div className="text-sm text-muted-foreground">Goals Against</div>
-                          <div className="text-xs text-muted-foreground">
-                            Avg: {userTeamStats.gamesPlayed > 0 ? (userTeamStats.goalsAgainst / userTeamStats.gamesPlayed).toFixed(1) : '0.0'} per game
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Top Performers from Last Game */}
-                      {userTeamStats.topPlayers.length > 0 && (
-                        <div>
-                          <h4 className="text-lg font-semibold mb-4 text-foreground flex items-center">
-                            <Star className="w-5 h-5 mr-2 text-primary" />
-                            Top Performers (Last Game)
-                          </h4>
-                          <div className="grid gap-3">
-                            {userTeamStats.topPlayers.slice(0, 5).map((player: any, index: number) => (
-                              <div key={index} className="flex items-center justify-between p-3 bg-muted/5 rounded-lg border border-muted/20">
-                                <div className="flex items-center space-x-3">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                                    index === 0 ? 'bg-gold text-gold-foreground' :
-                                    index === 1 ? 'bg-silver text-silver-foreground' :
-                                    index === 2 ? 'bg-bronze text-bronze-foreground' :
-                                    'bg-muted text-muted-foreground'
-                                  }`}>
-                                    {index + 1}
-                                  </div>
-                                  <div>
-                                    <div className="font-semibold text-foreground">{player.name}</div>
-                                    <div className="text-sm text-muted-foreground">{player.position}</div>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="font-bold text-primary">{player.g + player.a} pts</div>
-                                  <div className="text-sm text-muted-foreground">{player.g}G {player.a}A</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {userTeamStats.gamesPlayed === 0 && (
-                        <div className="text-center py-8">
-                          <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                          <p className="text-muted-foreground">Play your first game to see team statistics!</p>
-                        </div>
-                      )}
-                    </Card>
-                    
-                    <TeamComparison
-                      userTeam={userTeam}
-                      leagueAverage={leagueAverage}
+                    <TeamComparison 
+                      userTeam={userTeam} 
+                      leagueAverage={leagueAverage} 
                       leagueRank={leagueRank}
-                      totalTeams={leagueData.standings.length}
+                      totalTeams={leagueData.standings.length} 
                     />
                   </TabsContent>
                 </Tabs>
               </TabsContent>
 
               <TabsContent value="playoffs" className="space-y-6">
-                {/* Stanley Cup Playoffs */}
                 <Card className="game-card p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-bold text-foreground flex items-center">
-                      <Crown className="w-8 h-8 mr-3 text-gold" /> Stanley Cup Playoffs
-                    </h3>
+                    <h3 className="text-2xl font-bold text-foreground">Stanley Cup Playoffs</h3>
                     <div className="text-right">
-                      <div className="text-lg font-semibold text-gold">Round {Math.floor(playoffProgress / 25) + 1} of 4</div>
+                      <div className="text-lg font-semibold text-primary">
+                        Round {Math.floor(playoffProgress / 25) + 1} / 4
+                      </div>
                     </div>
                   </div>
-                  <Progress value={playoffProgress} className="h-4 mb-4" />
-                  <p className="text-sm text-muted-foreground">Win 4 rounds to claim the Stanley Cup! Higher rewards and tougher competition.</p>
+                  <Progress value={playoffProgress} className="h-3 mb-4" />
                 </Card>
 
-                {/* Playoff Bracket */}
-                <Card className="game-card p-6">
-                  <h3 className="text-2xl font-bold mb-6 text-foreground">Playoff Bracket</h3>
-                  <div className="space-y-6">
-                    {playoffTeams.map((round, index) => {
-                      const isUnlocked = index <= Math.floor(playoffProgress / 25);
-                      const isActive = index === Math.floor(playoffProgress / 25) && playoffProgress < 100;
-                      const isCompleted = index < Math.floor(playoffProgress / 25);
-
-                      return (
-                        <div key={round.name} className={`p-4 rounded-lg border ${
-                          isCompleted ? 'bg-primary/20 border-primary/50' : 
-                          isActive ? 'bg-accent/10 border-accent/30' : 
-                          'bg-muted/5 border-muted/20'
-                        }`}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                isCompleted ? 'bg-primary text-primary-foreground' :
-                                isActive ? 'bg-accent text-accent-foreground' :
-                                'bg-muted text-muted-foreground'
-                              }`}>
-                                {isCompleted ? <Crown className="w-4 h-4" /> : round.round}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-foreground">{round.name}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  Round {round.round} of 4 • Best of 7 Series
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-4">
-                              {isActive && (
-                                <Button
-                                  onClick={() => { setSelectedOpponent(round); setView('setup'); }}
-                                  disabled={isPlaying}
-                                  className="btn-primary"
-                                >
-                                  <Play className="w-4 h-4 mr-2" /> Setup Series
-                                </Button>
-                              )}
-                              {isCompleted && (
-                                <Badge className="bg-primary/20 text-primary">Won</Badge>
-                              )}
-                              {!isUnlocked && (
-                                <Badge variant="secondary">Locked</Badge>
-                              )}
-                            </div>
-                          </div>
+                {playoffTeams.map((round, index) => {
+                  const isCurrentRound = Math.floor(playoffProgress / 25) === index;
+                  const isCompleted = playoffProgress > (index + 1) * 25;
+                  
+                  return (
+                    <Card key={round.name} className={`game-card p-6 ${isCurrentRound ? 'ring-2 ring-primary' : ''}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-xl font-bold text-foreground">{round.name}</h4>
+                        {isCompleted && <Badge className="bg-green-500">Completed</Badge>}
+                        {isCurrentRound && <Badge className="bg-primary">Current Round</Badge>}
+                      </div>
+                      
+                      {round.opponents.map((opponent, oppIndex) => (
+                        <div key={opponent} className="flex items-center justify-between p-4 border rounded-lg mb-2">
+                          <span className="text-lg font-semibold text-foreground">vs {opponent}</span>
+                          {isCurrentRound && (
+                            <Button 
+                              onClick={() => simulatePlayoffGame({ name: opponent })}
+                              disabled={isPlaying}
+                              className="btn-primary"
+                            >
+                              <Play className="w-4 h-4 mr-2" />
+                              Play Series
+                            </Button>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                </Card>
+                      ))}
+                    </Card>
+                  );
+                })}
+              </TabsContent>
+
+              <TabsContent value="league-stats" className="space-y-6">
+                <PlayerLeaderboards 
+                  playerLeaders={leagueData.leaders.playerLeaders} 
+                  goalieLeaders={leagueData.leaders.goalieLeaders} 
+                />
+              </TabsContent>
+
+              <TabsContent value="standings" className="space-y-6">
+                <EnhancedLeagueStandings standings={leagueData.standings} userTeam="Your Team" />
+              </TabsContent>
+
+              <TabsContent value="scoreboard" className="space-y-6">
+                <LeagueScoreboard 
+                  recentGames={leagueData.recentGames} 
+                  todaysGames={leagueData.todaysGames} 
+                />
+              </TabsContent>
+
+              <TabsContent value="my-team" className="space-y-6">
+                <TeamComparison 
+                  userTeam={userTeam} 
+                  leagueAverage={leagueAverage} 
+                  leagueRank={leagueRank}
+                  totalTeams={leagueData.standings.length} 
+                />
               </TabsContent>
             </Tabs>
           </>
@@ -797,21 +666,20 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
             opponent={selectedOpponent}
             onBack={() => setView('hub')}
             onSimulateFull={(opts) => {
-              if (selectedOpponent) {
-                const isPlayoffMode = currentMode === 'playoffs';
-                simulateGame(selectedOpponent.difficulty || selectedOpponent.baseDifficulty, selectedOpponent.name, isPlayoffMode);
-                setView('hub');
-              }
+              setView('result');
+              simulateGame(selectedOpponent?.difficulty || 80, selectedOpponent?.name || 'Opponent', currentMode === 'playoffs');
             }}
           />
-        ) : null}
-
-        <ResultModal
-          open={!!resultData}
-          onOpenChange={(open) => !open && setResultData(null)}
-          data={resultData}
-        />
+        ) : (
+          <ResultModal
+            open={view === 'result'}
+            onOpenChange={(open) => !open && setView('hub')}
+            data={resultData}
+          />
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default EnhancedSeasonMode;
