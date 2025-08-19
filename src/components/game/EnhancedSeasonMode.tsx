@@ -666,9 +666,129 @@ const EnhancedSeasonMode = ({ playerData, setPlayerData, onNavigate }: EnhancedS
             opponent={selectedOpponent}
             onBack={() => setView('hub')}
             onSimulateFull={(opts) => {
-              setView('result');
-              simulateGame(selectedOpponent?.difficulty || 80, selectedOpponent?.name || 'Opponent', currentMode === 'playoffs');
+              // Enhanced simulation with new game settings
+              const opponentDifficulty = opts.awayTeam?.difficulty || selectedOpponent?.difficulty || 80;
+              const opponentName = opts.awayTeam?.name || selectedOpponent?.name || 'Opponent';
+              
+              setIsPlaying(true);
+              setTimeout(() => {
+                const difficultyMultiplier = 1 + (opts.difficulty * 0.1);
+                const lengthMultiplier = opts.gameLength / 10;
+                
+                // Calculate win probability based on selected players and settings
+                const selectedPlayerStrength = opts.selectedPlayers.reduce((sum, p) => sum + (p.overall || 75), 0) / opts.selectedPlayers.length;
+                const strengthDiff = selectedPlayerStrength - opponentDifficulty;
+                const baseWinChance = 0.5 + (strengthDiff * 0.01);
+                const winChance = Math.max(0.15, Math.min(0.85, baseWinChance));
+                
+                const isWin = Math.random() < winChance;
+                
+                // Enhanced scoring based on game settings
+                let yourGoals = Math.max(1, Math.round((2 + Math.random() * 3) * lengthMultiplier));
+                let oppGoals = Math.max(0, Math.round((2 + Math.random() * 3) * lengthMultiplier));
+                
+                if (isWin) {
+                  yourGoals += Math.round(Math.random() * 2);
+                } else {
+                  oppGoals += Math.round(Math.random() * 2);
+                }
+                
+                // Overtime logic
+                if (opts.overtimeEnabled && yourGoals === oppGoals) {
+                  if (Math.random() < 0.5) {
+                    yourGoals += 1;
+                  } else {
+                    oppGoals += 1;
+                  }
+                }
+                
+                // Generate detailed player stats
+                const skatersA = opts.selectedPlayers.filter(p => p.position !== 'G').map((player) => {
+                  const goals = Math.random() < 0.3 ? Math.round(Math.random() * 2) : 0;
+                  const assists = Math.random() < 0.4 ? Math.round(Math.random() * 2) : 0;
+                  return {
+                    id: player.id,
+                    name: player.name,
+                    position: player.position,
+                    g: goals,
+                    a: assists,
+                    sog: Math.round(1 + Math.random() * 4),
+                    hits: Math.round(Math.random() * 3),
+                    toi: 10 + Math.round(Math.random() * 10)
+                  };
+                });
+                
+                const goaliePlayer = opts.selectedPlayers.find(p => p.position === 'G');
+                const goalieA = goaliePlayer ? {
+                  name: goaliePlayer.name,
+                  sa: Math.round(15 + Math.random() * 20),
+                  ga: oppGoals,
+                  sv: Math.max(0, Math.round(15 + Math.random() * 20) - oppGoals),
+                  svPct: ((Math.round(15 + Math.random() * 20) - oppGoals) / Math.round(15 + Math.random() * 20) * 100)
+                } : {
+                  name: 'Your Goalie',
+                  sa: 20,
+                  ga: oppGoals,
+                  sv: Math.max(0, 20 - oppGoals),
+                  svPct: (20 - oppGoals) / 20 * 100
+                };
+                
+                // Build enhanced result data
+                setResultData({
+                  opponentName,
+                  isWin,
+                  scoreHome: yourGoals,
+                  scoreAway: oppGoals,
+                  teamA: {
+                    goals: yourGoals,
+                    sog: Math.round(20 + Math.random() * 20),
+                    hits: Math.round(10 + Math.random() * 20),
+                    pp: `${Math.round(Math.random()*2)}/${1+Math.round(Math.random()*3)}`,
+                    foPct: 40 + Math.random() * 20
+                  },
+                  teamB: {
+                    goals: oppGoals,
+                    sog: Math.round(20 + Math.random() * 20),
+                    hits: Math.round(10 + Math.random() * 20),
+                    pp: `${Math.round(Math.random()*2)}/${1+Math.round(Math.random()*3)}`,
+                    foPct: 40 + Math.random() * 20
+                  },
+                  skatersA,
+                  skatersB: [], // Opponent skaters could be generated here
+                  goalies: {
+                    home: goalieA,
+                    away: {
+                      name: `${opts.awayTeam?.abbreviation || 'OPP'} G1`,
+                      sa: Math.round(15 + Math.random() * 20),
+                      ga: yourGoals,
+                      sv: Math.max(0, Math.round(15 + Math.random() * 20) - yourGoals),
+                      svPct: ((Math.round(15 + Math.random() * 20) - yourGoals) / Math.round(15 + Math.random() * 20) * 100)
+                    }
+                  }
+                });
+                
+                // Update season/playoff progress
+                if (currentMode === 'season') {
+                  setSeasonProgress(prev => Math.min(100, prev + (100 / seasonTeams.length)));
+                } else {
+                  setPlayoffProgress(prev => Math.min(100, prev + 25));
+                }
+                
+                // Skip league update for now - just update display data
+                setLeagueData({
+                  standings: globalLeague.getStandings(),
+                  leaders: globalLeague.getLeagueLeaders(),
+                  recentGames: globalLeague.getRecentGames(10),
+                  todaysGames: leagueData.todaysGames
+                });
+                
+                setIsPlaying(false);
+                setView('result');
+                
+                toast(`${isWin ? "Victory!" : "Defeat"}: Final Score ${yourGoals}-${oppGoals} vs ${opponentName}`);
+              }, 1500);
             }}
+            availableTeams={seasonTeams}
           />
         ) : (
           <ResultModal
