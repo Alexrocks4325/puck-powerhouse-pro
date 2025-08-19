@@ -427,29 +427,6 @@ export class LeagueSimulation {
   // Add a game result directly (for user games)
   addGameResult(game: GameResult) {
     this.gameResults.push(game);
-    
-    // Ensure "Your Team" exists in standings
-    if (!this.teamStandings.has("Your Team")) {
-      this.teamStandings.set("Your Team", {
-        team: "Your Team",
-        wins: 0,
-        losses: 0,
-        otLosses: 0,
-        points: 0,
-        gamesPlayed: 0,
-        goalsFor: 0,
-        goalsAgainst: 0,
-        goalDifferential: 0,
-        powerPlayPercentage: 0.20,
-        penaltyKillPercentage: 0.82,
-        homeRecord: { wins: 0, losses: 0, ot: 0 },
-        awayRecord: { wins: 0, losses: 0, ot: 0 },
-        streak: { type: 'W', count: 0 },
-        lastTenRecord: { wins: 0, losses: 0, ot: 0 },
-        divisionRank: 0,
-        conferenceRank: 0
-      });
-    }
   }
 
   // Get recent games
