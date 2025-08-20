@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ interface EnhancedSeasonModeProps {
 }
 
 export default function EnhancedSeasonMode({ playerData, setPlayerData, onNavigate }: EnhancedSeasonModeProps) {
+  const navigate = useNavigate();
   const [seasonProgress, setSeasonProgress] = useState(0);
   const [playoffProgress, setPlayoffProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -208,6 +210,18 @@ export default function EnhancedSeasonMode({ playerData, setPlayerData, onNaviga
   };
 
   const simulateGame = (opponentDifficulty: number, teamName: string, isPlayoff = false) => {
+    // Navigate to gameplay instead of simulation
+    const opponentAbbr = selectedOpponent?.abbreviation || 'CBJ'; 
+    navigate('/gameplay', {
+      state: {
+        homeTeam: 'TOR', // User team - you can make this dynamic later
+        awayTeam: opponentAbbr,
+        isSeasonMode: true
+      }
+    });
+  };
+
+  const simulateGameOld = (opponentDifficulty: number, teamName: string, isPlayoff = false) => {
     setIsPlaying(true);
     setTimeout(() => {
       const strengthDiff = teamStrength - opponentDifficulty;
