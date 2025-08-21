@@ -261,6 +261,9 @@ export default function Gameplay() {
         <HockeyRink
           onRinkTap={() => console.log("Rink tapped")}
           isGameActive={isGameActive && !isPaused}
+          homeLineup={homeLineup}
+          awayLineup={awayLineup}
+          gameStats={gameStats}
         />
       </div>
 
