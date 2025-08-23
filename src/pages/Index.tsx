@@ -14,17 +14,18 @@ import LiveEventsMode from "@/components/game/LiveEventsMode";
 import PackManager from "@/components/game/PackManager";
 import CoinShop from "@/components/game/CoinShop";
 import RosterCollection from "@/components/game/RosterCollection";
-import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package, Library } from "lucide-react";
+import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package, Library, Building2 } from "lucide-react";
+import FranchiseMode from "@/components/game/FranchiseMode";
 import nhlLogo from "@/assets/nhl-ultimate-logo.png";
 
 import { addExperience, showLevelUpNotification, EXPERIENCE_REWARDS } from "@/components/game/ProgressionSystem";
 
 const Index = () => {
-  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'collection'>('intro');
+  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'collection' | 'franchise'>('intro');
   const [showPackManager, setShowPackManager] = useState(false);
   const [showCoinShop, setShowCoinShop] = useState(false);
 
-  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'collection') => {
+  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'collection' | 'franchise') => {
     setGameState(screen);
   };
 
@@ -313,6 +314,16 @@ const Index = () => {
     );
   }
 
+  if (gameState === 'franchise') {
+    return (
+      <FranchiseMode 
+        playerData={playerData}
+        updatePlayerData={setPlayerData}
+        onNavigate={handleNavigate}
+      />
+    );
+  }
+
   // Main Menu
   return (
     <div className="min-h-screen ice-surface">
@@ -549,6 +560,24 @@ const Index = () => {
               <Star className="w-4 h-4 text-orange-500" />
               <Star className="w-4 h-4 text-orange-500" />
               <Star className="w-4 h-4 text-orange-500" />
+            </div>
+          </Card>
+
+          <Card 
+            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => {
+              setGameState('franchise');
+            }}
+          >
+            <Building2 className="w-12 h-12 mx-auto mb-4 text-violet-500" />
+            <h3 className="text-xl font-bold mb-2">Franchise Mode</h3>
+            <p className="text-muted-foreground mb-4">
+              Take control as GM! Manage trades, contracts, and lead your franchise to glory
+            </p>
+            <div className="flex justify-center space-x-2">
+              <Star className="w-4 h-4 text-violet-500" />
+              <Star className="w-4 h-4 text-violet-500" />
+              <Star className="w-4 h-4 text-violet-500" />
             </div>
           </Card>
         </div>

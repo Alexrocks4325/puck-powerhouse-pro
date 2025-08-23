@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Gameplay from "./components/game/Gameplay";
+import FranchiseMode from "./components/game/FranchiseMode";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/gameplay" element={<Gameplay />} />
+          <Route path="/franchise" element={<FranchiseMode playerData={{}} updatePlayerData={() => {}} onNavigate={() => {}} />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
