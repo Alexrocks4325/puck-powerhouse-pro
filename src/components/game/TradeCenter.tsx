@@ -130,10 +130,7 @@ export default function TradeCenter({ state, setState } : { state: SeasonState; 
     return [...team.skaters as (Skater|Goalie)[], ...team.goalies];
   }
 
-  // toggle selection helpers
-  function toggleSelect(listSetter: (fn:(s:ID[])=>ID[])=>void, setStateList:(n:ID[])=>void, id: ID) {
-    setStateList(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
-  }
+  // Selection handlers work directly with state setters
 
   // ------------------ Trade actions ------------------
   function proposeTrade() {

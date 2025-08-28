@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import GameHeader from "./GameHeader";
 import { Trophy, Users, Calendar, Star, Settings, TrendingUp, Building2, Target, Crown } from "lucide-react";
 import { nhlPlayerDatabase, Player } from "@/data/nhlPlayerDatabase";
+import TradeCenter from './TradeCenter';
 
 // =============================================================
 // Types
@@ -768,12 +769,54 @@ function FranchiseDashboard() {
               </TabsContent>
 
               <TabsContent value="trades">
-                <Card className="p-6">
-                  <h3 className="font-semibold mb-4">Trade Center</h3>
-                  <p className="text-muted-foreground">
-                    Trade functionality coming soon! You'll be able to negotiate trades with other teams here.
-                  </p>
-                </Card>
+                <TradeCenter 
+                  state={{
+                    seasonYear: `${state.franchise.year}-${state.franchise.year + 1}`,
+                    currentDay: 1,
+                    totalDays: 180,
+                    schedule: [],
+                    boxScores: {},
+                    teams: Object.fromEntries(state.franchise.teams.map(team => [
+                      team.id,
+                      {
+                        id: team.id,
+                        name: team.name,
+                        abbrev: team.abbreviation,
+                        conference: team.conference,
+                        division: team.division,
+                        capSpace: team.capSpace,
+                        skaters: team.roster.filter(p => p.position !== "G").map(p => ({
+                          id: String(p.id),
+                          name: p.name,
+                          position: p.position as "C"|"LW"|"RW"|"D",
+                          overall: p.overall,
+                          shooting: Math.floor(p.overall * 0.9),
+                          passing: Math.floor(p.overall * 0.85),
+                          defense: Math.floor(p.overall * 0.8),
+                          stamina: 70,
+                          gp: 0, g: 0, a: 0, p: 0, pim: 0, shots: 0, plusMinus: 0
+                        })),
+                        goalies: team.roster.filter(p => p.position === "G").map(p => ({
+                          id: String(p.id),
+                          name: p.name,
+                          position: "G" as const,
+                          overall: p.overall,
+                          reflexes: Math.floor(p.overall * 1.05),
+                          positioning: Math.floor(p.overall * 1.02),
+                          reboundControl: Math.floor(p.overall * 0.95),
+                          stamina: 70,
+                          gp: 0, gs: 0, w: 0, l: 0, otl: 0, so: 0, shotsAgainst: 0, saves: 0, gaa: 0, svpct: 0
+                        })),
+                        w: 0, l: 0, otl: 0, gf: 0, ga: 0, pts: 0, shotsFor: 0, shotsAgainst: 0
+                      }
+                    ])),
+                    teamOrder: state.franchise.teams.map(t => t.id)
+                  }}
+                  setState={() => {
+                    // Handle state updates for trade center
+                    console.log("Trade center state update");
+                  }}
+                />
               </TabsContent>
 
               <TabsContent value="prospects">
