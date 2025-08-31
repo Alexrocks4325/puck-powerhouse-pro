@@ -42,10 +42,12 @@ export type Goalie = {
 };
 
 export type Team = {
-  id: ID; name: string; abbrev: string; conference: "East"|"West"; division?: string;
+  id: ID; name: string; abbrev: string; conference: "East"|"West"; 
+  division: "Atlantic" | "Metropolitan" | "Central" | "Pacific";
   skaters: Skater[]; goalies: Goalie[];
   w: number; l: number; otl: number; gf: number; ga: number; shotsFor: number; shotsAgainst: number;
   ppAttempts?: number; ppGoals?: number; foWon?: number; foLost?: number;
+  capSpace: number; pts: number; // Make required to match FranchiseMode
 };
 
 export type Game = {
@@ -333,7 +335,7 @@ function applyMobileResult(state: SeasonState, home: Team, away: Team, totals: {
   // player stat bumps (very light model; your sim may already track per-game)
   const skById: Record<string, Skater> = {};
   [...home.skaters, ...away.skaters].forEach(s=> (skById[s.id]=s));
-  const touch = (id?:ID, kind:"G"|"A"|"SHOT") => {
+  const touch = (kind:"G"|"A"|"SHOT", id?:ID) => {
     if (!id) return;
     const p = skById[id]; if (!p) return;
     if (kind==="G") { p.g=(p.g||0)+1; p.p=(p.p||0)+1; }
@@ -356,9 +358,9 @@ function applyMobileResult(state: SeasonState, home: Team, away: Team, totals: {
 
   // goals/assists
   for (const g of totals.goals) {
-    touch(g.scorerId, "G");
-    if (g.assist1Id) touch(g.assist1Id, "A");
-    if (g.assist2Id) touch(g.assist2Id, "A");
+    touch("G", g.scorerId);
+    if (g.assist1Id) touch("A", g.assist1Id);
+    if (g.assist2Id) touch("A", g.assist2Id);
   }
 
   // goalies — credit starts to #1
@@ -469,22 +471,26 @@ export default function CalendarSimHub({
 
   function simToNextGame() {
     if (!nextGame) return;
-    setState(prev => {
-      const s = structuredClone(prev) as SeasonState;
-      const home = s.teams[nextGame.homeId]; const away = s.teams[nextGame.awayId];
-      // run silent mobile engine (no UI)
-      const gen = liveSimGenerator(home, away);
-      let step = gen.next();
-      while(!step.done){ step = gen.next(); }
-      const totals = (step.value?.totals ?? {hShots:0,aShots:0,hGoals:0,aGoals:0,goals:[],ot:false}) as any;
-      const box = applyMobileResult(s, home, away, { ...totals, ot: step.value.ot });
-      nextGame.played = true;
-      nextGame.final = { homeGoals: totals.hGoals, awayGoals: totals.aGoals, ot: step.value.ot };
-      s.boxScores[box.gameId] = box;
-      s.currentDay = Math.max(s.currentDay, nextGame.day);
-      setLastBox(box);
-      return s;
-    });
+      setState(prev => {
+        const s = structuredClone(prev) as SeasonState;
+        const home = s.teams[nextGame.homeId]; const away = s.teams[nextGame.awayId];
+        // run silent mobile engine (no UI)
+        const gen = liveSimGenerator(home, away);
+        let step = gen.next();
+        while(!step.done){ step = gen.next(); }
+        const result = step.value;
+        const box = applyMobileResult(s, home, away, { 
+          hShots: result.hShots, aShots: result.aShots, 
+          hGoals: result.hGoals, aGoals: result.aGoals, 
+          goals: result.goals, ot: result.ot 
+        });
+        nextGame.played = true;
+        nextGame.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
+        s.boxScores[box.gameId] = box;
+        s.currentDay = Math.max(s.currentDay, nextGame.day);
+        setLastBox(box);
+        return s;
+      });
   }
 
   function simToEndOfSeason() {
@@ -501,10 +507,14 @@ export default function CalendarSimHub({
         const gen = liveSimGenerator(home, away);
         let step = gen.next();
         while(!step.done){ step = gen.next(); }
-        const totals = (step.value?.totals ?? {hShots:0,aShots:0,hGoals:0,aGoals:0,goals:[],ot:false}) as any;
-        const box = applyMobileResult(s, home, away, { ...totals, ot: step.value.ot });
+        const result = step.value;
+        const box = applyMobileResult(s, home, away, { 
+          hShots: result.hShots, aShots: result.aShots, 
+          hGoals: result.hGoals, aGoals: result.aGoals, 
+          goals: result.goals, ot: result.ot 
+        });
         g.played = true;
-        g.final = { homeGoals: totals.hGoals, awayGoals: totals.aGoals, ot: step.value.ot };
+        g.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
         s.boxScores[box.gameId] = box;
         s.currentDay = Math.max(s.currentDay, g.day);
         setLastBox(box);
@@ -527,10 +537,14 @@ export default function CalendarSimHub({
         const gen = liveSimGenerator(home, away);
         let step = gen.next();
         while(!step.done){ step = gen.next(); }
-        const totals = (step.value?.totals ?? {hShots:0,aShots:0,hGoals:0,aGoals:0,goals:[],ot:false}) as any;
-        const box = applyMobileResult(s, home, away, { ...totals, ot: step.value.ot });
+        const result = step.value;
+        const box = applyMobileResult(s, home, away, { 
+          hShots: result.hShots, aShots: result.aShots, 
+          hGoals: result.hGoals, aGoals: result.aGoals, 
+          goals: result.goals, ot: result.ot 
+        });
         g.played = true;
-        g.final = { homeGoals: totals.hGoals, awayGoals: totals.aGoals, ot: step.value.ot };
+        g.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
         s.boxScores[box.gameId] = box;
         s.currentDay = Math.max(s.currentDay, g.day);
         setLastBox(box);
@@ -717,13 +731,17 @@ function LiveSimModal({
       const step = genRef.current!.next();
       if (step.done) {
         // finalize, apply result to state
-        const totals = step.value?.totals ?? { hShots:0, aShots:0, hGoals:0, aGoals:0, goals:[], ot:false };
-        const box = applyMobileResult(state, home, away, { ...totals, ot: step.value.ot });
+        const result = step.value ?? { hShots:0, aShots:0, hGoals:0, aGoals:0, goals:[], ot:false };
+        const box = applyMobileResult(state, home, away, { 
+          hShots: result.hShots, aShots: result.aShots, 
+          hGoals: result.hGoals, aGoals: result.aGoals, 
+          goals: result.goals, ot: result.ot 
+        });
         setState(prev => {
           const s = structuredClone(prev) as SeasonState;
           const g = s.schedule.find(x => x.id === game.id)!;
           g.played = true;
-          g.final = { homeGoals: totals.hGoals, awayGoals: totals.aGoals, ot: step.value.ot };
+          g.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
           s.currentDay = Math.max(s.currentDay, g.day);
           s.boxScores[box.gameId] = box;
           return s;
@@ -732,9 +750,9 @@ function LiveSimModal({
         onFinished(box);
         setRunning(false);
       } else {
-        const t = step.value.totals;
+        const t = step.value;
         // Pull the last few raw events created since previous tick
-        // The generator stores them in totals.events; we just append new ones since last marker
+        // The generator stores them in step.value.events; we just append new ones since last marker
         const evs: LiveEvent[] = t.events.slice(-3); // take last few to avoid flooding
         const timeEv = evs.find(e=>e.t==="TIME") as any;
         if (timeEv) { setClock(timeEv.clock); setPeriod(timeEv.period); }
@@ -753,13 +771,17 @@ function LiveSimModal({
     if (!genRef.current) return;
     let step = genRef.current.next();
     while(!step.done) step = genRef.current.next();
-    const totals = step.value?.totals ?? { hShots:0, aShots:0, hGoals:0, aGoals:0, goals:[], ot:false };
-    const box = applyMobileResult(state, home, away, { ...totals, ot: step.value.ot });
+    const result = step.value ?? { hShots:0, aShots:0, hGoals:0, aGoals:0, goals:[], ot:false };
+    const box = applyMobileResult(state, home, away, { 
+      hShots: result.hShots, aShots: result.aShots, 
+      hGoals: result.hGoals, aGoals: result.aGoals, 
+      goals: result.goals, ot: result.ot 
+    });
     setState(prev => {
       const s = structuredClone(prev) as SeasonState;
       const g = s.schedule.find(x => x.id === game.id)!;
       g.played = true;
-      g.final = { homeGoals: totals.hGoals, awayGoals: totals.aGoals, ot: step.value.ot };
+      g.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
       s.currentDay = Math.max(s.currentDay, g.day);
       s.boxScores[box.gameId] = box;
       return s;
