@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import GameHeader from "./GameHeader";
+import TeamCoachSelection from "./TeamCoachSelection";
 import { Trophy, Users, Calendar, Star, Settings, TrendingUp, Building2, Target, Crown, Play, SkipForward, FastForward } from "lucide-react";
 import { nhlPlayerDatabase, Player as NHLPlayer } from "@/data/nhlPlayerDatabase";
 import TradeCenter from './TradeCenter';
@@ -957,10 +958,20 @@ function LiveSimPanel({ state, game, onFinish }: { state: SeasonState; game: Gam
 
 // -------------------------- MAIN EXPORT --------------------------
 export default function FranchiseMode() {
+  const [selectedTeam, setSelectedTeam] = useState<string>("");
+  const [coachName, setCoachName] = useState<string>("");
+  const [franchiseStarted, setFranchiseStarted] = useState<boolean>(false);
+  
   const { state, setState, reset, simToday, simAll, simToDate, simOne } = useSeason();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [view, setView] = useState<"scores"|"standings"|"leaders"|"livesim"|"trades">("scores");
   const [liveSimGame, setLiveSimGame] = useState<Game | null>(null);
+
+  const handleTeamSelection = (team: string, coach: string) => {
+    setSelectedTeam(team);
+    setCoachName(coach);
+    setFranchiseStarted(true);
+  };
 
   const openGame = (g: Game) => setSelectedGame(g);
   const closeGame = () => setSelectedGame(null);
@@ -976,6 +987,17 @@ export default function FranchiseMode() {
     setView("scores");
   };
 
+  const resetFranchise = () => {
+    setFranchiseStarted(false);
+    setSelectedTeam("");
+    setCoachName("");
+    reset();
+  };
+
+  if (!franchiseStarted) {
+    return <TeamCoachSelection onComplete={handleTeamSelection} />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <GameHeader />
@@ -983,10 +1005,11 @@ export default function FranchiseMode() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Franchise Mode — {state.seasonYear}</h1>
-            <div className="text-muted-foreground">Day {state.currentDay} / {state.totalDays}</div>
+            <div className="text-muted-foreground">Coach {coachName} • {selectedTeam} • Day {state.currentDay} / {state.totalDays}</div>
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={reset} variant="outline">New Season</Button>
+            <Button onClick={resetFranchise} variant="outline">Change Team</Button>
             <Button onClick={startLiveSim} className="gap-2">
               <Play className="w-4 h-4" />
               Play (Live Sim)
