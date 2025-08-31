@@ -142,7 +142,10 @@ export default function TeamManager({ state, setState, userTeamId }:
   const teamIds = useMemo(() => state.teamOrder ?? Object.keys(state.teams), [state]);
   const defaultTeam = userTeamId ?? teamIds[0];
   const [selectedTeamId, setSelectedTeamId] = useState<ID>(defaultTeam);
-  const team = state.teams[selectedTeamId];
+  
+  // Lock to userTeamId if provided
+  const actualSelectedTeamId = userTeamId || selectedTeamId;
+  const team = state.teams[actualSelectedTeamId];
 
   // local lineup state (not persisted into core team until "Apply")
   const [lineup, setLineup] = useState<Lineup>(() => team ? defaultLineupFromTeam(team) : { forwards: [[],[],[],[]], defense:[[],[],[]], goalieStart:null, goalieBackup:null });
@@ -153,7 +156,7 @@ export default function TeamManager({ state, setState, userTeamId }:
     const loaded = loadLineupFromStorage(team.id);
     if (loaded.lineup) setLineup(loaded.lineup);
     else setLineup(defaultLineupFromTeam(team));
-  }, [selectedTeamId]); // eslint-disable-line
+  }, [actualSelectedTeamId]); // eslint-disable-line
 
   // derived lists
   const bench = useMemo(() => {
@@ -288,12 +291,14 @@ export default function TeamManager({ state, setState, userTeamId }:
     <div className="p-4 space-y-4 max-w-6xl">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Team Manager — {team.name} ({team.abbrev})</h2>
-        <div className="flex items-center gap-2">
-          <label className="text-sm">Select Team:</label>
-          <select className="border rounded px-2 py-1" value={selectedTeamId} onChange={e=>setSelectedTeamId(e.target.value)}>
-            {teamIds.map(tid => <option key={tid} value={tid}>{state.teams[tid].abbrev} — {state.teams[tid].name}</option>)}
-          </select>
-        </div>
+        {!userTeamId && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm">Select Team:</label>
+            <select className="border rounded px-2 py-1" value={selectedTeamId} onChange={e=>setSelectedTeamId(e.target.value)}>
+              {teamIds.map(tid => <option key={tid} value={tid}>{state.teams[tid].abbrev} — {state.teams[tid].name}</option>)}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
