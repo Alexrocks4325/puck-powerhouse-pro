@@ -1115,7 +1115,7 @@ export default function FranchiseMode() {
           </TabsContent>
 
           <TabsContent value="team">
-            <TeamManager state={state} setState={setState} userTeamId={"TBL"} />
+            <TeamManager state={state} setState={setState} userTeamId={selectedTeam} />
           </TabsContent>
 
           <TabsContent value="livesim">

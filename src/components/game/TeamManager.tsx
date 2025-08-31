@@ -290,7 +290,9 @@ export default function TeamManager({ state, setState, userTeamId }:
   return (
     <div className="p-4 space-y-4 max-w-6xl">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Team Manager — {team.name} ({team.abbrev})</h2>
+        <h2 className="text-xl font-semibold">
+          {userTeamId ? `My Team — ${team.name} (${team.abbrev})` : `Team Manager — ${team.name} (${team.abbrev})`}
+        </h2>
         {!userTeamId && (
           <div className="flex items-center gap-2">
             <label className="text-sm">Select Team:</label>
