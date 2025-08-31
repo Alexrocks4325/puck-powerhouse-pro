@@ -249,62 +249,78 @@ function loadNHLLeague(): Record<ID, Team> {
     };
   }
 
-  // Import and organize players by team (synchronous approach for simplicity)
-  try {
-    const { nhlPlayerDatabase } = require('../../data/nhlPlayerDatabase');
-    const playersByTeam: Record<string, any[]> = {};
-    
-    // Group players by team
-    for (const player of nhlPlayerDatabase) {
-      if (!playersByTeam[player.team]) playersByTeam[player.team] = [];
-      playersByTeam[player.team].push(player);
+  // Use the imported NHL player database directly
+  console.log('Loading NHL teams with real rosters...');
+  console.log('Total NHL players in database:', nhlPlayerDatabase.length);
+  
+  const playersByTeam: Record<string, NHLPlayer[]> = {};
+  
+  // Group players by team
+  for (const player of nhlPlayerDatabase) {
+    if (!playersByTeam[player.team]) {
+      playersByTeam[player.team] = [];
+    }
+    playersByTeam[player.team].push(player);
+  }
+
+  console.log('Teams found in database:', Object.keys(playersByTeam));
+
+  // Convert NHL players to our format and assign to teams
+  for (const [teamAbbrev, players] of Object.entries(playersByTeam)) {
+    const team = teams[teamAbbrev];
+    if (!team) {
+      console.warn(`Team ${teamAbbrev} not found in TEAM_META`);
+      continue;
     }
 
-    // Convert NHL players to our format and assign to teams
-    for (const [teamAbbrev, players] of Object.entries(playersByTeam)) {
-      const team = teams[teamAbbrev];
-      if (!team) continue;
+    console.log(`Loading ${players.length} players for ${teamAbbrev}`);
 
-      for (const player of players) {
-        if (player.position === "G") {
-          const goalie: Goalie = {
-            id: player.id.toString(),
-            name: player.name,
-            position: "G",
-            overall: player.overall,
-            reflexes: player.overall + rnd(-5, 5),
-            positioning: player.overall + rnd(-5, 5),
-            reboundControl: player.overall + rnd(-5, 5),
-            stamina: rnd(60, 90),
-            gp: 0, gs: 0, w: 0, l: 0, otl: 0, so: 0, 
-            shotsAgainst: 0, saves: 0, gaa: 0, svpct: 0
-          };
-          team.goalies.push(goalie);
-        } else {
-          const skater: Skater = {
-            id: player.id.toString(),
-            name: player.name,
-            position: player.position as Skater["position"],
-            overall: player.overall,
-            shooting: player.overall + rnd(-8, 8),
-            passing: player.overall + rnd(-8, 8),
-            defense: player.overall + rnd(-8, 8),
-            stamina: rnd(60, 90),
-            gp: 0, g: 0, a: 0, p: 0, pim: 0, shots: 0, plusMinus: 0
-          };
-          team.skaters.push(skater);
-        }
+    for (const player of players) {
+      if (player.position === "G") {
+        const goalie: Goalie = {
+          id: player.id.toString(),
+          name: player.name,
+          position: "G",
+          overall: player.overall,
+          reflexes: Math.max(50, Math.min(99, player.overall + rnd(-3, 5))),
+          positioning: Math.max(50, Math.min(99, player.overall + rnd(-3, 5))),
+          reboundControl: Math.max(50, Math.min(99, player.overall + rnd(-3, 5))),
+          stamina: rnd(65, 90),
+          gp: 0, gs: 0, w: 0, l: 0, otl: 0, so: 0, 
+          shotsAgainst: 0, saves: 0, gaa: 0, svpct: 0
+        };
+        team.goalies.push(goalie);
+      } else {
+        const skater: Skater = {
+          id: player.id.toString(),
+          name: player.name,
+          position: player.position as Skater["position"],
+          overall: player.overall,
+          shooting: Math.max(45, Math.min(99, player.overall + rnd(-5, 8))),
+          passing: Math.max(45, Math.min(99, player.overall + rnd(-5, 8))),
+          defense: Math.max(45, Math.min(99, player.overall + rnd(-5, 8))),
+          stamina: rnd(65, 90),
+          gp: 0, g: 0, a: 0, p: 0, pim: 0, shots: 0, plusMinus: 0
+        };
+        team.skaters.push(skater);
       }
     }
-  } catch (error) {
-    // Fallback to generated teams if import fails
-    for (const meta of TEAM_META) {
-      if (teams[meta.id].skaters.length === 0) {
-        teams[meta.id] = genTeam(meta);
-      }
+
+    console.log(`${teamAbbrev}: ${team.skaters.length} skaters, ${team.goalies.length} goalies`);
+  }
+
+  // Verify all teams have players, fallback if needed
+  let teamsWithPlayers = 0;
+  for (const [teamId, team] of Object.entries(teams)) {
+    if (team.skaters.length > 0 || team.goalies.length > 0) {
+      teamsWithPlayers++;
+    } else {
+      console.warn(`Team ${teamId} has no players, using fallback`);
+      teams[teamId] = genTeam(TEAM_META.find(t => t.id === teamId)!);
     }
   }
 
+  console.log(`Successfully loaded ${teamsWithPlayers} teams with real NHL rosters`);
   return teams;
 }
 
