@@ -14,6 +14,75 @@ import { Trophy, Users, Calendar, Star, Settings, TrendingUp, Building2, Target,
 import { nhlPlayerDatabase, Player as NHLPlayer } from "@/data/nhlPlayerDatabase";
 import TradeCenter from './TradeCenter';
 
+// -------------------------- TEAM META --------------------------
+const TEAM_META: Array<{ id: ID; name: string; abbrev: string; conf: Team["conference"]; div: Team["division"]; }> = [
+  { id: "BOS", name: "Boston Bruins", abbrev: "BOS", conf: "East", div: "Atlantic" },
+  { id: "BUF", name: "Buffalo Sabres", abbrev: "BUF", conf: "East", div: "Atlantic" },
+  { id: "DET", name: "Detroit Red Wings", abbrev: "DET", conf: "East", div: "Atlantic" },
+  { id: "FLA", name: "Florida Panthers", abbrev: "FLA", conf: "East", div: "Atlantic" },
+  { id: "MTL", name: "Montréal Canadiens", abbrev: "MTL", conf: "East", div: "Atlantic" },
+  { id: "OTT", name: "Ottawa Senators", abbrev: "OTT", conf: "East", div: "Atlantic" },
+  { id: "TBL", name: "Tampa Bay Lightning", abbrev: "TBL", conf: "East", div: "Atlantic" },
+  { id: "TOR", name: "Toronto Maple Leafs", abbrev: "TOR", conf: "East", div: "Atlantic" },
+  { id: "CAR", name: "Carolina Hurricanes", abbrev: "CAR", conf: "East", div: "Metropolitan" },
+  { id: "CBJ", name: "Columbus Blue Jackets", abbrev: "CBJ", conf: "East", div: "Metropolitan" },
+  { id: "NJD", name: "New Jersey Devils", abbrev: "NJD", conf: "East", div: "Metropolitan" },
+  { id: "NYI", name: "New York Islanders", abbrev: "NYI", conf: "East", div: "Metropolitan" },
+  { id: "NYR", name: "New York Rangers", abbrev: "NYR", conf: "East", div: "Metropolitan" },
+  { id: "PHI", name: "Philadelphia Flyers", abbrev: "PHI", conf: "East", div: "Metropolitan" },
+  { id: "PIT", name: "Pittsburgh Penguins", abbrev: "PIT", conf: "East", div: "Metropolitan" },
+  { id: "WSH", name: "Washington Capitals", abbrev: "WSH", conf: "East", div: "Metropolitan" },
+  { id: "ARI", name: "Arizona Coyotes", abbrev: "ARI", conf: "West", div: "Central" },
+  { id: "CHI", name: "Chicago Blackhawks", abbrev: "CHI", conf: "West", div: "Central" },
+  { id: "COL", name: "Colorado Avalanche", abbrev: "COL", conf: "West", div: "Central" },
+  { id: "DAL", name: "Dallas Stars", abbrev: "DAL", conf: "West", div: "Central" },
+  { id: "MIN", name: "Minnesota Wild", abbrev: "MIN", conf: "West", div: "Central" },
+  { id: "NSH", name: "Nashville Predators", abbrev: "NSH", conf: "West", div: "Central" },
+  { id: "STL", name: "St. Louis Blues", abbrev: "STL", conf: "West", div: "Central" },
+  { id: "WPG", name: "Winnipeg Jets", abbrev: "WPG", conf: "West", div: "Central" },
+  { id: "ANA", name: "Anaheim Ducks", abbrev: "ANA", conf: "West", div: "Pacific" },
+  { id: "CGY", name: "Calgary Flames", abbrev: "CGY", conf: "West", div: "Pacific" },
+  { id: "EDM", name: "Edmonton Oilers", abbrev: "EDM", conf: "West", div: "Pacific" },
+  { id: "LAK", name: "Los Angeles Kings", abbrev: "LAK", conf: "West", div: "Pacific" },
+  { id: "SEA", name: "Seattle Kraken", abbrev: "SEA", conf: "West", div: "Pacific" },
+  { id: "SJS", name: "San Jose Sharks", abbrev: "SJS", conf: "West", div: "Pacific" },
+  { id: "VAN", name: "Vancouver Canucks", abbrev: "VAN", conf: "West", div: "Pacific" },
+  { id: "VGK", name: "Vegas Golden Knights", abbrev: "VGK", conf: "West", div: "Pacific" },
+];
+
+// -------------------------- FAKE ROSTER GENERATOR (FALLBACK) --------------------------
+const FIRST = ["Alex","Chris","Jordan","Taylor","Jamie","Pat","Devin","Riley","Sam","Casey","Robin","Corey","Drew","Avery","Shawn","Logan","Carter","Noah","Mason","Liam","Ethan","Lucas","Henry","Owen","Jack","Leo","Miles","Nate","Cole","Evan"];
+const LAST = ["Smith","Johnson","Williams","Jones","Brown","Miller","Davis","Wilson","Taylor","Clark","Hall","Young","King","Wright","Lopez","Hill","Scott","Green","Adams","Baker","Ward","Turner","Carter","Phillips","Campbell","Parker","Evans","Edwards","Collins","Stewart"];
+function genName() { return `${choice(FIRST)} ${choice(LAST)}`; }
+
+function genSkater(pos: Skater["position"]): Skater {
+  const overall = rnd(55, 94);
+  return {
+    id: makeId("P"), name: genName(), position: pos, overall,
+    shooting: rnd(50, 95), passing: rnd(50, 95), defense: rnd(50, 95), stamina: rnd(55, 95),
+    gp: 0, g: 0, a: 0, p: 0, pim: 0, shots: 0, plusMinus: 0
+  };
+}
+function genGoalie(): Goalie {
+  const overall = rnd(55, 95);
+  return {
+    id: makeId("G"), name: genName(), position: "G", overall,
+    reflexes: rnd(55, 96), positioning: rnd(55, 96), reboundControl: rnd(55, 96), stamina: rnd(60, 96),
+    gp: 0, gs: 0, w: 0, l: 0, otl: 0, so: 0, shotsAgainst: 0, saves: 0, gaa: 0, svpct: 0
+  };
+}
+function genTeam(meta: (typeof TEAM_META)[number]): Team {
+  const centers = Array.from({ length: 4 }, () => genSkater("C"));
+  const wings = Array.from({ length: 8 }, (_, i) => genSkater(i % 2 === 0 ? "LW" : "RW"));
+  const defense = Array.from({ length: 6 }, () => genSkater("D"));
+  const goalies = [genGoalie(), genGoalie()];
+  return {
+    id: meta.id, name: meta.name, abbrev: meta.abbrev, conference: meta.conf, division: meta.div,
+    capSpace: rnd(0, 15000000), skaters: [...centers, ...wings, ...defense], goalies,
+    w: 0, l: 0, otl: 0, gf: 0, ga: 0, pts: 0, shotsFor: 0, shotsAgainst: 0
+  };
+}
+
 // -------------------------- TYPES & MODELS --------------------------
 type ID = string;
 
@@ -164,29 +233,77 @@ function convertNHLPlayerToGoalie(player: NHLPlayer): Goalie {
 function loadNHLLeague(): Record<ID, Team> {
   const teams: Record<ID, Team> = {};
   
-  // Create teams from NHL database
-  for (const team of nhlPlayerDatabase.teams) {
-    const teamPlayers = team.roster;
-    const skaters = teamPlayers
-      .filter(p => p.position !== "G")
-      .map(convertNHLPlayerToSkater);
-    const goalies = teamPlayers
-      .filter(p => p.position === "G")
-      .map(convertNHLPlayerToGoalie);
-
-    teams[team.abbreviation] = {
-      id: team.abbreviation,
-      name: team.name,
-      abbrev: team.abbreviation,
-      conference: team.conference,
-      division: team.division,
+  // Create teams from metadata first
+  for (const meta of TEAM_META) {
+    teams[meta.id] = {
+      id: meta.id,
+      name: meta.name,
+      abbrev: meta.abbrev,
+      conference: meta.conf,
+      division: meta.div,
       capSpace: rnd(0, 15000000),
-      skaters,
-      goalies,
+      skaters: [],
+      goalies: [],
       w: 0, l: 0, otl: 0, gf: 0, ga: 0, pts: 0, shotsFor: 0, shotsAgainst: 0
     };
   }
-  
+
+  // Import and organize players by team (synchronous approach for simplicity)
+  try {
+    const { nhlPlayerDatabase } = require('../../data/nhlPlayerDatabase');
+    const playersByTeam: Record<string, any[]> = {};
+    
+    // Group players by team
+    for (const player of nhlPlayerDatabase) {
+      if (!playersByTeam[player.team]) playersByTeam[player.team] = [];
+      playersByTeam[player.team].push(player);
+    }
+
+    // Convert NHL players to our format and assign to teams
+    for (const [teamAbbrev, players] of Object.entries(playersByTeam)) {
+      const team = teams[teamAbbrev];
+      if (!team) continue;
+
+      for (const player of players) {
+        if (player.position === "G") {
+          const goalie: Goalie = {
+            id: player.id.toString(),
+            name: player.name,
+            position: "G",
+            overall: player.overall,
+            reflexes: player.overall + rnd(-5, 5),
+            positioning: player.overall + rnd(-5, 5),
+            reboundControl: player.overall + rnd(-5, 5),
+            stamina: rnd(60, 90),
+            gp: 0, gs: 0, w: 0, l: 0, otl: 0, so: 0, 
+            shotsAgainst: 0, saves: 0, gaa: 0, svpct: 0
+          };
+          team.goalies.push(goalie);
+        } else {
+          const skater: Skater = {
+            id: player.id.toString(),
+            name: player.name,
+            position: player.position as Skater["position"],
+            overall: player.overall,
+            shooting: player.overall + rnd(-8, 8),
+            passing: player.overall + rnd(-8, 8),
+            defense: player.overall + rnd(-8, 8),
+            stamina: rnd(60, 90),
+            gp: 0, g: 0, a: 0, p: 0, pim: 0, shots: 0, plusMinus: 0
+          };
+          team.skaters.push(skater);
+        }
+      }
+    }
+  } catch (error) {
+    // Fallback to generated teams if import fails
+    for (const meta of TEAM_META) {
+      if (teams[meta.id].skaters.length === 0) {
+        teams[meta.id] = genTeam(meta);
+      }
+    }
+  }
+
   return teams;
 }
 
@@ -195,12 +312,10 @@ type PairKey = `${ID}_${ID}`;
 type PairMeetings = { a: ID; b: ID; meetings: number; };
 function keyPair(a: ID, b: ID): PairKey { return [a,b].sort().join("_") as PairKey; }
 function getDivision(id: ID) { 
-  const team = nhlPlayerDatabase.teams.find(t => t.abbreviation === id);
-  return team?.division ?? "Atlantic"; 
+  return TEAM_META.find(t => t.id === id)?.div ?? "Atlantic"; 
 }
 function getConference(id: ID) { 
-  const team = nhlPlayerDatabase.teams.find(t => t.abbreviation === id);
-  return team?.conference ?? "East"; 
+  return TEAM_META.find(t => t.id === id)?.conf ?? "East"; 
 }
 
 function buildPairMatrix(teamIds: ID[]): PairMeetings[] {
@@ -389,7 +504,7 @@ function simulateQuickGame(home: Team, away: Team): { box: BoxScore; winnerHome:
 // -------------------------- STATE & UPDATERS --------------------------
 function newSeason(seasonYear = "2025-26"): SeasonState {
   const teams = loadNHLLeague();
-  const teamOrder = nhlPlayerDatabase.teams.map(t => t.abbreviation);
+  const teamOrder = TEAM_META.map(t => t.id);
   const schedule = generateFullSeasonSchedule(teamOrder, 190);
   return {
     seasonYear,

@@ -19,7 +19,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/gameplay" element={<Gameplay />} />
-          <Route path="/franchise" element={<FranchiseMode playerData={{}} updatePlayerData={() => {}} onNavigate={() => {}} />} />
+          <Route path="/franchise" element={<FranchiseMode />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

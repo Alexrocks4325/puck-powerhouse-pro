@@ -316,11 +316,7 @@ const Index = () => {
 
   if (gameState === 'franchise') {
     return (
-      <FranchiseMode 
-        playerData={playerData}
-        updatePlayerData={setPlayerData}
-        onNavigate={handleNavigate}
-      />
+      <FranchiseMode />
     );
   }
 
