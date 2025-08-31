@@ -14,6 +14,7 @@ import TeamCoachSelection from "./TeamCoachSelection";
 import { Trophy, Users, Calendar, Star, Settings, TrendingUp, Building2, Target, Crown, Play, SkipForward, FastForward } from "lucide-react";
 import { nhlPlayerDatabase, Player as NHLPlayer } from "@/data/nhlPlayerDatabase";
 import TradeCenter from './TradeCenter';
+import TeamManager from "./TeamManager";
 
 // -------------------------- TEAM META --------------------------
 const TEAM_META: Array<{ id: ID; name: string; abbrev: string; conf: Team["conference"]; div: Team["division"]; }> = [
@@ -980,7 +981,7 @@ export default function FranchiseMode() {
   
   const { state, setState, reset, simToday, simAll, simToDate, simOne } = useSeason();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [view, setView] = useState<"scores"|"standings"|"leaders"|"livesim"|"trades">("scores");
+  const [view, setView] = useState<"scores"|"standings"|"leaders"|"livesim"|"trades"|"team">("scores");
   const [liveSimGame, setLiveSimGame] = useState<Game | null>(null);
 
   const handleTeamSelection = (team: string, coach: string) => {
@@ -1036,11 +1037,12 @@ export default function FranchiseMode() {
         <GameControlBar state={state} onSimToday={simToday} onSimAll={simAll} onSimToDate={simToDate} />
 
         <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="scores">Scores</TabsTrigger>
             <TabsTrigger value="standings">Standings</TabsTrigger>
             <TabsTrigger value="leaders">Leaders</TabsTrigger>
             <TabsTrigger value="trades">Trades</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="livesim" disabled={!liveSimGame}>Live Sim</TabsTrigger>
           </TabsList>
 
@@ -1110,6 +1112,10 @@ export default function FranchiseMode() {
                 }
               }}
             />
+          </TabsContent>
+
+          <TabsContent value="team">
+            <TeamManager state={state} setState={setState} userTeamId={"TBL"} />
           </TabsContent>
 
           <TabsContent value="livesim">
