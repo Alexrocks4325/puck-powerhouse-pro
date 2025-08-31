@@ -15,6 +15,7 @@ import { Trophy, Users, Calendar, Star, Settings, TrendingUp, Building2, Target,
 import { nhlPlayerDatabase, Player as NHLPlayer } from "@/data/nhlPlayerDatabase";
 import TradeCenter from './TradeCenter';
 import TeamManager from "./TeamManager";
+import MyTeamStatsPanel from "./MyTeamStatsPanel";
 
 // -------------------------- TEAM META --------------------------
 const TEAM_META: Array<{ id: ID; name: string; abbrev: string; conf: Team["conference"]; div: Team["division"]; }> = [
@@ -1037,12 +1038,13 @@ export default function FranchiseMode() {
         <GameControlBar state={state} onSimToday={simToday} onSimAll={simAll} onSimToDate={simToDate} />
 
         <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="scores">Scores</TabsTrigger>
             <TabsTrigger value="standings">Standings</TabsTrigger>
             <TabsTrigger value="leaders">Leaders</TabsTrigger>
             <TabsTrigger value="trades">Trades</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="mystats">My Stats</TabsTrigger>
             <TabsTrigger value="livesim" disabled={!liveSimGame}>Live Sim</TabsTrigger>
           </TabsList>
 
@@ -1116,6 +1118,10 @@ export default function FranchiseMode() {
 
           <TabsContent value="team">
             <TeamManager state={state} setState={setState} userTeamId={selectedTeam} />
+          </TabsContent>
+
+          <TabsContent value="mystats">
+            <MyTeamStatsPanel state={state} myTeamId={selectedTeam} />
           </TabsContent>
 
           <TabsContent value="livesim">
