@@ -326,8 +326,18 @@ function applyMobileResult(state: SeasonState, home: Team, away: Team, totals: {
   const applyTeam = (mine: Team, opp: Team, myShots:number, oppShots:number, myGoals:number, oppGoals:number, ot:boolean) => {
     mine.gf += myGoals; mine.ga += oppGoals;
     mine.shotsFor += myShots; mine.shotsAgainst += oppShots;
-    if (myGoals > oppGoals) mine.w++; else if (myGoals < oppGoals) mine.l++; else {/* OT handled below */ }
-    if (ot && myGoals < oppGoals) mine.otl++;
+    if (myGoals > oppGoals) {
+      mine.w++;
+      mine.pts += 2; // Win = 2 points
+    } else if (myGoals < oppGoals) {
+      if (ot) {
+        mine.otl++;
+        mine.pts += 1; // OT/SO loss = 1 point
+      } else {
+        mine.l++;
+        // Regulation loss = 0 points
+      }
+    }
   };
   applyTeam(home, away, totals.hShots, totals.aShots, totals.hGoals, totals.aGoals, totals.ot);
   applyTeam(away, home, totals.aShots, totals.hShots, totals.aGoals, totals.hGoals, totals.ot);
@@ -617,13 +627,24 @@ export default function CalendarSimHub({
                   const at = g.homeId === myTeamId ? "vs" : "@";
                   const played = g.played;
                   const isNext = nextGame && nextGame.id === g.id;
+                  
+                  // Show game result if played
+                  let resultText = "";
+                  if (played && g.final) {
+                    const myGoals = g.homeId === myTeamId ? g.final.homeGoals : g.final.awayGoals;
+                    const oppGoals = g.homeId === myTeamId ? g.final.awayGoals : g.final.homeGoals;
+                    const won = myGoals > oppGoals;
+                    const otText = g.final.ot ? " (OT)" : "";
+                    resultText = ` ${won ? "W" : "L"} ${myGoals}-${oppGoals}${otText}`;
+                  }
+                  
                   return (
                     <div key={g.id} className={`text-[11px] px-1 py-0.5 rounded ${
                       played ? "bg-muted text-muted-foreground" : 
                       isNext ? "bg-primary text-primary-foreground font-medium" :
                       "bg-accent"
                     }`}>
-                      {at} {teamLabel(state, oppId)} {played ? "• Final" : ""}
+                      {at} {teamLabel(state, oppId)}{resultText}
                     </div>
                   );
                 })}
@@ -675,7 +696,11 @@ export default function CalendarSimHub({
       </div>
 
       {/* Latest box score (if any) */}
-      {lastBox && <BoxScoreCard box={lastBox} state={state} />}
+      {lastBox && (
+        <div className="mt-4">
+          <BoxScoreCard box={lastBox} state={state} />
+        </div>
+      )}
 
       {/* Live Sim Modal (mobile-style) */}
       {liveModal && (
@@ -712,6 +737,7 @@ function LiveSimModal({
   const [score, setScore] = useState({ home: 0, away: 0, shotsH: 0, shotsA: 0 });
   const genRef = useRef<Generator<any, any, any> | null>(null);
   const doneRef = useRef(false);
+  const [lastBox, setLastBox] = useState<BoxScore | null>(null);
 
   useEffect(() => {
     // init generator
@@ -720,6 +746,7 @@ function LiveSimModal({
     setPeriod(1); setClock("20:00");
     setScore({ home: 0, away: 0, shotsH: 0, shotsA: 0 });
     doneRef.current = false;
+    setLastBox(null);
     // auto-start
     setRunning(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -747,15 +774,18 @@ function LiveSimModal({
           return s;
         });
         doneRef.current = true;
+        setLastBox(box);
         onFinished(box);
         setRunning(false);
       } else {
         const t = step.value;
         // Pull the last few raw events created since previous tick
-        // The generator stores them in step.value.events; we just append new ones since last marker
         const evs: LiveEvent[] = t.events.slice(-3); // take last few to avoid flooding
         const timeEv = evs.find(e=>e.t==="TIME") as any;
-        if (timeEv) { setClock(timeEv.clock); setPeriod(timeEv.period); }
+        if (timeEv) { 
+          setClock(timeEv.clock); 
+          setPeriod(timeEv.period); 
+        }
         const goalEvs = evs.filter(e=>e.t==="GOAL") as any[];
         const shotEvs = evs.filter(e=>e.t==="SHOT") as any[];
         if (goalEvs.length || shotEvs.length || evs.some(e=>e.t==="PENALTY")) {
@@ -787,6 +817,7 @@ function LiveSimModal({
       return s;
     });
     doneRef.current = true;
+    setLastBox(box);
     onFinished(box);
     setRunning(false);
   }
@@ -838,9 +869,17 @@ function LiveSimModal({
           ))}
         </div>
 
+        {/* Game completed - show final box score */}
+        {doneRef.current && lastBox && (
+          <div className="mt-4 p-4 border rounded-lg bg-muted/10">
+            <div className="font-semibold mb-2 text-center">Game Complete!</div>
+            <BoxScoreCard box={lastBox} state={state} />
+          </div>
+        )}
+
         {/* Footer note */}
         <div className="text-xs text-muted-foreground mt-2">
-          Goals show scorer + up to two assists. At the end, stats are written to your database and a box score is available.
+          Goals show scorer + up to two assists. Stats are automatically saved to your season when the game ends.
         </div>
       </div>
     </div>
