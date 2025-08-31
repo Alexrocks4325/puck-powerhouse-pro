@@ -1040,13 +1040,13 @@ export default function FranchiseMode() {
 
         <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full">
           <TabsList className="grid w-full grid-cols-8">
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="scores">Scores</TabsTrigger>
             <TabsTrigger value="standings">Standings</TabsTrigger>
             <TabsTrigger value="leaders">Leaders</TabsTrigger>
             <TabsTrigger value="trades">Trades</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="mystats">My Stats</TabsTrigger>
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="livesim" disabled={!liveSimGame}>Live Sim</TabsTrigger>
           </TabsList>
 

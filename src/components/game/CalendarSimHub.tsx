@@ -104,6 +104,12 @@ function findFirstUnplayedMyGameFromTo(state: SeasonState, myTeamId: ID, fromDay
     .sort((x,y) => x.day - y.day);
 }
 
+function findNextUnplayedGame(state: SeasonState, myTeamId: ID): Game | null {
+  return state.schedule
+    .filter(g => (g.homeId === myTeamId || g.awayId === myTeamId) && !g.played && g.day >= state.currentDay)
+    .sort((x,y) => x.day - y.day)[0] || null;
+}
+
 function teamLabel(state: SeasonState, tid: ID) {
   const t = state.teams[tid]; return t ? t.abbrev : tid.slice(0,3).toUpperCase();
 }
@@ -121,13 +127,15 @@ export default function CalendarSimHub({
   simulateGame?: SimFn;                  // if omitted, uses simulateGameAccurate
 }) {
   const todayDate = getDateFromIndex(seasonStartDate, state.currentDay);
-  const [viewMonth, setViewMonth] = useState<number>(todayDate.getMonth());
-  const [viewYear, setViewYear] = useState<number>(todayDate.getFullYear());
+  const seasonStartDateObj = toDate(seasonStartDate);
+  const [viewMonth, setViewMonth] = useState<number>(seasonStartDateObj.getMonth());
+  const [viewYear, setViewYear] = useState<number>(seasonStartDateObj.getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date>(todayDate);
   const [liveModal, setLiveModal] = useState<{ game: Game } | null>(null);
   const [lastBox, setLastBox] = useState<BoxScore | null>(null);
 
   const cells = useMemo(() => buildMonthMatrix(viewYear, viewMonth), [viewYear, viewMonth]);
+  const nextGame = useMemo(() => findNextUnplayedGame(state, myTeamId), [state, myTeamId]);
 
   const selectedDayIndex = getDayIndex(seasonStartDate, selectedDate);
   const myGamesThatDay = useMemo(
@@ -141,8 +149,24 @@ export default function CalendarSimHub({
     setViewMonth(d.getMonth());
   }
 
-  function simToSelectedDay() {
-    const games = findFirstUnplayedMyGameFromTo(state, myTeamId, state.currentDay, selectedDayIndex);
+  function simToNextGame() {
+    if (!nextGame) return;
+    setState(prev => {
+      const s = structuredClone(prev) as SeasonState;
+      const runSim = simulateGame ?? simulateGameAccurate;
+      const result = runSim(s, nextGame.homeId, nextGame.awayId, { wentToOT: undefined });
+      nextGame.played = true;
+      nextGame.final = { homeGoals: result.homeGoals, awayGoals: result.awayGoals, ot: result.wentToOT };
+      s.currentDay = Math.max(s.currentDay, nextGame.day);
+      setLastBox(result.boxScore);
+      return s;
+    });
+  }
+
+  function simToEndOfSeason() {
+    const games = state.schedule.filter(g => 
+      (g.homeId === myTeamId || g.awayId === myTeamId) && !g.played && g.day >= state.currentDay
+    ).sort((x,y) => x.day - y.day);
     if (!games.length) return;
 
     setState(prev => {
@@ -152,7 +176,27 @@ export default function CalendarSimHub({
         const result = runSim(s, g.homeId, g.awayId, { wentToOT: undefined });
         g.played = true;
         g.final = { homeGoals: result.homeGoals, awayGoals: result.awayGoals, ot: result.wentToOT };
-        s.currentDay = Math.max(s.currentDay, g.day); // advance "today"
+        s.currentDay = Math.max(s.currentDay, g.day);
+        setLastBox(result.boxScore);
+      }
+      return s;
+    });
+  }
+
+  function simToEndOfMonth() {
+    const endOfMonth = new Date(viewYear, viewMonth + 1, 0);
+    const endDayIndex = getDayIndex(seasonStartDate, endOfMonth);
+    const games = findFirstUnplayedMyGameFromTo(state, myTeamId, state.currentDay, endDayIndex);
+    if (!games.length) return;
+
+    setState(prev => {
+      const s = structuredClone(prev) as SeasonState;
+      const runSim = simulateGame ?? simulateGameAccurate;
+      for (const g of games) {
+        const result = runSim(s, g.homeId, g.awayId, { wentToOT: undefined });
+        g.played = true;
+        g.final = { homeGoals: result.homeGoals, awayGoals: result.awayGoals, ot: result.wentToOT };
+        s.currentDay = Math.max(s.currentDay, g.day);
         setLastBox(result.boxScore);
       }
       return s;
@@ -212,7 +256,16 @@ export default function CalendarSimHub({
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xl font-semibold">Season Calendar</div>
-          <div className="text-sm text-muted-foreground">Select a day to sim or live-sim your game.</div>
+          <div className="text-sm text-muted-foreground">
+            {nextGame ? (
+              <>Next Game: <span className="font-medium text-primary">
+                {nextGame.homeId === myTeamId ? "vs" : "@"} {teamLabel(state, nextGame.homeId === myTeamId ? nextGame.awayId : nextGame.homeId)} 
+                (Day {nextGame.day + 1})
+              </span></>
+            ) : (
+              "No upcoming games"
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button className="px-2 py-1 border rounded hover:bg-accent" onClick={()=>navMonth(-1)}>←</button>
@@ -234,6 +287,8 @@ export default function CalendarSimHub({
           const isToday = sameYMD(d, todayDate);
           const isSelected = sameYMD(d, selectedDate);
           const myGames = findMyGamesOnDay(state, myTeamId, dayIdx);
+          const hasNextGame = nextGame && nextGame.day === dayIdx;
+          
           return (
             <button
               key={idx}
@@ -241,16 +296,26 @@ export default function CalendarSimHub({
               className={`h-24 rounded-lg border p-1 text-left relative transition-colors
                 ${isThisMonth ? "" : "opacity-50"}
                 ${isSelected ? "border-primary ring-2 ring-primary/20" : ""}
-                ${isToday ? "bg-accent" : "bg-background"}`}
+                ${isToday ? "bg-primary/10 border-primary font-semibold" : "bg-background"}
+                ${hasNextGame ? "bg-accent border-accent-foreground" : ""}`}
             >
-              <div className="text-xs font-semibold">{d.getDate()}</div>
+              <div className="text-xs font-semibold flex items-center justify-between">
+                {d.getDate()}
+                {isToday && <span className="text-[10px] text-primary">TODAY</span>}
+                {hasNextGame && <span className="text-[10px] text-accent-foreground">NEXT</span>}
+              </div>
               <div className="mt-1 space-y-1">
                 {myGames.map(g => {
                   const oppId = g.homeId === myTeamId ? g.awayId : g.homeId;
                   const at = g.homeId === myTeamId ? "vs" : "@";
                   const played = g.played;
+                  const isNext = nextGame && nextGame.id === g.id;
                   return (
-                    <div key={g.id} className={`text-[11px] px-1 py-0.5 rounded ${played ? "bg-muted text-muted-foreground" : "bg-accent"}`}>
+                    <div key={g.id} className={`text-[11px] px-1 py-0.5 rounded ${
+                      played ? "bg-muted text-muted-foreground" : 
+                      isNext ? "bg-primary text-primary-foreground font-medium" :
+                      "bg-accent"
+                    }`}>
                       {at} {teamLabel(state, oppId)} {played ? "• Final" : ""}
                     </div>
                   );
@@ -261,19 +326,39 @@ export default function CalendarSimHub({
         })}
       </div>
 
-      {/* Controls for selected day */}
+      {/* Simulation Controls */}
       <div className="border rounded-xl p-3 bg-background shadow">
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-semibold">Selected: {selectedDate.toDateString()}</div>
-            <div className="text-sm text-muted-foreground">Games for your team on this day: {myGamesThatDay.length}</div>
+            <div className="font-semibold">Simulation Controls</div>
+            <div className="text-sm text-muted-foreground">
+              Current Day: {state.currentDay + 1} | 
+              Selected: {selectedDate.toDateString()} | 
+              Games on this day: {myGamesThatDay.length}
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90" onClick={simToSelectedDay}>
-              Sim To Day
+            <button 
+              className="px-3 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50" 
+              onClick={simToNextGame}
+              disabled={!nextGame}
+            >
+              Sim Next Game
+            </button>
+            <button 
+              className="px-3 py-1 rounded bg-accent text-accent-foreground hover:bg-accent/80" 
+              onClick={simToEndOfMonth}
+            >
+              Sim to Month End
+            </button>
+            <button 
+              className="px-3 py-1 rounded bg-secondary text-secondary-foreground hover:bg-secondary/80" 
+              onClick={simToEndOfSeason}
+            >
+              Sim to Season End
             </button>
             {myGamesThatDay.map(g => (
-              <button key={g.id} disabled={g.played} className={`px-3 py-1 rounded ${g.played? "bg-muted text-muted-foreground":"bg-accent text-accent-foreground hover:bg-accent/80"}`}
+              <button key={g.id} disabled={g.played} className={`px-3 py-1 rounded ${g.played? "bg-muted text-muted-foreground":"bg-destructive text-destructive-foreground hover:bg-destructive/80"}`}
                 onClick={()=>openLiveSim(g)}>
                 {g.played ? "Played" : "Live Sim"}
               </button>
