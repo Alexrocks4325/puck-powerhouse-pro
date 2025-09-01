@@ -18,6 +18,7 @@ export type Skater = {
   overall: number; shooting: number; passing: number; defense: number; stamina: number;
   gp: number; g: number; a: number; p: number; pim: number; shots: number; plusMinus: number;
   ppG?: number; shG?: number;
+  playoffGP?: number; playoffG?: number; playoffA?: number; playoffP?: number;
 };
 export type Goalie = {
   id: ID; name: string; position: "G";
@@ -106,6 +107,56 @@ function findNextUnplayedGame(state: SeasonState, myTeamId: ID): Game | null {
     .sort((x,y) => x.day - y.day)[0] || null;
 }
 
+// ─── Playoff Stats Card Component ───────────────────────────────────────────
+function PlayoffStatsCard({ state }: { state: SeasonState }) {
+  const allSkaters = Object.values(state.teams).flatMap(t => t.skaters);
+  const playoffSkaters = allSkaters.filter(s => (s.playoffGP || 0) > 0);
+  
+  const topScorers = playoffSkaters
+    .sort((a, b) => (b.playoffP || 0) - (a.playoffP || 0))
+    .slice(0, 10);
+  
+  const topGoalScorers = playoffSkaters
+    .sort((a, b) => (b.playoffG || 0) - (a.playoffG || 0))
+    .slice(0, 5);
+
+  if (playoffSkaters.length === 0) return null;
+
+  return (
+    <div className="mt-4 p-4 bg-white rounded-lg border border-yellow-300">
+      <h4 className="font-semibold text-yellow-800 mb-3">🏆 Playoff Leaders</h4>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Points Leaders */}
+        <div>
+          <h5 className="font-medium text-sm text-yellow-700 mb-2">Most Points</h5>
+          <div className="space-y-1">
+            {topScorers.map((player, idx) => (
+              <div key={player.id} className="flex justify-between text-sm">
+                <span>{idx + 1}. {player.name}</span>
+                <span className="font-medium">{player.playoffP || 0}pts ({player.playoffG || 0}G, {player.playoffA || 0}A)</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Goal Leaders */}
+        <div>
+          <h5 className="font-medium text-sm text-yellow-700 mb-2">Most Goals</h5>
+          <div className="space-y-1">
+            {topGoalScorers.map((player, idx) => (
+              <div key={player.id} className="flex justify-between text-sm">
+                <span>{idx + 1}. {player.name}</span>
+                <span className="font-medium">{player.playoffG || 0} goals</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Playoff System ──────────────────────────────────────────────────────────
 function generatePlayoffSeries(teams: Record<ID, Team>): PlayoffSeries[] {
   // Get all teams and sort by points for seeding
@@ -151,29 +202,73 @@ function generatePlayoffSeries(teams: Record<ID, Team>): PlayoffSeries[] {
   return series;
 }
 
-function simulatePlayoffSeries(series: PlayoffSeries, teams: Record<ID, Team>): PlayoffSeries {
-  const home = teams[series.homeId];
-  const away = teams[series.awayId];
+function simulatePlayoffSeries(series: PlayoffSeries, teams: Record<ID, Team>): { simulatedSeries: PlayoffSeries; updatedTeams: Record<ID, Team> } {
+  let updatedTeams = { ...teams };
+  const cloneTeam = (t: Team): Team => ({
+    ...t,
+    skaters: t.skaters.map(s => ({ ...s })),
+    goalies: t.goalies.map(g => ({ ...g })),
+  });
+
+  const home = cloneTeam(updatedTeams[series.homeId]);
+  const away = cloneTeam(updatedTeams[series.awayId]);
   
   let homeWins = series.homeWins;
   let awayWins = series.awayWins;
   
-  // Simulate games until one team gets 4 wins
+  // Simulate games until one team wins 4
   while (homeWins < 4 && awayWins < 4) {
     const totals = quickSimTotals(home, away);
+    
+    // Update playoff stats for both teams
+    [home, away].forEach(team => {
+      team.skaters.forEach(skater => {
+        skater.playoffGP = (skater.playoffGP || 0) + 1;
+      });
+    });
+
     if (totals.hGoals > totals.aGoals) {
       homeWins++;
+      // Add goals/assists to home team
+      const scorers = home.skaters.slice(0, totals.hGoals);
+      scorers.forEach(scorer => {
+        scorer.playoffG = (scorer.playoffG || 0) + 1;
+        scorer.playoffP = (scorer.playoffP || 0) + 1;
+      });
+      const assisters = home.skaters.filter(s => !scorers.includes(s)).slice(0, totals.hGoals);
+      assisters.forEach(assister => {
+        assister.playoffA = (assister.playoffA || 0) + 1;
+        assister.playoffP = (assister.playoffP || 0) + 1;
+      });
     } else {
       awayWins++;
+      // Add goals/assists to away team
+      const scorers = away.skaters.slice(0, totals.aGoals);
+      scorers.forEach(scorer => {
+        scorer.playoffG = (scorer.playoffG || 0) + 1;
+        scorer.playoffP = (scorer.playoffP || 0) + 1;
+      });
+      const assisters = away.skaters.filter(s => !scorers.includes(s)).slice(0, totals.aGoals);
+      assisters.forEach(assister => {
+        assister.playoffA = (assister.playoffA || 0) + 1;
+        assister.playoffP = (assister.playoffP || 0) + 1;
+      });
     }
   }
   
-  return {
-    ...series,
-    homeWins,
-    awayWins,
-    completed: true,
-    winnerId: homeWins === 4 ? series.homeId : series.awayId
+  // Update teams in the record
+  updatedTeams[series.homeId] = home;
+  updatedTeams[series.awayId] = away;
+  
+  return { 
+    simulatedSeries: {
+      ...series,
+      homeWins,
+      awayWins,
+      completed: true,
+      winnerId: homeWins === 4 ? series.homeId : series.awayId
+    }, 
+    updatedTeams 
   };
 }
 
@@ -293,7 +388,7 @@ function quickSimTotals(home: Team, away: Team): SimTotals {
 }
 
 // ─── IMMUTABLE APPLY: Build new state with copied teams/schedule ─────────────
-function applyResultImmutable(prev: SeasonState, gameId: string, homeId: ID, awayId: ID, totals: SimTotals) {
+function applyResultImmutable(prev: SeasonState, gameId: string, homeId: ID, awayId: ID, totals: SimTotals, isPlayoffGame = false) {
   // 1) Clone teams deeply enough (team + skaters + goalies arrays) so mutations don't touch prev
   const newTeams: Record<ID, Team> = { ...prev.teams };
   const cloneTeam = (t: Team): Team => ({
@@ -454,7 +549,7 @@ export default function CalendarSimHub({
         const home = working.teams[g.homeId];
         const away = working.teams[g.awayId];
         const totals = quickSimTotals(home, away);
-        const { next, box } = applyResultImmutable(working, g.id, g.homeId, g.awayId, totals);
+        const { next, box } = applyResultImmutable(working, g.id, g.homeId, g.awayId, totals, false);
         working = next;
         
         // Only set lastBox for my team's games
@@ -480,7 +575,7 @@ export default function CalendarSimHub({
         const home = working.teams[g.homeId];
         const away = working.teams[g.awayId];
         const totals = quickSimTotals(home, away);
-        const { next, box } = applyResultImmutable(working, g.id, g.homeId, g.awayId, totals);
+        const { next, box } = applyResultImmutable(working, g.id, g.homeId, g.awayId, totals, false);
         working = next;
         
         // Only set lastBox for my team's games
@@ -522,8 +617,11 @@ export default function CalendarSimHub({
       // Simulate all series in current round
       let updatedSeries = [...(prev.playoffSeries || [])];
       
+      let newTeams = { ...prev.teams };
+      
       for (const series of currentRoundSeries) {
-        const simulatedSeries = simulatePlayoffSeries(series, prev.teams);
+        const { simulatedSeries, updatedTeams } = simulatePlayoffSeries(series, newTeams);
+        newTeams = updatedTeams;
         const index = updatedSeries.findIndex(s => s.id === series.id);
         if (index !== -1) {
           updatedSeries[index] = simulatedSeries;
@@ -546,6 +644,7 @@ export default function CalendarSimHub({
       
       return {
         ...prev,
+        teams: newTeams,
         playoffSeries: updatedSeries,
         currentPlayoffRound: newCurrentRound
       };
@@ -756,6 +855,11 @@ export default function CalendarSimHub({
                 );
               })}
               
+              {/* Playoff Stats Leaders */}
+              {state.playoffSeries && state.playoffSeries.some(s => s.completed) && (
+                <PlayoffStatsCard state={state} />
+              )}
+              
               {/* Stanley Cup Winner Display */}
               {state.playoffSeries?.some(s => s.round === 4 && s.completed) && (
                 <div className="mt-6 p-4 bg-gradient-to-r from-yellow-200 to-amber-200 rounded-lg border-2 border-yellow-400">
@@ -816,7 +920,7 @@ function LiveSimQuick({
       const totals = quickSimTotals(home, away);
       // IMMUTABLE apply
       setState(prev => {
-        const { next, box } = applyResultImmutable(prev, game.id, game.homeId, game.awayId, totals);
+        const { next, box } = applyResultImmutable(prev, game.id, game.homeId, game.awayId, totals, false);
         setScore({ h: totals.hGoals, a: totals.aGoals, sH: totals.hShots, sA: totals.aShots });
         onFinished(box);
         return next;
