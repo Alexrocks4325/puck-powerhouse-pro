@@ -505,15 +505,18 @@ export default function CalendarSimHub({
   }
 
   function simToEndOfSeason() {
-    const games = state.schedule.filter(g => 
-      (g.homeId === myTeamId || g.awayId === myTeamId) && !g.played && g.day >= state.currentDay
+    // Get ALL games (not just my team's) that need to be played
+    const allGames = state.schedule.filter(g => 
+      !g.played && g.day >= state.currentDay
     ).sort((x,y) => x.day - y.day);
-    if (!games.length) return;
+    
+    if (!allGames.length) return;
 
     setState(prev => {
       const s = structuredClone(prev) as SeasonState;
       let lastGameDay = s.currentDay;
-      for (const g of games) {
+      
+      for (const g of allGames) {
         const home = s.teams[g.homeId]; const away = s.teams[g.awayId];
         // run silent mobile engine (no UI)
         const gen = liveSimGenerator(home, away);
@@ -529,7 +532,11 @@ export default function CalendarSimHub({
         g.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
         s.boxScores[box.gameId] = box;
         lastGameDay = Math.max(lastGameDay, g.day);
-        setLastBox(box);
+        
+        // Only set lastBox for my team's games
+        if (g.homeId === myTeamId || g.awayId === myTeamId) {
+          setLastBox(box);
+        }
       }
       // Advance to day after last game
       s.currentDay = lastGameDay + 1;
@@ -540,13 +547,19 @@ export default function CalendarSimHub({
   function simToEndOfMonth() {
     const endOfMonth = new Date(viewYear, viewMonth + 1, 0);
     const endDayIndex = getDayIndex(seasonStartDate, endOfMonth);
-    const games = findFirstUnplayedMyGameFromTo(state, myTeamId, state.currentDay, endDayIndex);
-    if (!games.length) return;
+    
+    // Get ALL games (not just my team's) that need to be played up to end of month
+    const allGames = state.schedule.filter(g => 
+      !g.played && g.day >= state.currentDay && g.day <= endDayIndex
+    ).sort((x,y) => x.day - y.day);
+    
+    if (!allGames.length) return;
 
     setState(prev => {
       const s = structuredClone(prev) as SeasonState;
       let lastGameDay = s.currentDay;
-      for (const g of games) {
+      
+      for (const g of allGames) {
         const home = s.teams[g.homeId]; const away = s.teams[g.awayId];
         // run silent mobile engine (no UI)
         const gen = liveSimGenerator(home, away);
@@ -562,7 +575,11 @@ export default function CalendarSimHub({
         g.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
         s.boxScores[box.gameId] = box;
         lastGameDay = Math.max(lastGameDay, g.day);
-        setLastBox(box);
+        
+        // Only set lastBox for my team's games
+        if (g.homeId === myTeamId || g.awayId === myTeamId) {
+          setLastBox(box);
+        }
       }
       // Advance to day after last game or end of month, whichever is later
       s.currentDay = Math.max(lastGameDay + 1, endDayIndex + 1);
