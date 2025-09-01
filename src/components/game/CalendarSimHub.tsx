@@ -481,12 +481,12 @@ function processRetirement(state: SeasonState): SeasonState {
   const currentYear = parseInt(state.seasonYear);
   const retirementEngine = new RetirementEngine(currentYear);
   
-  // Convert all skaters to Retiree format
+  // Convert all skaters to Retiree format - ONLY OLDER PLAYERS (35+)
   const allSkaters: Retiree[] = [];
   Object.values(state.teams).forEach(team => {
     team.skaters.forEach(skater => {
-      // Generate simulated career data
-      const age = 25 + Math.floor(Math.random() * 15); // Ages 25-40
+      // Generate age with bias toward older players for retirement
+      const age = 35 + Math.floor(Math.random() * 10); // Ages 35-44 only
       const seasonsPlayed = Math.max(1, age - 18);
       const careerGoals = skater.g * seasonsPlayed + Math.floor(Math.random() * 100);
       const careerPoints = skater.p * seasonsPlayed + Math.floor(Math.random() * 200);
@@ -669,14 +669,53 @@ function generateProspects(count: number) {
 function processResigning(state: SeasonState): SeasonState {
   const resignings: ResigningResult[] = [];
   
-  // Check all players for contract status
+  // Check all players for contract status  
   Object.values(state.teams).forEach(team => {
     team.skaters.forEach(skater => {
-      // Assume 20% of players need resigning each year
-      if (Math.random() < 0.2) {
-        const willResign = Math.random() < 0.8; // 80% resign
-        const years = willResign ? Math.floor(Math.random() * 5) + 1 : 0;
-        const value = willResign ? (skater.overall * 100000) + Math.floor(Math.random() * 500000) : 0;
+      // Simulate contract expiry based on age and performance
+      const isExpiring = Math.random() < 0.15; // 15% of players have expiring contracts
+      
+      if (isExpiring) {
+        // Resign probability based on performance and team cap
+        let resignChance = 0.7; // Base 70% resign rate
+        
+        // Better players more likely to get offers
+        if (skater.overall >= 85) resignChance = 0.9;
+        else if (skater.overall >= 80) resignChance = 0.8;
+        else if (skater.overall <= 70) resignChance = 0.5;
+        
+        // Add some randomness for team cap constraints
+        if (Math.random() < 0.1) resignChance -= 0.2; // 10% chance team can't afford
+        
+        const willResign = Math.random() < resignChance;
+        
+        let years = 0, value = 0;
+        if (willResign) {
+          // Contract length based on age and overall
+          const age = 25 + Math.floor(Math.random() * 15); // Simulated age
+          if (age <= 25) years = 3 + Math.floor(Math.random() * 5); // Young: 3-7 years
+          else if (age <= 30) years = 2 + Math.floor(Math.random() * 4); // Prime: 2-5 years  
+          else if (age <= 35) years = 1 + Math.floor(Math.random() * 3); // Veteran: 1-3 years
+          else years = 1; // Old: 1 year
+          
+          // Contract value based on overall rating
+          const baseValue = Math.max(0.8, (skater.overall - 60) * 0.15); // $0.8M to $4.5M+
+          value = (baseValue + Math.random() * 0.5) * 1000000; // Add randomness
+        }
+        
+        let reason: string;
+        if (willResign) {
+          reason = `Re-signed for ${years} years at $${(value/1000000).toFixed(1)}M per year`;
+        } else {
+          const reasons = [
+            'Signed with another team for more money',
+            'Wanted a bigger role elsewhere', 
+            'Team couldn\'t afford asking price',
+            'Mutual decision to part ways',
+            'Seeking new opportunity'
+          ];
+          reason = reasons[Math.floor(Math.random() * reasons.length)];
+        }
         
         resignings.push({
           playerId: skater.id,
@@ -685,7 +724,7 @@ function processResigning(state: SeasonState): SeasonState {
           resigned: willResign,
           contractYears: years,
           contractValue: value,
-          reason: willResign ? 'Agreed to terms' : 'Seeking more money/opportunity'
+          reason: reason
         });
       }
     });
@@ -694,7 +733,7 @@ function processResigning(state: SeasonState): SeasonState {
   return {
     ...state,
     resignings,
-    offseasonPhase: 'resigning'
+    offseasonPhase: 'complete'
   };
 }
 
@@ -989,6 +1028,82 @@ export default function CalendarSimHub({
     });
   }
 
+  // UPDATED: Sim through playoffs and into offseason
+  function simToOffseason() {
+    setState(prev => {
+      let working = prev;
+      
+      // First, complete regular season if not done
+      if (!working.isRegularSeasonComplete) {
+        const allGames = working.schedule.filter(g => !g.played).sort((x,y) => x.day - y.day);
+        for (const g of allGames) {
+          const home = working.teams[g.homeId];
+          const away = working.teams[g.awayId];
+          const totals = quickSimTotals(home, away);
+          const { next } = applyResultImmutable(working, g.id, g.homeId, g.awayId, totals, false);
+          working = next;
+        }
+        
+        working = {
+          ...working,
+          isRegularSeasonComplete: true,
+          playoffSeries: generatePlayoffSeries(working.teams),
+          currentPlayoffRound: 1
+        };
+      }
+      
+      // Simulate all playoff rounds
+      if (working.playoffSeries) {
+        for (let round = 1; round <= 4; round++) {
+          const roundSeries = working.playoffSeries.filter(s => s.round === round && !s.completed);
+          
+          let newTeams = { ...working.teams };
+          let updatedSeries = [...working.playoffSeries];
+          
+          for (const series of roundSeries) {
+            const { simulatedSeries, updatedTeams } = simulatePlayoffSeries(series, newTeams);
+            newTeams = updatedTeams;
+            const index = updatedSeries.findIndex(s => s.id === series.id);
+            if (index !== -1) {
+              updatedSeries[index] = simulatedSeries;
+            }
+          }
+          
+          working = {
+            ...working,
+            teams: newTeams,
+            playoffSeries: updatedSeries,
+            currentPlayoffRound: round
+          };
+          
+          // Generate next round if current round completed
+          if (round < 4) {
+            const allCurrentRoundCompleted = updatedSeries
+              .filter(s => s.round === round)
+              .every(s => s.completed);
+            
+            if (allCurrentRoundCompleted) {
+              const nextRoundSeries = generateNextRoundSeries(updatedSeries, round + 1, working.teams);
+              working = {
+                ...working,
+                playoffSeries: [...updatedSeries, ...nextRoundSeries]
+              };
+            }
+          }
+        }
+      }
+      
+      // Start offseason - move to June (around day 275)
+      working = {
+        ...working,
+        currentDay: 275,
+        offseasonPhase: 'retirement'
+      };
+      
+      return working;
+    });
+  }
+
   function openLiveSim(game: Game) {
     setLiveModal({ game });
   }
@@ -1083,6 +1198,14 @@ export default function CalendarSimHub({
           const myGames = findMyGamesOnDay(state, myTeamId, dayIdx);
           const hasNextGame = nextGame && nextGame.day === dayIdx;
           
+          // Check if this day has offseason events
+          const isOffseasonDay = dayIdx >= 275 && dayIdx <= 350; // June-August offseason period
+          const offseasonPhaseText = dayIdx >= 275 && dayIdx <= 285 ? "Retirement" :
+                                    dayIdx >= 286 && dayIdx <= 295 ? "HOF" :
+                                    dayIdx >= 296 && dayIdx <= 305 ? "Lottery" :
+                                    dayIdx >= 306 && dayIdx <= 320 ? "Draft" :
+                                    dayIdx >= 321 && dayIdx <= 350 ? "Free Agency" : "";
+          
           return (
             <button
               key={idx}
@@ -1091,7 +1214,8 @@ export default function CalendarSimHub({
                 ${isThisMonth ? "" : "opacity-50"}
                 ${isSelected ? "border-primary ring-2 ring-primary/20" : ""}
                 ${isToday ? "bg-primary/10 border-primary font-semibold" : "bg-background"}
-                ${hasNextGame ? "bg-accent border-accent-foreground" : ""}`}
+                ${hasNextGame ? "bg-accent border-accent-foreground" : ""}
+                ${isOffseasonDay ? "bg-purple-50 border-purple-200" : ""}`}
             >
               <div className="text-xs font-semibold flex items-center justify-between">
                 {d.getDate()}
@@ -1116,7 +1240,7 @@ export default function CalendarSimHub({
                   }
                   
                   return (
-                    <div key={g.id} className={`text-[11px] px-1 py-0.5 rounded ${
+                     <div key={g.id} className={`text-[11px] px-1 py-0.5 rounded ${
                       played ? "bg-muted text-muted-foreground" : 
                       isNext ? "bg-primary text-primary-foreground font-medium" :
                       "bg-accent"
@@ -1125,6 +1249,13 @@ export default function CalendarSimHub({
                     </div>
                   );
                 })}
+                
+                {/* Show offseason events */}
+                {isOffseasonDay && offseasonPhaseText && (
+                  <div className="text-[10px] px-1 py-0.5 rounded bg-purple-100 text-purple-700 font-medium">
+                    {offseasonPhaseText}
+                  </div>
+                )}
               </div>
             </button>
           );
@@ -1164,6 +1295,12 @@ export default function CalendarSimHub({
               onClick={simToEndOfSeason}
             >
               Sim to Season End
+            </button>
+            <button 
+              className="px-3 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+              onClick={simToOffseason}
+            >
+              Sim to Offseason
             </button>
             {myGamesThatDay.map(g => (
               <button key={g.id} disabled={g.played} className={`px-3 py-1 rounded ${g.played? "bg-muted text-muted-foreground":"bg-indigo-600 text-white hover:bg-indigo-700"}`}
@@ -1423,50 +1560,12 @@ export default function CalendarSimHub({
 
           {/* Draft Phase */}
           {state.offseasonPhase === 'draft' && state.draftPicks && (
-            <div className="p-6 bg-green-50 rounded-lg border border-green-200">
-              <h3 className="text-xl font-bold text-green-800 mb-4">🎯 NHL Entry Draft</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-green-700 mb-2">First Round (Top 10):</h4>
-                  <div className="space-y-2">
-                    {state.draftPicks.filter(p => p.round === 1).slice(0, 10).map(pick => (
-                      <div key={pick.overall} className="p-3 bg-green-100 rounded border border-green-300">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <span className="font-medium">#{pick.overall} {pick.playerName} ({pick.position})</span>
-                            <div className="text-sm text-green-700">
-                              Selected by {teamLabel(state, pick.teamId)} • Potential: {pick.potential}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <details className="bg-green-100 rounded p-3">
-                  <summary className="font-medium text-green-800 cursor-pointer">View All Draft Picks</summary>
-                  <div className="mt-3 max-h-96 overflow-y-auto space-y-1">
-                    {state.draftPicks.map(pick => (
-                      <div key={pick.overall} className="flex justify-between items-center p-2 bg-white rounded text-sm">
-                        <span>#{pick.overall} {pick.playerName} ({pick.position})</span>
-                        <span className="text-green-600">{teamLabel(state, pick.teamId)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              </div>
-
-              <div className="mt-4">
-                <button 
-                  className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
-                  onClick={() => setState(processResigning)}
-                >
-                  Continue to Free Agency →
-                </button>
-              </div>
-            </div>
+            <DraftInterface 
+              state={state} 
+              setState={setState}
+              myTeamId={myTeamId}
+              onComplete={() => setState(processResigning)}
+            />
           )}
 
           {/* Resigning Phase */}
@@ -1608,6 +1707,169 @@ function LiveSimQuick({
         <button className={`mt-3 w-full px-3 py-2 rounded ${running?"bg-slate-300":"bg-indigo-600 text-white"}`} disabled={running} onClick={start}>
           {running ? "Simulating…" : "Sim Now"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Draft Interface Component ──────────────────────────────────────────────
+function DraftInterface({ 
+  state, 
+  setState, 
+  myTeamId, 
+  onComplete 
+}: {
+  state: SeasonState;
+  setState: (updater: (s: SeasonState) => SeasonState) => void;
+  myTeamId: string;
+  onComplete: () => void;
+}) {
+  const [currentPick, setCurrentPick] = useState(1);
+  const [selectedProspect, setSelectedProspect] = useState<string | null>(null);
+  
+  // Generate prospect pool if not exists
+  const prospects = useMemo(() => generateProspects(224), []);
+  
+  const myPicks = state.draftPicks?.filter(p => p.teamId === myTeamId) || [];
+  const currentPickInfo = state.draftLottery?.find((_, index) => index + 1 === currentPick);
+  const isMyPick = currentPickInfo?.teamId === myTeamId;
+  
+  function makeSelection() {
+    if (!selectedProspect || !isMyPick) return;
+    
+    const prospect = prospects.find(p => p.id === selectedProspect);
+    if (!prospect) return;
+    
+    setState(prev => {
+      const newPicks = [...(prev.draftPicks || [])];
+      const pickIndex = newPicks.findIndex(p => p.overall === currentPick);
+      
+      if (pickIndex !== -1) {
+        newPicks[pickIndex] = {
+          ...newPicks[pickIndex],
+          playerId: prospect.id,
+          playerName: prospect.name,
+          position: prospect.position,
+          potential: prospect.potential
+        };
+      }
+      
+      return {
+        ...prev,
+        draftPicks: newPicks
+      };
+    });
+    
+    setCurrentPick(prev => prev + 1);
+    setSelectedProspect(null);
+  }
+  
+  function simRestOfDraft() {
+    setState(prev => {
+      const completed = processDraft(prev);
+      return completed;
+    });
+    onComplete();
+  }
+  
+  const availableProspects = prospects.filter(p => 
+    !state.draftPicks?.some(dp => dp.playerId === p.id)
+  ).slice(0, 20); // Show top 20 available
+  
+  return (
+    <div className="p-6 bg-green-50 rounded-lg border border-green-200">
+      <h3 className="text-xl font-bold text-green-800 mb-4">🎯 NHL Entry Draft</h3>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Current Pick */}
+        <div className="space-y-4">
+          <div className="p-4 bg-white rounded border">
+            <h4 className="font-semibold text-green-700 mb-2">
+              Pick #{currentPick}
+            </h4>
+            {currentPickInfo && (
+              <div className="text-sm">
+                <div>Team: {teamLabel(state, currentPickInfo.teamId)}</div>
+                {isMyPick && <div className="text-green-600 font-medium">YOUR PICK!</div>}
+              </div>
+            )}
+            
+            {isMyPick && (
+              <div className="mt-4 space-y-3">
+                <h5 className="font-medium">Available Prospects:</h5>
+                <div className="max-h-64 overflow-y-auto space-y-2">
+                  {availableProspects.map(prospect => (
+                    <button
+                      key={prospect.id}
+                      onClick={() => setSelectedProspect(prospect.id)}
+                      className={`w-full p-3 text-left rounded border ${
+                        selectedProspect === prospect.id 
+                          ? 'border-green-500 bg-green-100' 
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="font-medium">{prospect.name} ({prospect.position})</div>
+                      <div className="text-sm text-gray-600">Potential: {prospect.potential}</div>
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={makeSelection}
+                    disabled={!selectedProspect}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                  >
+                    Draft Player
+                  </button>
+                  <button
+                    onClick={simRestOfDraft}
+                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                  >
+                    Sim Rest of Draft
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {!isMyPick && (
+              <button
+                onClick={() => setCurrentPick(prev => prev + 1)}
+                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Next Pick →
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* My Picks */}
+        <div>
+          <h4 className="font-semibold text-green-700 mb-2">
+            Your Picks ({myPicks.length}):
+          </h4>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {myPicks.map(pick => (
+              <div key={pick.overall} className="p-3 bg-green-100 rounded border">
+                <div className="font-medium">
+                  #{pick.overall} {pick.playerName} ({pick.position})
+                </div>
+                <div className="text-sm text-green-700">
+                  Round {pick.round} • Potential: {pick.potential}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {currentPick > 224 && (
+            <button
+              onClick={onComplete}
+              className="mt-4 w-full px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+            >
+              Complete Draft & Continue to Free Agency →
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
