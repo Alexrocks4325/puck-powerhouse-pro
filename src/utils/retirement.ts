@@ -93,6 +93,9 @@ export class RetirementEngine {
   constructor(
     public seasonYear: number,
     public maxHofPerYear: number = 4,
+    public tooOldAge: number = 42,
+    public finalYearThreshold: number = 1,
+    public requireFinalYearGate: boolean = true,
     public immediateHof: boolean = true,
     public hofWaitYears: number = 3,
     public randomSalt: number = 777
@@ -104,11 +107,21 @@ export class RetirementEngine {
     const news: string[] = [];
 
     for (const r of pool) {
-      const p = this.retirementProbability(r);
+      const eligible = this.isEligible(r);
+      let p: number;
+
+      if (!eligible) {
+        p = 0.0;
+      } else if (r.age >= 44) {
+        p = 1.0; // hard cap: very old always retire
+      } else {
+        p = this.retirementProbabilityConstrained(r);
+      }
+
       const roll = rng();
       const retires = roll < p;
 
-      const reason = this.retireReason(r, p, roll);
+      const reason = this.retireReason(r, eligible, p, roll);
       const hofScore = this.hofScore(r);
       const hofRecommend = retires && hofScore >= 3.0;
 
@@ -165,51 +178,58 @@ export class RetirementEngine {
     };
   }
 
-  private retirementProbability(r: Retiree): number {
+  private isEligible(r: Retiree): boolean {
+    if (r.age >= this.tooOldAge) return true; // "way too old" bypass
+    if (!this.requireFinalYearGate) return true;
+    // Only allow if at/entering final year of contract (or UFA)
+    return r.contractYearsRemaining <= this.finalYearThreshold;
+  }
+
+  private retirementProbabilityConstrained(r: Retiree): number {
+    // This is a *toned-down* curve applied ONLY to eligible players.
+    // Start from a conservative base:
     let base: number;
+
+    // Position-dependent age inflection — but lower steepness:
     const pos = r.position.toUpperCase();
-    
     if (pos === 'G') {
-      base = this.logistic(r.age, 38.5, 0.55);
+      base = this.logistic(r.age, 39.0, 0.40);
     } else if (pos === 'D') {
-      base = this.logistic(r.age, 37.0, 0.60);
+      base = this.logistic(r.age, 37.5, 0.45);
     } else {
-      base = this.logistic(r.age, 36.0, 0.65);
+      base = this.logistic(r.age, 36.5, 0.48);
     }
 
-    if (r.age <= 30) base *= 0.10;
-    if (r.age >= 40) base = Math.max(base, 0.70);
-    if (r.age >= 44) base = 1.0;
+    // Cap at modest levels unless truly old
+    base = Math.max(0.0, Math.min(base, r.age >= (this.tooOldAge - 1) ? 0.85 : 0.55));
 
-    if (r.overall < 74 && r.age >= 33) base += 0.10;
-    if (r.overall < 70 && r.age >= 30) base += 0.12;
+    // Small nudges (kept mild):
+    if (r.overall < 72 && r.age >= 32) base += 0.08;
     if (r.overall >= 85 && r.age <= 38) base -= 0.08;
-    if (r.potential >= 88 && r.age <= 36) base -= 0.05;
+    if (r.gamesLastSeason < 15 && r.age >= 31) base += 0.08;
+    if (r.majorInjuries >= 3) base += 0.10;
 
-    if (r.gamesLastSeason < 20 && r.age >= 32) base += 0.10;
-    if (r.majorInjuries >= 2) base += 0.12;
-    if (r.majorInjuries >= 4) base += 0.10;
+    // Milestone chase reduces odds (eligible but sticking around)
+    if (r.milestonesPending > 0 && r.milestonesPending <= 5) base -= 0.10;
 
-    if (r.contractYearsRemaining >= 2) base -= 0.04;
-    if (r.contractYearsRemaining === 0 && r.age >= 34) base += 0.04;
-
-    if (r.milestonesPending > 0 && r.milestonesPending <= 5) base -= 0.08;
-    if (r.cups === 0 && r.age >= 33 && r.age <= 38) base -= 0.03;
-    if (r.cups >= 3 && r.age >= 35) base += 0.05;
-
+    // Legends linger a bit
     if (r.isLegend && r.age < 40) base -= 0.06;
-    if (r.isLegend && r.age >= 41) base += 0.08;
+
+    // Contract context — already gated to final year, but tiny effect:
+    if (r.contractYearsRemaining > 0) base -= 0.03; // one more year tends to stay
+    if (r.contractYearsRemaining === 0) base += 0.03; // UFA status nudges toward retirement
 
     return Math.max(0.0, Math.min(1.0, base));
   }
 
-  private retireReason(r: Retiree, p: number, roll: number): string {
+  private retireReason(r: Retiree, eligible: boolean, p: number, roll: number): string {
+    if (!eligible) return 'Not in final contract year and not too old.';
     if (r.age >= 44) return 'Age 44+: automatic retirement.';
+    if (r.age >= this.tooOldAge) return 'Beyond configured tooOldAge threshold.';
     if (r.majorInjuries >= 4) return 'Multiple major injuries.';
-    if (r.gamesLastSeason < 20 && r.age >= 32) return 'Limited usage.';
-    if (r.overall < 70 && r.age >= 30) return 'Performance decline.';
-    if (r.isLegend && r.age >= 41) return 'Legendary career end.';
-    return `Stochastic (p=${p.toFixed(2)}, roll=${roll.toFixed(2)}).`;
+    if (r.gamesLastSeason < 15 && r.age >= 31) return 'Limited usage.';
+    if (r.overall < 72 && r.age >= 32) return 'Performance decline.';
+    return `Eligible (final contract year). Stochastic (p=${p.toFixed(2)}, roll=${roll.toFixed(2)}).`;
   }
 
   private hofScore(r: Retiree): number {
