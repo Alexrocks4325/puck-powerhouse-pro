@@ -497,7 +497,8 @@ export default function CalendarSimHub({
         nextGame.played = true;
         nextGame.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
         s.boxScores[box.gameId] = box;
-        s.currentDay = Math.max(s.currentDay, nextGame.day);
+        // Auto-advance to the next day after this game
+        s.currentDay = nextGame.day + 1;
         setLastBox(box);
         return s;
       });
@@ -511,6 +512,7 @@ export default function CalendarSimHub({
 
     setState(prev => {
       const s = structuredClone(prev) as SeasonState;
+      let lastGameDay = s.currentDay;
       for (const g of games) {
         const home = s.teams[g.homeId]; const away = s.teams[g.awayId];
         // run silent mobile engine (no UI)
@@ -526,9 +528,11 @@ export default function CalendarSimHub({
         g.played = true;
         g.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
         s.boxScores[box.gameId] = box;
-        s.currentDay = Math.max(s.currentDay, g.day);
+        lastGameDay = Math.max(lastGameDay, g.day);
         setLastBox(box);
       }
+      // Advance to day after last game
+      s.currentDay = lastGameDay + 1;
       return s;
     });
   }
@@ -541,6 +545,7 @@ export default function CalendarSimHub({
 
     setState(prev => {
       const s = structuredClone(prev) as SeasonState;
+      let lastGameDay = s.currentDay;
       for (const g of games) {
         const home = s.teams[g.homeId]; const away = s.teams[g.awayId];
         // run silent mobile engine (no UI)
@@ -556,9 +561,11 @@ export default function CalendarSimHub({
         g.played = true;
         g.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
         s.boxScores[box.gameId] = box;
-        s.currentDay = Math.max(s.currentDay, g.day);
+        lastGameDay = Math.max(lastGameDay, g.day);
         setLastBox(box);
       }
+      // Advance to day after last game or end of month, whichever is later
+      s.currentDay = Math.max(lastGameDay + 1, endDayIndex + 1);
       return s;
     });
   }
