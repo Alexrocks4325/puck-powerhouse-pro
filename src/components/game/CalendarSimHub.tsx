@@ -982,11 +982,18 @@ export default function CalendarSimHub({
                       {teamLabel(state, state.playoffSeries.find(s => s.round === 4 && s.completed)?.winnerId!)}
                     </div>
                     {(() => {
-                      const championTeamId = state.playoffSeries.find(s => s.round === 4 && s.completed)?.winnerId!;
+                      const championTeamId = state.playoffSeries.find(s => s.round === 4 && s.completed)?.winnerId;
+                      if (!championTeamId) return null;
+                      
                       const championTeam = state.teams[championTeamId];
-                      const connSmytheWinner = championTeam?.skaters
+                      if (!championTeam) return null;
+                      
+                      // Find player with most playoff points from the WINNING team only
+                      const teamPlayoffSkaters = championTeam.skaters
                         .filter(s => (s.playoffP || 0) > 0)
-                        .sort((a, b) => (b.playoffP || 0) - (a.playoffP || 0))[0];
+                        .sort((a, b) => (b.playoffP || 0) - (a.playoffP || 0));
+                      
+                      const connSmytheWinner = teamPlayoffSkaters[0];
                       
                       return connSmytheWinner ? (
                         <div className="text-lg font-medium text-yellow-800">
