@@ -481,6 +481,7 @@ export default function CalendarSimHub({
 
   function simToNextGame() {
     if (!nextGame) return;
+    console.log("Simulating next game:", nextGame);
       setState(prev => {
         const s = structuredClone(prev) as SeasonState;
         const home = s.teams[nextGame.homeId]; const away = s.teams[nextGame.awayId];
@@ -494,12 +495,20 @@ export default function CalendarSimHub({
           hGoals: result.hGoals, aGoals: result.aGoals, 
           goals: result.goals, ot: result.ot 
         });
-        nextGame.played = true;
-        nextGame.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
+        
+        // Find the game in the schedule and update it
+        const gameToUpdate = s.schedule.find(g => g.id === nextGame.id);
+        if (gameToUpdate) {
+          gameToUpdate.played = true;
+          gameToUpdate.final = { homeGoals: result.hGoals, awayGoals: result.aGoals, ot: result.ot };
+          console.log("Updated game:", gameToUpdate);
+        }
+        
         s.boxScores[box.gameId] = box;
         // Auto-advance to the next day after this game
         s.currentDay = nextGame.day + 1;
         setLastBox(box);
+        console.log("New state currentDay:", s.currentDay);
         return s;
       });
   }
@@ -661,6 +670,14 @@ export default function CalendarSimHub({
                     const otText = g.final.ot ? " (OT)" : "";
                     resultText = ` ${won ? "W" : "L"} ${myGoals}-${oppGoals}${otText}`;
                   }
+                  
+                  console.log("Game display:", { 
+                    gameId: g.id, 
+                    played: g.played, 
+                    final: g.final, 
+                    resultText, 
+                    oppTeam: teamLabel(state, oppId) 
+                  });
                   
                   return (
                     <div key={g.id} className={`text-[11px] px-1 py-0.5 rounded ${
