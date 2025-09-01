@@ -220,40 +220,84 @@ function simulatePlayoffSeries(series: PlayoffSeries, teams: Record<ID, Team>): 
   while (homeWins < 4 && awayWins < 4) {
     const totals = quickSimTotals(home, away);
     
-    // Update playoff stats for both teams
-    [home, away].forEach(team => {
-      team.skaters.forEach(skater => {
-        skater.playoffGP = (skater.playoffGP || 0) + 1;
-      });
-    });
-
     if (totals.hGoals > totals.aGoals) {
       homeWins++;
-      // Add goals/assists to home team
-      const scorers = home.skaters.slice(0, totals.hGoals);
-      scorers.forEach(scorer => {
-        scorer.playoffG = (scorer.playoffG || 0) + 1;
-        scorer.playoffP = (scorer.playoffP || 0) + 1;
-      });
-      const assisters = home.skaters.filter(s => !scorers.includes(s)).slice(0, totals.hGoals);
-      assisters.forEach(assister => {
-        assister.playoffA = (assister.playoffA || 0) + 1;
-        assister.playoffP = (assister.playoffP || 0) + 1;
-      });
+      // Enhanced playoff stat distribution for home team
+      const sortedHome = [...home.skaters].sort((a, b) => b.overall - a.overall);
+      
+      // Goals
+      for (let i = 0; i < totals.hGoals; i++) {
+        const weights = sortedHome.map(s => Math.pow(s.overall / 85, 2.5));
+        const totalWeight = sum(weights);
+        const rand = Math.random() * totalWeight;
+        let cumWeight = 0;
+        for (let j = 0; j < sortedHome.length; j++) {
+          cumWeight += weights[j];
+          if (rand <= cumWeight) {
+            sortedHome[j].playoffG = (sortedHome[j].playoffG || 0) + 1;
+            sortedHome[j].playoffP = (sortedHome[j].playoffP || 0) + 1;
+            break;
+          }
+        }
+      }
+      
+      // Assists (2 per goal)
+      for (let i = 0; i < totals.hGoals * 2; i++) {
+        const weights = sortedHome.map(s => Math.pow(s.overall / 85, 2));
+        const totalWeight = sum(weights);
+        const rand = Math.random() * totalWeight;
+        let cumWeight = 0;
+        for (let j = 0; j < sortedHome.length; j++) {
+          cumWeight += weights[j];
+          if (rand <= cumWeight) {
+            sortedHome[j].playoffA = (sortedHome[j].playoffA || 0) + 1;
+            sortedHome[j].playoffP = (sortedHome[j].playoffP || 0) + 1;
+            break;
+          }
+        }
+      }
     } else {
       awayWins++;
-      // Add goals/assists to away team
-      const scorers = away.skaters.slice(0, totals.aGoals);
-      scorers.forEach(scorer => {
-        scorer.playoffG = (scorer.playoffG || 0) + 1;
-        scorer.playoffP = (scorer.playoffP || 0) + 1;
-      });
-      const assisters = away.skaters.filter(s => !scorers.includes(s)).slice(0, totals.aGoals);
-      assisters.forEach(assister => {
-        assister.playoffA = (assister.playoffA || 0) + 1;
-        assister.playoffP = (assister.playoffP || 0) + 1;
-      });
+      // Enhanced playoff stat distribution for away team
+      const sortedAway = [...away.skaters].sort((a, b) => b.overall - a.overall);
+      
+      // Goals
+      for (let i = 0; i < totals.aGoals; i++) {
+        const weights = sortedAway.map(s => Math.pow(s.overall / 85, 2.5));
+        const totalWeight = sum(weights);
+        const rand = Math.random() * totalWeight;
+        let cumWeight = 0;
+        for (let j = 0; j < sortedAway.length; j++) {
+          cumWeight += weights[j];
+          if (rand <= cumWeight) {
+            sortedAway[j].playoffG = (sortedAway[j].playoffG || 0) + 1;
+            sortedAway[j].playoffP = (sortedAway[j].playoffP || 0) + 1;
+            break;
+          }
+        }
+      }
+      
+      // Assists (2 per goal)
+      for (let i = 0; i < totals.aGoals * 2; i++) {
+        const weights = sortedAway.map(s => Math.pow(s.overall / 85, 2));
+        const totalWeight = sum(weights);
+        const rand = Math.random() * totalWeight;
+        let cumWeight = 0;
+        for (let j = 0; j < sortedAway.length; j++) {
+          cumWeight += weights[j];
+          if (rand <= cumWeight) {
+            sortedAway[j].playoffA = (sortedAway[j].playoffA || 0) + 1;
+            sortedAway[j].playoffP = (sortedAway[j].playoffP || 0) + 1;
+            break;
+          }
+        }
+      }
     }
+    
+    // Update games played for all players
+    [...home.skaters, ...away.skaters].forEach(skater => {
+      skater.playoffGP = (skater.playoffGP || 0) + 1;
+    });
   }
   
   // Update teams in the record
@@ -372,16 +416,21 @@ function generateNextRoundSeries(completedSeries: PlayoffSeries[], round: number
   return newSeries;
 }
 
-// ─── Minimal Sim (replace with your AccurateSim if you want) ─────────────────
+// ─── Enhanced Sim (more realistic scoring) ─────────────────────────────────
 type SimTotals = { hShots:number; aShots:number; hGoals:number; aGoals:number; goals:GoalEvent[]; ot:boolean };
 function quickSimTotals(home: Team, away: Team): SimTotals {
   const avgOVR = (ts:Team) => ts.skaters.length ? (sum(ts.skaters.map(s=>s.overall))/ts.skaters.length) : 75;
-  const hS = 26 + Math.floor(Math.random()*12);
-  const aS = 26 + Math.floor(Math.random()*12);
-  const hQ = 0.09 + (avgOVR(home)-80)*0.0015;
-  const aQ = 0.09 + (avgOVR(away)-80)*0.0015;
-  let hG = Math.max(0, Math.round(hS * hQ));
-  let aG = Math.max(0, Math.round(aS * aQ));
+  
+  // Higher shot totals for more realistic scoring
+  const hS = 28 + Math.floor(Math.random()*16); // 28-44 shots
+  const aS = 28 + Math.floor(Math.random()*16); // 28-44 shots
+  
+  // Better shooting percentage based on team quality (6-12% range)
+  const hQ = 0.06 + (avgOVR(home)-70)*0.0008 + Math.random()*0.03;
+  const aQ = 0.06 + (avgOVR(away)-70)*0.0008 + Math.random()*0.03;
+  
+  let hG = Math.max(1, Math.round(hS * hQ)); // At least 1 goal
+  let aG = Math.max(1, Math.round(aS * aQ)); // At least 1 goal
   let ot = false;
   if (hG===aG) { ot = true; Math.random()<0.5 ? hG++ : aG++; }
   return { hShots: hS, aShots: aS, hGoals: hG, aGoals: aG, goals: [], ot };
@@ -402,7 +451,7 @@ function applyResultImmutable(prev: SeasonState, gameId: string, homeId: ID, awa
   const home = cloneTeam(homePrev);
   const away = cloneTeam(awayPrev);
 
-  // 2) Update team aggregates (hockey points calculation)
+  // Enhanced team aggregates and player stats
   const updTeam = (mine: Team, opp: Team, myGoals:number, oppGoals:number, myShots:number, oppShots:number, ot:boolean) => {
     mine.gf += myGoals; mine.ga += oppGoals;
     mine.shotsFor += myShots; mine.shotsAgainst += oppShots;
@@ -419,6 +468,68 @@ function applyResultImmutable(prev: SeasonState, gameId: string, homeId: ID, awa
         mine.l++;
       }
     }
+
+    // Enhanced player stats distribution based on overall rating
+    if (myGoals > 0) {
+      // Sort skaters by overall rating for better distribution
+      const sortedSkaters = [...mine.skaters].sort((a, b) => b.overall - a.overall);
+      
+      // Distribute goals based on player quality
+      for (let i = 0; i < myGoals; i++) {
+        const weights = sortedSkaters.map(s => Math.pow(s.overall / 85, 2.5)); // Heavily weight better players
+        const totalWeight = sum(weights);
+        const rand = Math.random() * totalWeight;
+        
+        let cumWeight = 0;
+        for (let j = 0; j < sortedSkaters.length; j++) {
+          cumWeight += weights[j];
+          if (rand <= cumWeight) {
+            const scorer = sortedSkaters[j];
+            if (isPlayoffGame) {
+              scorer.playoffG = (scorer.playoffG || 0) + 1;
+              scorer.playoffP = (scorer.playoffP || 0) + 1;
+            } else {
+              scorer.g += 1;
+              scorer.p += 1;
+            }
+            break;
+          }
+        }
+      }
+      
+      // Distribute assists (2 per goal on average)
+      const totalAssists = myGoals * 2;
+      for (let i = 0; i < totalAssists; i++) {
+        const weights = sortedSkaters.map(s => Math.pow(s.overall / 85, 2)); // Weight for assists
+        const totalWeight = sum(weights);
+        const rand = Math.random() * totalWeight;
+        
+        let cumWeight = 0;
+        for (let j = 0; j < sortedSkaters.length; j++) {
+          cumWeight += weights[j];
+          if (rand <= cumWeight) {
+            const assister = sortedSkaters[j];
+            if (isPlayoffGame) {
+              assister.playoffA = (assister.playoffA || 0) + 1;
+              assister.playoffP = (assister.playoffP || 0) + 1;
+            } else {
+              assister.a += 1;
+              assister.p += 1;
+            }
+            break;
+          }
+        }
+      }
+    }
+    
+    // Update games played for all skaters
+    mine.skaters.forEach(skater => {
+      if (isPlayoffGame) {
+        skater.playoffGP = (skater.playoffGP || 0) + 1;
+      } else {
+        skater.gp += 1;
+      }
+    });
   };
   updTeam(home, away, totals.hGoals, totals.aGoals, totals.hShots, totals.aShots, totals.ot);
   updTeam(away, home, totals.aGoals, totals.hGoals, totals.aShots, totals.hShots, totals.ot);
@@ -867,9 +978,22 @@ export default function CalendarSimHub({
                     <div className="text-2xl font-bold text-yellow-800 mb-2">
                       🏆 STANLEY CUP CHAMPIONS 🏆
                     </div>
-                    <div className="text-xl font-semibold text-yellow-900">
+                    <div className="text-xl font-semibold text-yellow-900 mb-3">
                       {teamLabel(state, state.playoffSeries.find(s => s.round === 4 && s.completed)?.winnerId!)}
                     </div>
+                    {(() => {
+                      const championTeamId = state.playoffSeries.find(s => s.round === 4 && s.completed)?.winnerId!;
+                      const championTeam = state.teams[championTeamId];
+                      const connSmytheWinner = championTeam?.skaters
+                        .filter(s => (s.playoffP || 0) > 0)
+                        .sort((a, b) => (b.playoffP || 0) - (a.playoffP || 0))[0];
+                      
+                      return connSmytheWinner ? (
+                        <div className="text-lg font-medium text-yellow-800">
+                          Conn Smythe Winner: {connSmytheWinner.name} ({connSmytheWinner.playoffP || 0} pts)
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               )}
