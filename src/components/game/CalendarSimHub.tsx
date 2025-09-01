@@ -9,6 +9,7 @@
 // - Calendar will immediately reflect Played/Final
 
 import React, { useMemo, useState, useEffect, useRef } from "react";
+import { RetirementEngine, type Retiree, computeAwardsScore } from "../../utils/retirement";
 
 type ID = string;
 
@@ -65,6 +66,65 @@ export type SeasonState = {
   isRegularSeasonComplete?: boolean;
   playoffSeries?: PlayoffSeries[];
   currentPlayoffRound?: number;
+  // Offseason phases
+  offseasonPhase?: 'retirement' | 'hof' | 'lottery' | 'draft' | 'resigning' | 'complete';
+  retiredPlayers?: RetiredPlayer[];
+  hofInductees?: HofInductee[];
+  draftLottery?: DraftLotteryResult[];
+  draftPicks?: DraftPick[];
+  resignings?: ResigningResult[];
+};
+
+export type RetiredPlayer = {
+  id: string;
+  name: string;
+  position: string;
+  age: number;
+  careerStats: {
+    games: number;
+    goals: number;
+    assists: number;
+    points: number;
+    cups: number;
+  };
+  retirementReason: string;
+};
+
+export type HofInductee = {
+  id: string;
+  name: string;
+  position: string;
+  hofScore: number;
+  classYear: number;
+  careerHighlights: string;
+};
+
+export type DraftLotteryResult = {
+  teamId: string;
+  position: number;
+  probability: number;
+  moved: boolean;
+};
+
+export type DraftPick = {
+  overall: number;
+  round: number;
+  pick: number;
+  teamId: string;
+  playerId: string;
+  playerName: string;
+  position: string;
+  potential: number;
+};
+
+export type ResigningResult = {
+  playerId: string;
+  playerName: string;
+  teamId: string;
+  resigned: boolean;
+  contractYears: number;
+  contractValue: number;
+  reason: string;
 };
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -414,6 +474,228 @@ function generateNextRoundSeries(completedSeries: PlayoffSeries[], round: number
   }
   
   return newSeries;
+}
+
+// ─── Offseason Functions ──────────────────────────────────────────────────────
+function processRetirement(state: SeasonState): SeasonState {
+  const currentYear = parseInt(state.seasonYear);
+  const retirementEngine = new RetirementEngine(currentYear);
+  
+  // Convert all skaters to Retiree format
+  const allSkaters: Retiree[] = [];
+  Object.values(state.teams).forEach(team => {
+    team.skaters.forEach(skater => {
+      // Generate simulated career data
+      const age = 25 + Math.floor(Math.random() * 15); // Ages 25-40
+      const seasonsPlayed = Math.max(1, age - 18);
+      const careerGoals = skater.g * seasonsPlayed + Math.floor(Math.random() * 100);
+      const careerPoints = skater.p * seasonsPlayed + Math.floor(Math.random() * 200);
+      const cups = team.pts > 100 ? Math.floor(Math.random() * 3) : 0;
+      const isLegend = skater.overall >= 90 && careerPoints > 800;
+      
+      allSkaters.push({
+        id: skater.id,
+        name: skater.name,
+        position: skater.position,
+        age,
+        seasonsPlayed,
+        gamesLastSeason: skater.gp,
+        majorInjuries: Math.floor(Math.random() * 3),
+        overall: skater.overall,
+        potential: skater.overall + Math.floor(Math.random() * 10) - 5,
+        careerGoals,
+        careerPoints,
+        cups,
+        awardsScore: computeAwardsScore({
+          hart: isLegend ? 1 : 0,
+          allStar: Math.floor(seasonsPlayed / 3)
+        }),
+        milestonesPending: careerGoals > 490 ? 500 - careerGoals : 0,
+        isLegend,
+        contractYearsRemaining: Math.floor(Math.random() * 5)
+      });
+    });
+  });
+  
+  const result = retirementEngine.run(allSkaters);
+  const retiredPlayers: RetiredPlayer[] = [];
+  
+  // Process retirements and remove from teams
+  const updatedTeams = { ...state.teams };
+  result.retirements.forEach(decision => {
+    if (decision.retires) {
+      const retiree = allSkaters.find(p => p.id === decision.playerId)!;
+      retiredPlayers.push({
+        id: decision.playerId,
+        name: decision.playerName,
+        position: retiree.position,
+        age: retiree.age,
+        careerStats: {
+          games: retiree.gamesLastSeason * retiree.seasonsPlayed,
+          goals: retiree.careerGoals,
+          assists: retiree.careerPoints - retiree.careerGoals,
+          points: retiree.careerPoints,
+          cups: retiree.cups
+        },
+        retirementReason: decision.reason
+      });
+      
+      // Remove from teams
+      Object.keys(updatedTeams).forEach(teamId => {
+        updatedTeams[teamId] = {
+          ...updatedTeams[teamId],
+          skaters: updatedTeams[teamId].skaters.filter(s => s.id !== decision.playerId)
+        };
+      });
+    }
+  });
+  
+  // Process Hall of Fame
+  const hofInductees: HofInductee[] = result.hallOfFame.map(inductee => {
+    const retiree = allSkaters.find(p => p.id === inductee.playerId)!;
+    return {
+      id: inductee.playerId,
+      name: inductee.playerName,
+      position: retiree.position,
+      hofScore: inductee.hofScore,
+      classYear: inductee.classYear,
+      careerHighlights: `${retiree.careerGoals} goals, ${retiree.careerPoints} points, ${retiree.cups} Stanley Cups`
+    };
+  });
+  
+  return {
+    ...state,
+    teams: updatedTeams,
+    retiredPlayers,
+    hofInductees,
+    offseasonPhase: 'hof'
+  };
+}
+
+function processDraftLottery(state: SeasonState): SeasonState {
+  // Sort teams by points (worst to best for lottery)
+  const teamsByPoints = Object.values(state.teams)
+    .sort((a, b) => a.pts - b.pts)
+    .slice(0, 16); // Bottom 16 teams eligible
+  
+  const lotteryResults: DraftLotteryResult[] = [];
+  const availablePositions = Array.from({length: 16}, (_, i) => i + 1);
+  
+  // Simple lottery - worse teams have better odds
+  teamsByPoints.forEach((team, index) => {
+    const baseOdds = 16 - index; // Worst team gets 16% chance, etc.
+    const roll = Math.random() * 100;
+    const position = availablePositions.shift() || index + 1;
+    
+    lotteryResults.push({
+      teamId: team.id,
+      position,
+      probability: baseOdds,
+      moved: position !== index + 1
+    });
+  });
+  
+  return {
+    ...state,
+    draftLottery: lotteryResults,
+    offseasonPhase: 'lottery'
+  };
+}
+
+function processDraft(state: SeasonState): SeasonState {
+  if (!state.draftLottery) return state;
+  
+  const draftPicks: DraftPick[] = [];
+  const prospects = generateProspects(210); // 7 rounds × 30 teams
+  
+  // First round based on lottery
+  state.draftLottery.forEach((lottery, index) => {
+    const prospect = prospects[index];
+    draftPicks.push({
+      overall: index + 1,
+      round: 1,
+      pick: index + 1,
+      teamId: lottery.teamId,
+      playerId: prospect.id,
+      playerName: prospect.name,
+      position: prospect.position,
+      potential: prospect.potential
+    });
+  });
+  
+  // Remaining rounds (2-7) in reverse order of standings
+  const teamsByPoints = Object.values(state.teams).sort((a, b) => a.pts - b.pts);
+  let overallPick = 31;
+  
+  for (let round = 2; round <= 7; round++) {
+    teamsByPoints.forEach(team => {
+      const prospect = prospects[overallPick - 1];
+      if (prospect) {
+        draftPicks.push({
+          overall: overallPick,
+          round,
+          pick: overallPick - ((round - 1) * 30),
+          teamId: team.id,
+          playerId: prospect.id,
+          playerName: prospect.name,
+          position: prospect.position,
+          potential: prospect.potential
+        });
+        overallPick++;
+      }
+    });
+  }
+  
+  return {
+    ...state,
+    draftPicks,
+    offseasonPhase: 'draft'
+  };
+}
+
+function generateProspects(count: number) {
+  const positions = ['C', 'LW', 'RW', 'D', 'G'];
+  const firstNames = ['Connor', 'Nathan', 'Erik', 'Alex', 'Tyler', 'Brady', 'Dylan', 'Jack', 'Owen', 'Liam'];
+  const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+  
+  return Array.from({length: count}, (_, i) => ({
+    id: `prospect_${i + 1}`,
+    name: `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
+    position: positions[Math.floor(Math.random() * positions.length)],
+    potential: Math.max(60, 85 - Math.floor(i / 10)) // Early picks have higher potential
+  }));
+}
+
+function processResigning(state: SeasonState): SeasonState {
+  const resignings: ResigningResult[] = [];
+  
+  // Check all players for contract status
+  Object.values(state.teams).forEach(team => {
+    team.skaters.forEach(skater => {
+      // Assume 20% of players need resigning each year
+      if (Math.random() < 0.2) {
+        const willResign = Math.random() < 0.8; // 80% resign
+        const years = willResign ? Math.floor(Math.random() * 5) + 1 : 0;
+        const value = willResign ? (skater.overall * 100000) + Math.floor(Math.random() * 500000) : 0;
+        
+        resignings.push({
+          playerId: skater.id,
+          playerName: skater.name,
+          teamId: team.id,
+          resigned: willResign,
+          contractYears: years,
+          contractValue: value,
+          reason: willResign ? 'Agreed to terms' : 'Seeking more money/opportunity'
+        });
+      }
+    });
+  });
+  
+  return {
+    ...state,
+    resignings,
+    offseasonPhase: 'resigning'
+  };
 }
 
 // ─── Enhanced Sim (more realistic scoring) ─────────────────────────────────
@@ -1002,6 +1284,18 @@ export default function CalendarSimHub({
                       ) : null;
                     })()}
                   </div>
+                  
+                  {/* Offseason Trigger */}
+                  {!state.offseasonPhase && (
+                    <div className="mt-4 pt-4 border-t border-yellow-300">
+                      <button 
+                        className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium"
+                        onClick={() => setState(prev => ({ ...prev, offseasonPhase: 'retirement' }))}
+                      >
+                        Begin Offseason →
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1016,6 +1310,246 @@ export default function CalendarSimHub({
 
       {/* Latest box score (if any) */}
       {lastBox && <BoxScoreCard box={lastBox} state={state} />}
+
+      {/* Offseason Phases */}
+      {state.offseasonPhase && (
+        <div className="space-y-6">
+          {/* Retirement Phase */}
+          {state.offseasonPhase === 'retirement' && (
+            <div className="p-6 bg-gray-100 rounded-lg">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-800">🏁 Player Retirements</h3>
+                <button 
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={() => setState(processRetirement)}
+                >
+                  Process Retirements
+                </button>
+              </div>
+              <p className="text-gray-600">
+                Analyzing all players for potential retirements based on age, performance, and career milestones...
+              </p>
+            </div>
+          )}
+
+          {/* Hall of Fame Phase */}
+          {state.offseasonPhase === 'hof' && state.retiredPlayers && (
+            <div className="space-y-4">
+              <div className="p-6 bg-yellow-50 rounded-lg border border-yellow-200">
+                <h3 className="text-xl font-bold text-yellow-800 mb-4">🏆 Hall of Fame Inductions</h3>
+                
+                {state.hofInductees && state.hofInductees.length > 0 ? (
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-yellow-700">Class of {state.seasonYear}:</h4>
+                    {state.hofInductees.map(inductee => (
+                      <div key={inductee.id} className="p-3 bg-yellow-100 rounded border border-yellow-300">
+                        <div className="font-medium text-yellow-900">{inductee.name} ({inductee.position})</div>
+                        <div className="text-sm text-yellow-700">{inductee.careerHighlights}</div>
+                        <div className="text-xs text-yellow-600">HOF Score: {inductee.hofScore.toFixed(2)}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-yellow-700">No players qualified for the Hall of Fame this year.</p>
+                )}
+
+                <div className="mt-6 pt-4 border-t border-yellow-200">
+                  <h4 className="font-semibold text-yellow-700 mb-2">Retired Players ({state.retiredPlayers.length}):</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                    {state.retiredPlayers.map(player => (
+                      <div key={player.id} className="p-2 bg-gray-100 rounded text-sm">
+                        <div className="font-medium">{player.name} ({player.position})</div>
+                        <div className="text-gray-600">
+                          Age {player.age} • {player.careerStats.points} career points • {player.careerStats.cups} cups
+                        </div>
+                        <div className="text-xs text-gray-500">{player.retirementReason}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <button 
+                    className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                    onClick={() => setState(processDraftLottery)}
+                  >
+                    Continue to Draft Lottery →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Draft Lottery Phase */}
+          {state.offseasonPhase === 'lottery' && state.draftLottery && (
+            <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-xl font-bold text-blue-800 mb-4">🎱 Draft Lottery Results</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-blue-700 mb-2">Top 10 Picks:</h4>
+                  <div className="space-y-2">
+                    {state.draftLottery.slice(0, 10).map((result, index) => (
+                      <div key={result.teamId} className="flex justify-between items-center p-2 bg-blue-100 rounded">
+                        <span className="font-medium">#{index + 1} {teamLabel(state, result.teamId)}</span>
+                        {result.moved && <span className="text-green-600 text-sm">↑ Lottery Winner!</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-semibold text-blue-700 mb-2">Remaining Picks:</h4>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {state.draftLottery.slice(10).map((result, index) => (
+                      <div key={result.teamId} className="flex justify-between p-1 bg-blue-50 rounded text-sm">
+                        <span>#{index + 11} {teamLabel(state, result.teamId)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <button 
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  onClick={() => setState(processDraft)}
+                >
+                  Continue to Draft →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Draft Phase */}
+          {state.offseasonPhase === 'draft' && state.draftPicks && (
+            <div className="p-6 bg-green-50 rounded-lg border border-green-200">
+              <h3 className="text-xl font-bold text-green-800 mb-4">🎯 NHL Entry Draft</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-green-700 mb-2">First Round (Top 10):</h4>
+                  <div className="space-y-2">
+                    {state.draftPicks.filter(p => p.round === 1).slice(0, 10).map(pick => (
+                      <div key={pick.overall} className="p-3 bg-green-100 rounded border border-green-300">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <span className="font-medium">#{pick.overall} {pick.playerName} ({pick.position})</span>
+                            <div className="text-sm text-green-700">
+                              Selected by {teamLabel(state, pick.teamId)} • Potential: {pick.potential}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <details className="bg-green-100 rounded p-3">
+                  <summary className="font-medium text-green-800 cursor-pointer">View All Draft Picks</summary>
+                  <div className="mt-3 max-h-96 overflow-y-auto space-y-1">
+                    {state.draftPicks.map(pick => (
+                      <div key={pick.overall} className="flex justify-between items-center p-2 bg-white rounded text-sm">
+                        <span>#{pick.overall} {pick.playerName} ({pick.position})</span>
+                        <span className="text-green-600">{teamLabel(state, pick.teamId)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
+
+              <div className="mt-4">
+                <button 
+                  className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+                  onClick={() => setState(processResigning)}
+                >
+                  Continue to Free Agency →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Resigning Phase */}
+          {state.offseasonPhase === 'resigning' && state.resignings && (
+            <div className="p-6 bg-orange-50 rounded-lg border border-orange-200">
+              <h3 className="text-xl font-bold text-orange-800 mb-4">✍️ Free Agency & Re-signings</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-orange-700 mb-2">
+                    Players Re-signed ({state.resignings.filter(r => r.resigned).length}):
+                  </h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {state.resignings.filter(r => r.resigned).map(resigning => (
+                      <div key={resigning.playerId} className="p-2 bg-orange-100 rounded">
+                        <div className="font-medium text-orange-900">{resigning.playerName}</div>
+                        <div className="text-sm text-orange-700">
+                          {teamLabel(state, resigning.teamId)} • {resigning.contractYears} years • 
+                          ${(resigning.contractValue / 1000000).toFixed(1)}M
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-semibold text-orange-700 mb-2">
+                    Players Left ({state.resignings.filter(r => !r.resigned).length}):
+                  </h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {state.resignings.filter(r => !r.resigned).map(resigning => (
+                      <div key={resigning.playerId} className="p-2 bg-red-100 rounded">
+                        <div className="font-medium text-red-900">{resigning.playerName}</div>
+                        <div className="text-sm text-red-700">
+                          Left {teamLabel(state, resigning.teamId)} • {resigning.reason}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <button 
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                  onClick={() => setState(prev => ({ ...prev, offseasonPhase: 'complete' }))}
+                >
+                  Complete Offseason
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Offseason Complete */}
+          {state.offseasonPhase === 'complete' && (
+            <div className="p-6 bg-green-100 rounded-lg border border-green-400">
+              <h3 className="text-xl font-bold text-green-800 mb-4">✅ Offseason Complete</h3>
+              <p className="text-green-700 mb-4">
+                All offseason activities have been completed. The league is ready for the next season!
+              </p>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="p-3 bg-white rounded border border-green-300">
+                  <div className="text-2xl font-bold text-green-800">{state.retiredPlayers?.length || 0}</div>
+                  <div className="text-sm text-green-600">Retirements</div>
+                </div>
+                <div className="p-3 bg-white rounded border border-green-300">
+                  <div className="text-2xl font-bold text-green-800">{state.hofInductees?.length || 0}</div>
+                  <div className="text-sm text-green-600">HOF Inductees</div>
+                </div>
+                <div className="p-3 bg-white rounded border border-green-300">
+                  <div className="text-2xl font-bold text-green-800">{state.draftPicks?.length || 0}</div>
+                  <div className="text-sm text-green-600">Draft Picks</div>
+                </div>
+                <div className="p-3 bg-white rounded border border-green-300">
+                  <div className="text-2xl font-bold text-green-800">{state.resignings?.filter(r => r.resigned).length || 0}</div>
+                  <div className="text-sm text-green-600">Re-signings</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Simple Live Sim (calls immutable apply on finish) */}
       {liveModal && (
