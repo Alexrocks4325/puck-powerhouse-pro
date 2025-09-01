@@ -42,6 +42,17 @@ export type BoxScore = {
   gameId: string; homeId: ID; awayId: ID; goals: GoalEvent[]; shots: Record<ID, number>;
   goalieShots: Record<ID, number>; goalieSaves: Record<ID, number>; homeGoalieId: ID; awayGoalieId: ID; ot: boolean;
 };
+export type PlayoffSeries = {
+  id: string;
+  round: number;
+  homeId: ID;
+  awayId: ID;
+  homeWins: number;
+  awayWins: number;
+  completed: boolean;
+  winnerId?: ID;
+};
+
 export type SeasonState = {
   seasonYear: string;
   currentDay: number;            // today (0-based from season start)
@@ -50,6 +61,9 @@ export type SeasonState = {
   boxScores: Record<string, BoxScore>;
   teams: Record<ID, Team>;
   teamOrder: ID[];
+  isRegularSeasonComplete?: boolean;
+  playoffSeries?: PlayoffSeries[];
+  currentPlayoffRound?: number;
 };
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -90,6 +104,69 @@ function findNextUnplayedGame(state: SeasonState, myTeamId: ID): Game | null {
   return state.schedule
     .filter(g => (g.homeId === myTeamId || g.awayId === myTeamId) && !g.played && g.day >= state.currentDay)
     .sort((x,y) => x.day - y.day)[0] || null;
+}
+
+// ─── Playoff System ──────────────────────────────────────────────────────────
+function generatePlayoffSeries(teams: Record<ID, Team>): PlayoffSeries[] {
+  // Get all teams and sort by points for seeding
+  const allTeams = Object.values(teams);
+  const eastTeams = allTeams.filter(t => t.conference === "East").sort((a, b) => (b.pts || 0) - (a.pts || 0)).slice(0, 8);
+  const westTeams = allTeams.filter(t => t.conference === "West").sort((a, b) => (b.pts || 0) - (a.pts || 0)).slice(0, 8);
+  
+  const series: PlayoffSeries[] = [];
+  
+  // Round 1 - Wild Card Round (8 series total)
+  for (let i = 0; i < 4; i++) {
+    // Eastern Conference
+    series.push({
+      id: `R1_E${i + 1}`,
+      round: 1,
+      homeId: eastTeams[i].id,
+      awayId: eastTeams[7 - i].id,
+      homeWins: 0,
+      awayWins: 0,
+      completed: false
+    });
+    
+    // Western Conference  
+    series.push({
+      id: `R1_W${i + 1}`,
+      round: 1,
+      homeId: westTeams[i].id,
+      awayId: westTeams[7 - i].id,
+      homeWins: 0,
+      awayWins: 0,
+      completed: false
+    });
+  }
+  
+  return series;
+}
+
+function simulatePlayoffSeries(series: PlayoffSeries, teams: Record<ID, Team>): PlayoffSeries {
+  const home = teams[series.homeId];
+  const away = teams[series.awayId];
+  
+  let homeWins = series.homeWins;
+  let awayWins = series.awayWins;
+  
+  // Simulate games until one team gets 4 wins
+  while (homeWins < 4 && awayWins < 4) {
+    const totals = quickSimTotals(home, away);
+    if (totals.hGoals > totals.aGoals) {
+      homeWins++;
+    } else {
+      awayWins++;
+    }
+  }
+  
+  return {
+    ...series,
+    homeWins,
+    awayWins,
+    completed: true,
+    winnerId: homeWins === 4 ? series.homeId : series.awayId
+  };
 }
 
 // ─── Minimal Sim (replace with your AccurateSim if you want) ─────────────────
@@ -287,10 +364,10 @@ export default function CalendarSimHub({
       !g.played && g.day >= state.currentDay
     ).sort((x,y) => x.day - y.day);
     
-    if (!allGames.length) return;
-
     setState(prev => {
       let working = prev;
+      
+      // Simulate remaining regular season games
       for (const g of allGames) {
         const home = working.teams[g.homeId];
         const away = working.teams[g.awayId];
@@ -303,12 +380,49 @@ export default function CalendarSimHub({
           setLastBox(box);
         }
       }
+      
+      // Mark regular season as complete and generate playoffs
+      working = {
+        ...working,
+        isRegularSeasonComplete: true,
+        playoffSeries: generatePlayoffSeries(working.teams),
+        currentPlayoffRound: 1
+      };
+      
       return working;
     });
   }
 
   function openLiveSim(game: Game) {
     setLiveModal({ game });
+  }
+
+  // Check if playoffs should be available
+  const allRegularSeasonGamesPlayed = state.schedule.every(g => g.played);
+  const isPlayoffsActive = state.isRegularSeasonComplete || allRegularSeasonGamesPlayed;
+  const myTeamInPlayoffs = state.playoffSeries?.some(s => s.homeId === myTeamId || s.awayId === myTeamId);
+
+  function simulateMyPlayoffSeries() {
+    if (!state.playoffSeries) return;
+    
+    setState(prev => {
+      const myCurrentSeries = prev.playoffSeries?.find(s => 
+        (s.homeId === myTeamId || s.awayId === myTeamId) && !s.completed
+      );
+      
+      if (!myCurrentSeries) return prev;
+      
+      const simulatedSeries = simulatePlayoffSeries(myCurrentSeries, prev.teams);
+      
+      const newPlayoffSeries = prev.playoffSeries!.map(s => 
+        s.id === myCurrentSeries.id ? simulatedSeries : s
+      );
+      
+      return {
+        ...prev,
+        playoffSeries: newPlayoffSeries
+      };
+    });
   }
 
   return (
@@ -441,6 +555,68 @@ export default function CalendarSimHub({
           </div>
         </div>
       </div>
+
+      {/* Playoffs Section */}
+      {isPlayoffsActive && (
+        <div className="border rounded-xl p-4 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                🏆
+              </div>
+              <h3 className="text-xl font-bold text-yellow-800">Stanley Cup Playoffs</h3>
+            </div>
+            {myTeamInPlayoffs && (
+              <button 
+                className="px-4 py-2 rounded bg-yellow-600 text-white hover:bg-yellow-700 font-medium"
+                onClick={simulateMyPlayoffSeries}
+              >
+                Simulate My Series
+              </button>
+            )}
+          </div>
+          
+          {state.playoffSeries && state.playoffSeries.length > 0 ? (
+            <div className="grid gap-4">
+              <h4 className="font-semibold text-yellow-800">First Round</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {state.playoffSeries.filter(s => s.round === 1).map(series => {
+                  const isMyGame = series.homeId === myTeamId || series.awayId === myTeamId;
+                  return (
+                    <div key={series.id} className={`p-3 rounded border ${
+                      isMyGame ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
+                    }`}>
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm font-medium">
+                          {teamLabel(state, series.awayId)} @ {teamLabel(state, series.homeId)}
+                        </div>
+                        <div className="text-lg font-bold">
+                          {series.awayWins} - {series.homeWins}
+                        </div>
+                      </div>
+                      {series.completed && (
+                        <div className="text-xs text-green-600 font-medium mt-1">
+                          {teamLabel(state, series.winnerId!)} advances
+                        </div>
+                      )}
+                      {!series.completed && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Best of 7 series
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-yellow-700">Playoffs will begin after the regular season ends.</p>
+              <p className="text-sm text-yellow-600 mt-1">Use "Sim to Season End" to complete all games.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Latest box score (if any) */}
       {lastBox && <BoxScoreCard box={lastBox} state={state} />}
