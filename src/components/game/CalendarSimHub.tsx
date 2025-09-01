@@ -110,8 +110,16 @@ function findNextUnplayedGame(state: SeasonState, myTeamId: ID): Game | null {
 function generatePlayoffSeries(teams: Record<ID, Team>): PlayoffSeries[] {
   // Get all teams and sort by points for seeding
   const allTeams = Object.values(teams);
-  const eastTeams = allTeams.filter(t => t.conference === "East").sort((a, b) => (b.pts || 0) - (a.pts || 0)).slice(0, 8);
-  const westTeams = allTeams.filter(t => t.conference === "West").sort((a, b) => (b.pts || 0) - (a.pts || 0)).slice(0, 8);
+  const eastTeams = allTeams.filter(t => t.conference === "East").sort((a, b) => {
+    const aPts = (a.w * 2) + a.otl;
+    const bPts = (b.w * 2) + b.otl;
+    return bPts - aPts;
+  }).slice(0, 8);
+  const westTeams = allTeams.filter(t => t.conference === "West").sort((a, b) => {
+    const aPts = (a.w * 2) + a.otl;
+    const bPts = (b.w * 2) + b.otl;
+    return bPts - aPts;
+  }).slice(0, 8);
   
   const series: PlayoffSeries[] = [];
   
@@ -167,6 +175,106 @@ function simulatePlayoffSeries(series: PlayoffSeries, teams: Record<ID, Team>): 
     completed: true,
     winnerId: homeWins === 4 ? series.homeId : series.awayId
   };
+}
+
+function generateNextRoundSeries(completedSeries: PlayoffSeries[], round: number, teams: Record<ID, Team>): PlayoffSeries[] {
+  if (round > 4) return []; // No more rounds after Stanley Cup Finals
+  
+  const winners = completedSeries.filter(s => s.completed && s.winnerId).map(s => s.winnerId!);
+  const newSeries: PlayoffSeries[] = [];
+  
+  if (round === 2) {
+    // Second Round - Conference Semifinals
+    const eastWinners = completedSeries
+      .filter(s => s.round === 1 && s.id.includes('_E') && s.completed)
+      .map(s => s.winnerId!)
+      .filter(Boolean);
+    const westWinners = completedSeries
+      .filter(s => s.round === 1 && s.id.includes('_W') && s.completed)
+      .map(s => s.winnerId!)
+      .filter(Boolean);
+    
+    // Pair winners by original seeding (need to determine original seeds)
+    for (let i = 0; i < eastWinners.length; i += 2) {
+      if (eastWinners[i + 1]) {
+        newSeries.push({
+          id: `R2_E${Math.floor(i/2) + 1}`,
+          round: 2,
+          homeId: eastWinners[i],
+          awayId: eastWinners[i + 1],
+          homeWins: 0,
+          awayWins: 0,
+          completed: false
+        });
+      }
+    }
+    
+    for (let i = 0; i < westWinners.length; i += 2) {
+      if (westWinners[i + 1]) {
+        newSeries.push({
+          id: `R2_W${Math.floor(i/2) + 1}`,
+          round: 2,
+          homeId: westWinners[i],
+          awayId: westWinners[i + 1],
+          homeWins: 0,
+          awayWins: 0,
+          completed: false
+        });
+      }
+    }
+  } else if (round === 3) {
+    // Conference Finals
+    const eastWinners = completedSeries
+      .filter(s => s.round === 2 && s.id.includes('_E') && s.completed)
+      .map(s => s.winnerId!)
+      .filter(Boolean);
+    const westWinners = completedSeries
+      .filter(s => s.round === 2 && s.id.includes('_W') && s.completed)
+      .map(s => s.winnerId!)
+      .filter(Boolean);
+    
+    if (eastWinners.length >= 2) {
+      newSeries.push({
+        id: 'R3_E1',
+        round: 3,
+        homeId: eastWinners[0],
+        awayId: eastWinners[1],
+        homeWins: 0,
+        awayWins: 0,
+        completed: false
+      });
+    }
+    
+    if (westWinners.length >= 2) {
+      newSeries.push({
+        id: 'R3_W1',
+        round: 3,
+        homeId: westWinners[0],
+        awayId: westWinners[1],
+        homeWins: 0,
+        awayWins: 0,
+        completed: false
+      });
+    }
+  } else if (round === 4) {
+    // Stanley Cup Finals
+    const eastChamp = completedSeries.find(s => s.round === 3 && s.id.includes('_E') && s.completed)?.winnerId;
+    const westChamp = completedSeries.find(s => s.round === 3 && s.id.includes('_W') && s.completed)?.winnerId;
+    
+    if (eastChamp && westChamp) {
+      newSeries.push({
+        id: 'R4_SCF',
+        round: 4,
+        homeId: eastChamp,
+        awayId: westChamp,
+        homeWins: 0,
+        awayWins: 0,
+        completed: false
+      });
+    }
+  }
+  
+  return newSeries;
 }
 
 // ─── Minimal Sim (replace with your AccurateSim if you want) ─────────────────
@@ -402,25 +510,44 @@ export default function CalendarSimHub({
   const isPlayoffsActive = state.isRegularSeasonComplete || allRegularSeasonGamesPlayed;
   const myTeamInPlayoffs = state.playoffSeries?.some(s => s.homeId === myTeamId || s.awayId === myTeamId);
 
-  function simulateMyPlayoffSeries() {
+  function simulateCurrentPlayoffRound() {
     if (!state.playoffSeries) return;
     
     setState(prev => {
-      const myCurrentSeries = prev.playoffSeries?.find(s => 
-        (s.homeId === myTeamId || s.awayId === myTeamId) && !s.completed
-      );
+      const currentRound = prev.currentPlayoffRound || 1;
+      const currentRoundSeries = prev.playoffSeries?.filter(s => s.round === currentRound && !s.completed) || [];
       
-      if (!myCurrentSeries) return prev;
+      if (currentRoundSeries.length === 0) return prev;
       
-      const simulatedSeries = simulatePlayoffSeries(myCurrentSeries, prev.teams);
+      // Simulate all series in current round
+      let updatedSeries = [...(prev.playoffSeries || [])];
       
-      const newPlayoffSeries = prev.playoffSeries!.map(s => 
-        s.id === myCurrentSeries.id ? simulatedSeries : s
-      );
+      for (const series of currentRoundSeries) {
+        const simulatedSeries = simulatePlayoffSeries(series, prev.teams);
+        const index = updatedSeries.findIndex(s => s.id === series.id);
+        if (index !== -1) {
+          updatedSeries[index] = simulatedSeries;
+        }
+      }
+      
+      // Check if all series in current round are completed
+      const allCurrentRoundCompleted = updatedSeries
+        .filter(s => s.round === currentRound)
+        .every(s => s.completed);
+      
+      let newCurrentRound = currentRound;
+      
+      // If current round is completed, generate next round
+      if (allCurrentRoundCompleted && currentRound < 4) {
+        const nextRoundSeries = generateNextRoundSeries(updatedSeries, currentRound + 1, prev.teams);
+        updatedSeries = [...updatedSeries, ...nextRoundSeries];
+        newCurrentRound = currentRound + 1;
+      }
       
       return {
         ...prev,
-        playoffSeries: newPlayoffSeries
+        playoffSeries: updatedSeries,
+        currentPlayoffRound: newCurrentRound
       };
     });
   }
@@ -566,48 +693,82 @@ export default function CalendarSimHub({
               </div>
               <h3 className="text-xl font-bold text-yellow-800">Stanley Cup Playoffs</h3>
             </div>
-            {myTeamInPlayoffs && (
-              <button 
-                className="px-4 py-2 rounded bg-yellow-600 text-white hover:bg-yellow-700 font-medium"
-                onClick={simulateMyPlayoffSeries}
-              >
-                Simulate My Series
-              </button>
-            )}
+            <button 
+              className="px-4 py-2 rounded bg-yellow-600 text-white hover:bg-yellow-700 font-medium"
+              onClick={simulateCurrentPlayoffRound}
+            >
+              Simulate Round {state.currentPlayoffRound || 1}
+            </button>
           </div>
           
           {state.playoffSeries && state.playoffSeries.length > 0 ? (
-            <div className="grid gap-4">
-              <h4 className="font-semibold text-yellow-800">First Round</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {state.playoffSeries.filter(s => s.round === 1).map(series => {
-                  const isMyGame = series.homeId === myTeamId || series.awayId === myTeamId;
-                  return (
-                    <div key={series.id} className={`p-3 rounded border ${
-                      isMyGame ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                    }`}>
-                      <div className="flex justify-between items-center">
-                        <div className="text-sm font-medium">
-                          {teamLabel(state, series.awayId)} @ {teamLabel(state, series.homeId)}
-                        </div>
-                        <div className="text-lg font-bold">
-                          {series.awayWins} - {series.homeWins}
-                        </div>
-                      </div>
-                      {series.completed && (
-                        <div className="text-xs text-green-600 font-medium mt-1">
-                          {teamLabel(state, series.winnerId!)} advances
-                        </div>
-                      )}
-                      {!series.completed && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Best of 7 series
-                        </div>
+            <div className="space-y-6">
+              {/* Show all rounds */}
+              {[1, 2, 3, 4].map(round => {
+                const roundSeries = state.playoffSeries?.filter(s => s.round === round) || [];
+                if (roundSeries.length === 0) return null;
+                
+                const roundNames = {
+                  1: "First Round",
+                  2: "Second Round", 
+                  3: "Conference Finals",
+                  4: "Stanley Cup Finals"
+                };
+                
+                return (
+                  <div key={round} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-yellow-800">{roundNames[round as keyof typeof roundNames]}</h4>
+                      {round === (state.currentPlayoffRound || 1) && (
+                        <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded">Current Round</span>
                       )}
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {roundSeries.map(series => {
+                        const isMyGame = series.homeId === myTeamId || series.awayId === myTeamId;
+                        return (
+                          <div key={series.id} className={`p-3 rounded border ${
+                            isMyGame ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
+                          }`}>
+                            <div className="flex justify-between items-center">
+                              <div className="text-sm font-medium">
+                                {teamLabel(state, series.awayId)} @ {teamLabel(state, series.homeId)}
+                              </div>
+                              <div className="text-lg font-bold">
+                                {series.awayWins} - {series.homeWins}
+                              </div>
+                            </div>
+                            {series.completed && (
+                              <div className="text-xs text-green-600 font-medium mt-1">
+                                {teamLabel(state, series.winnerId!)} advances
+                              </div>
+                            )}
+                            {!series.completed && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                Best of 7 series
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* Stanley Cup Winner Display */}
+              {state.playoffSeries?.some(s => s.round === 4 && s.completed) && (
+                <div className="mt-6 p-4 bg-gradient-to-r from-yellow-200 to-amber-200 rounded-lg border-2 border-yellow-400">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-800 mb-2">
+                      🏆 STANLEY CUP CHAMPIONS 🏆
+                    </div>
+                    <div className="text-xl font-semibold text-yellow-900">
+                      {teamLabel(state, state.playoffSeries.find(s => s.round === 4 && s.completed)?.winnerId!)}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-4">
