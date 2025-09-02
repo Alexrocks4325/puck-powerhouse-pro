@@ -10,6 +10,7 @@
 
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { RetirementEngine, type Retiree, computeAwardsScore } from "../../utils/retirement";
+import { playerAges } from '../../utils/playerAgeUpdater';
 
 type ID = string;
 
@@ -481,17 +482,24 @@ function processRetirement(state: SeasonState): SeasonState {
   const currentYear = parseInt(state.seasonYear);
   const retirementEngine = new RetirementEngine(currentYear);
   
-  // Convert all skaters to Retiree format - ONLY OLDER PLAYERS (35+)
+  // Get real NHL player ages from database
+  
+  // Convert all skaters to Retiree format - use real ages when available
   const allSkaters: Retiree[] = [];
   Object.values(state.teams).forEach(team => {
     team.skaters.forEach(skater => {
-      // Generate age with bias toward older players for retirement
-      const age = 35 + Math.floor(Math.random() * 10); // Ages 35-44 only
+      // Use real age if available, otherwise generate reasonable age
+      const realAge = playerAges[skater.name];
+      const age = realAge || (25 + Math.floor(Math.random() * 15)); // 25-39 fallback
       const seasonsPlayed = Math.max(1, age - 18);
       const careerGoals = skater.g * seasonsPlayed + Math.floor(Math.random() * 100);
       const careerPoints = skater.p * seasonsPlayed + Math.floor(Math.random() * 200);
       const cups = team.pts > 100 ? Math.floor(Math.random() * 3) : 0;
       const isLegend = skater.overall >= 90 && careerPoints > 800;
+      
+      // Contract years remaining - more realistic distribution
+      // Most players have 1-3 years left, some are UFA (0 years)
+      const contractYearsRemaining = Math.random() < 0.2 ? 0 : Math.floor(Math.random() * 4) + 1; // 0 or 1-4 years
       
       allSkaters.push({
         id: skater.id,
@@ -512,7 +520,7 @@ function processRetirement(state: SeasonState): SeasonState {
         }),
         milestonesPending: careerGoals > 490 ? 500 - careerGoals : 0,
         isLegend,
-        contractYearsRemaining: Math.floor(Math.random() * 5)
+        contractYearsRemaining
       });
     });
   });

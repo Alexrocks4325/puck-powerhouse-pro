@@ -8,6 +8,7 @@ export interface Player {
   overall: number;
   rarity: 'bronze' | 'silver' | 'gold' | 'elite' | 'legend';
   chemistry: string[];
+  age?: number;
   image?: string;
   stats?: {
     goals?: number;
