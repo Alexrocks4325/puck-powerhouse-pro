@@ -976,13 +976,14 @@ function runArbitration(teams: Record<string, TeamFAContext>, remainingRFAs: Mar
 }
 
 function processResigning(state: SeasonState): SeasonState {
+  console.log('Processing resigning phase...');
   const resignings: ResigningResult[] = [];
   
   // Check all players for contract status  
   Object.values(state.teams).forEach(team => {
     team.skaters.forEach(skater => {
-      // Simulate contract expiry based on age and performance
-      const isExpiring = Math.random() < 0.15; // 15% of players have expiring contracts
+      // Simulate contract expiry - ensure at least some players per team have expiring contracts
+      const isExpiring = Math.random() < 0.25; // Increased to 25% for more activity
       
       if (isExpiring) {
         // Resign probability based on performance and team cap
@@ -1040,7 +1041,7 @@ function processResigning(state: SeasonState): SeasonState {
     
     // Check goalies too
     team.goalies.forEach(goalie => {
-      const isExpiring = Math.random() < 0.12; // 12% for goalies
+      const isExpiring = Math.random() < 0.2; // 20% for goalies
       
       if (isExpiring) {
         let resignChance = 0.75; // Slightly higher for goalies
@@ -1092,10 +1093,26 @@ function processResigning(state: SeasonState): SeasonState {
     });
   });
   
+  console.log(`Generated ${resignings.length} resigning decisions`);
+  
+  // If no resignings generated, create at least one dummy one to ensure phase works
+  if (resignings.length === 0) {
+    console.log('No resignings generated, creating placeholder...');
+    resignings.push({
+      playerId: 'placeholder',
+      playerName: 'No Contract Decisions',
+      teamId: 'none',
+      resigned: true,
+      contractYears: 0,
+      contractValue: 0,
+      reason: 'No players had expiring contracts this year'
+    });
+  }
+  
   return {
     ...state,
     resignings,
-    offseasonPhase: 'freeagency'
+    offseasonPhase: 'resigning'
   };
 }
 
@@ -1956,12 +1973,18 @@ export default function CalendarSimHub({
               state={state} 
               setState={setState}
               myTeamId={myTeamId}
-              onComplete={() => setState(processResigning)}
+              onComplete={() => {
+                console.log('Draft completed, transitioning to resigning...');
+                setState(processResigning);
+              }}
             />
           )}
 
           {/* Resigning Phase */}
-          {state.offseasonPhase === 'resigning' && state.resignings && (
+          {(() => {
+            console.log('Checking resigning phase:', state.offseasonPhase, 'resignings:', state.resignings?.length);
+            return state.offseasonPhase === 'resigning';
+          })() && (
             <ResigningInterface 
               state={state} 
               setState={setState}
