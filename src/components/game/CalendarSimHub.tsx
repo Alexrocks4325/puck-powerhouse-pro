@@ -21,12 +21,14 @@ export type Skater = {
   gp: number; g: number; a: number; p: number; pim: number; shots: number; plusMinus: number;
   ppG?: number; shG?: number;
   playoffGP?: number; playoffG?: number; playoffA?: number; playoffP?: number;
+  age?: number; contractYears?: number; contractValue?: number; image?: string;
 };
 export type Goalie = {
   id: ID; name: string; position: "G";
   overall: number; reflexes: number; positioning: number; reboundControl: number; stamina: number;
   gp: number; gs: number; w: number; l: number; otl: number; so: number;
   shotsAgainst: number; saves: number; gaa: number; svpct: number;
+  age?: number; contractYears?: number; contractValue?: number; image?: string;
 };
 export type Team = {
   id: ID; name: string; abbrev: string; conference: "East"|"West"; 
@@ -35,6 +37,7 @@ export type Team = {
   w: number; l: number; otl: number; gf: number; ga: number; shotsFor: number; shotsAgainst: number;
   ppAttempts?: number; ppGoals?: number; foWon?: number; foLost?: number;
   pts: number; capSpace: number; // Required for compatibility
+  contractExpiring?: string[]; // player IDs with expiring contracts
 };
 export type Game = {
   id: string; day: number; homeId: ID; awayId: ID; played: boolean;
@@ -68,12 +71,14 @@ export type SeasonState = {
   playoffSeries?: PlayoffSeries[];
   currentPlayoffRound?: number;
   // Offseason phases
-  offseasonPhase?: 'retirement' | 'hof' | 'lottery' | 'draft' | 'resigning' | 'complete';
+  offseasonPhase?: 'retirement' | 'hof' | 'lottery' | 'draft' | 'resigning' | 'freeagency' | 'arbitration' | 'complete';
   retiredPlayers?: RetiredPlayer[];
   hofInductees?: HofInductee[];
   draftLottery?: DraftLotteryResult[];
   draftPicks?: DraftPick[];
   resignings?: ResigningResult[];
+  freeAgency?: FAOutcome;
+  arbitrationAwards?: ArbitrationAward[];
 };
 
 export type RetiredPlayer = {
@@ -126,6 +131,72 @@ export type ResigningResult = {
   contractYears: number;
   contractValue: number;
   reason: string;
+};
+
+// Free Agency Types
+export type MarketFreeAgent = {
+  playerId: string;
+  name: string;
+  position: string; // 'F','D','G'
+  age: number;
+  overall: number;       // 0-100 current talent
+  potential: number;     // 0-100 upside (or =overall if unknown)
+  lastSeasonPoints: number; // for skaters (G can be 0)
+  lastSeasonWAR: number; // optional; 0 if not tracked
+  rfa: boolean;             // RFAs require offer sheets or rights
+  rightsTeamId?: string; // if RFA: the team holding rights (qualifying team)
+  starPower: boolean;       // brand/market draw
+  injuries: number;         // notable injuries last season
+  image?: string;
+};
+
+export type TeamFAContext = {
+  teamId: string;
+  teamName: string;
+  capSpace: number;                  // remaining cap space in $M
+  isContender: boolean;
+  needs: Record<string, number>;     // 'F','D','G' -> magnitude need 0..5
+  marketAttractiveness: number;   // 0..100
+  coachPreferenceSkill: number;   // 0..100 (fit to system)
+  developmentTrack: number;       // 0..100 (for young players)
+  rebuilding: boolean;            // teams rebuilding value potential/term
+};
+
+export type FAOffer = {
+  teamId: string;
+  teamName: string;
+  aav: number; // $M
+  years: number;
+  clause: string; // None/NTC/NMC
+  totalValue: number;
+};
+
+export type FAAgreement = {
+  playerId: string;
+  playerName: string;
+  teamId: string;
+  teamName: string;
+  aav: number;
+  years: number;
+  clause: string;
+  matchedByRightsTeam: boolean; // for RFA offers matched by original team
+  note: string; // e.g., "Offer sheet matched", "Signed UFA deal"
+};
+
+export type FAOutcome = {
+  signings: FAAgreement[];
+  news: string[];
+  remaining: string[]; // playerIds still unsigned
+};
+
+export type ArbitrationAward = {
+  playerId: string;
+  playerName: string;
+  rightsTeamId: string;
+  rightsTeamName: string;
+  aav: number; // $M
+  years: number;
+  accepted: boolean;
 };
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -674,6 +745,236 @@ function generateProspects(count: number) {
   }));
 }
 
+// ─── Free Agency Engine ──────────────────────────────────────────────────────
+function createFreeAgencyMarket(state: SeasonState): MarketFreeAgent[] {
+  const market: MarketFreeAgent[] = [];
+  
+  // Create free agents from players leaving teams
+  state.resignings?.forEach(resigning => {
+    if (!resigning.resigned) {
+      // Find the player
+      Object.values(state.teams).forEach(team => {
+        const skater = team.skaters.find(s => s.id === resigning.playerId);
+        const goalie = team.goalies.find(g => g.id === resigning.playerId);
+        const player = skater || goalie;
+        
+        if (player) {
+          const age = player.age || (25 + Math.floor(Math.random() * 15));
+          market.push({
+            playerId: player.id,
+            name: player.name,
+            position: skater ? (skater.position === 'D' ? 'D' : 'F') : 'G',
+            age,
+            overall: player.overall,
+            potential: player.overall, // For existing players, potential = current overall
+            lastSeasonPoints: skater ? skater.p : 0,
+            lastSeasonWAR: 0, // Simplified for now
+            rfa: age <= 25,
+            rightsTeamId: age <= 25 ? team.id : undefined,
+            starPower: player.overall >= 90,
+            injuries: Math.floor(Math.random() * 4),
+            image: player.image
+          });
+        }
+      });
+    }
+  });
+  
+  // Add some additional free agents to make market more interesting
+  for (let i = 0; i < 50; i++) {
+    const positions = ['F', 'F', 'F', 'D', 'D', 'G'];
+    const position = positions[Math.floor(Math.random() * positions.length)];
+    const age = 22 + Math.floor(Math.random() * 16);
+    const overall = 65 + Math.floor(Math.random() * 25);
+    
+    market.push({
+      playerId: `fa_${i}`,
+      name: `Free Agent ${i + 1}`,
+      position,
+      age,
+      overall,
+      potential: overall + (age <= 24 ? Math.floor(Math.random() * 10) : 0),
+      lastSeasonPoints: position === 'G' ? 0 : Math.floor(Math.random() * 80),
+      lastSeasonWAR: 0,
+      rfa: age <= 25,
+      starPower: overall >= 90,
+      injuries: Math.floor(Math.random() * 3)
+    });
+  }
+  
+  return market;
+}
+
+function createTeamFAContexts(state: SeasonState): Record<string, TeamFAContext> {
+  const contexts: Record<string, TeamFAContext> = {};
+  
+  Object.values(state.teams).forEach(team => {
+    const teamPoints = team.pts || 0;
+    const avgPoints = 82; // Rough average
+    const isContender = teamPoints > avgPoints + 10;
+    const rebuilding = teamPoints < avgPoints - 15;
+    
+    // Calculate positional needs
+    const forwardCount = team.skaters.filter(s => ['C', 'LW', 'RW'].includes(s.position)).length;
+    const defenseCount = team.skaters.filter(s => s.position === 'D').length;
+    const goalieCount = team.goalies.length;
+    
+    contexts[team.id] = {
+      teamId: team.id,
+      teamName: team.name,
+      capSpace: team.capSpace || (82 - Math.random() * 30), // $82M cap with spending
+      isContender,
+      needs: {
+        'F': Math.max(0, 12 - forwardCount),
+        'D': Math.max(0, 6 - defenseCount), 
+        'G': Math.max(0, 2 - goalieCount)
+      },
+      marketAttractiveness: 50 + Math.floor(Math.random() * 50),
+      coachPreferenceSkill: 50 + Math.floor(Math.random() * 50),
+      developmentTrack: 50 + Math.floor(Math.random() * 50),
+      rebuilding
+    };
+  });
+  
+  return contexts;
+}
+
+function runFreeAgency(teams: Record<string, TeamFAContext>, market: MarketFreeAgent[]): FAOutcome {
+  const signings: FAAgreement[] = [];
+  const news: string[] = [];
+  const remaining: string[] = [];
+  
+  // Simple free agency simulation - each player signs with team offering best deal
+  market.forEach(player => {
+    const offers: FAOffer[] = [];
+    
+    Object.values(teams).forEach(team => {
+      const need = team.needs[player.position] || 0;
+      if (need <= 0 && Math.random() > 0.3) return; // Less likely to bid if no need
+      
+      // Calculate offer based on player rating and team cap
+      let aav = Math.max(0.8, (player.overall - 60) * 0.15);
+      if (player.lastSeasonPoints >= 70) aav += 1.5;
+      if (player.starPower) aav += 1.0;
+      if (player.injuries >= 3) aav -= 0.5;
+      
+      aav = Math.min(aav, team.capSpace * 0.8); // Don't spend all cap on one player
+      
+      if (aav < 0.8) return; // Can't afford minimum
+      
+      let years = 3;
+      if (player.age <= 25) years = 4 + Math.floor(Math.random() * 3);
+      else if (player.age <= 30) years = 3 + Math.floor(Math.random() * 3);
+      else if (player.age >= 35) years = 1 + Math.floor(Math.random() * 2);
+      
+      let clause = 'None';
+      if (player.overall >= 88 && years >= 4) clause = 'NTC';
+      if (player.overall >= 92 && years >= 5) clause = 'NMC';
+      
+      offers.push({
+        teamId: team.teamId,
+        teamName: team.teamName,
+        aav: Number(aav.toFixed(1)),
+        years,
+        clause,
+        totalValue: Number((aav * years).toFixed(1))
+      });
+    });
+    
+    if (offers.length === 0) {
+      remaining.push(player.playerId);
+      return;
+    }
+    
+    // Player picks best offer (prioritize total value, then terms)
+    const bestOffer = offers.reduce((best, current) => {
+      const bestScore = best.totalValue + (best.clause === 'NMC' ? 2 : best.clause === 'NTC' ? 1 : 0);
+      const currentScore = current.totalValue + (current.clause === 'NMC' ? 2 : current.clause === 'NTC' ? 1 : 0);
+      return currentScore > bestScore ? current : best;
+    });
+    
+    // Handle RFA matching
+    if (player.rfa && player.rightsTeamId) {
+      const rightsTeam = teams[player.rightsTeamId];
+      if (rightsTeam && rightsTeam.capSpace >= bestOffer.aav && Math.random() < 0.7) {
+        // Rights team matches 70% of the time if they can afford it
+        rightsTeam.capSpace -= bestOffer.aav;
+        signings.push({
+          playerId: player.playerId,
+          playerName: player.name,
+          teamId: rightsTeam.teamId,
+          teamName: rightsTeam.teamName,
+          aav: bestOffer.aav,
+          years: bestOffer.years,
+          clause: bestOffer.clause,
+          matchedByRightsTeam: true,
+          note: 'Offer sheet matched'
+        });
+        news.push(`${rightsTeam.teamName} matches offer sheet for ${player.name}`);
+        return;
+      }
+    }
+    
+    // Sign with offering team
+    const offeringTeam = teams[bestOffer.teamId];
+    if (offeringTeam && offeringTeam.capSpace >= bestOffer.aav) {
+      offeringTeam.capSpace -= bestOffer.aav;
+      signings.push({
+        playerId: player.playerId,
+        playerName: player.name,
+        teamId: bestOffer.teamId,
+        teamName: bestOffer.teamName,
+        aav: bestOffer.aav,
+        years: bestOffer.years,
+        clause: bestOffer.clause,
+        matchedByRightsTeam: false,
+        note: player.rfa ? 'RFA offer sheet signed' : 'UFA signing'
+      });
+      news.push(`${player.name} signs with ${bestOffer.teamName} for $${bestOffer.aav}M x ${bestOffer.years}`);
+    } else {
+      remaining.push(player.playerId);
+    }
+  });
+  
+  return { signings, news, remaining };
+}
+
+function runArbitration(teams: Record<string, TeamFAContext>, remainingRFAs: MarketFreeAgent[]): ArbitrationAward[] {
+  const awards: ArbitrationAward[] = [];
+  
+  remainingRFAs.filter(p => p.rfa && p.rightsTeamId).forEach(player => {
+    const team = teams[player.rightsTeamId!];
+    if (!team) return;
+    
+    // Calculate arbitration award
+    let aav = Math.max(0.8, (player.overall - 60) * 0.12); // Slightly lower than FA market
+    if (player.lastSeasonPoints >= 50) aav += 1.0;
+    if (player.injuries >= 3) aav -= 0.3;
+    
+    aav = Number(aav.toFixed(1));
+    const years = player.age <= 24 ? 2 : 1; // Shorter terms in arbitration
+    
+    const canAfford = team.capSpace >= aav;
+    const willAccept = canAfford && (player.overall >= 75 || Math.random() < 0.8);
+    
+    if (willAccept) {
+      team.capSpace -= aav;
+    }
+    
+    awards.push({
+      playerId: player.playerId,
+      playerName: player.name,
+      rightsTeamId: team.teamId,
+      rightsTeamName: team.teamName,
+      aav,
+      years,
+      accepted: willAccept
+    });
+  });
+  
+  return awards;
+}
+
 function processResigning(state: SeasonState): SeasonState {
   const resignings: ResigningResult[] = [];
   
@@ -700,7 +1001,7 @@ function processResigning(state: SeasonState): SeasonState {
         let years = 0, value = 0;
         if (willResign) {
           // Contract length based on age and overall
-          const age = 25 + Math.floor(Math.random() * 15); // Simulated age
+          const age = skater.age || (25 + Math.floor(Math.random() * 15));
           if (age <= 25) years = 3 + Math.floor(Math.random() * 5); // Young: 3-7 years
           else if (age <= 30) years = 2 + Math.floor(Math.random() * 4); // Prime: 2-5 years  
           else if (age <= 35) years = 1 + Math.floor(Math.random() * 3); // Veteran: 1-3 years
@@ -736,11 +1037,94 @@ function processResigning(state: SeasonState): SeasonState {
         });
       }
     });
+    
+    // Check goalies too
+    team.goalies.forEach(goalie => {
+      const isExpiring = Math.random() < 0.12; // 12% for goalies
+      
+      if (isExpiring) {
+        let resignChance = 0.75; // Slightly higher for goalies
+        
+        if (goalie.overall >= 85) resignChance = 0.9;
+        else if (goalie.overall >= 80) resignChance = 0.85;
+        else if (goalie.overall <= 70) resignChance = 0.6;
+        
+        if (Math.random() < 0.1) resignChance -= 0.2;
+        
+        const willResign = Math.random() < resignChance;
+        
+        let years = 0, value = 0;
+        if (willResign) {
+          const age = goalie.age || (25 + Math.floor(Math.random() * 15));
+          if (age <= 25) years = 3 + Math.floor(Math.random() * 4);
+          else if (age <= 30) years = 3 + Math.floor(Math.random() * 3);
+          else if (age <= 35) years = 2 + Math.floor(Math.random() * 2);
+          else years = 1;
+          
+          const baseValue = Math.max(1.0, (goalie.overall - 65) * 0.2); // Goalies paid more
+          value = (baseValue + Math.random() * 0.8) * 1000000;
+        }
+        
+        let reason: string;
+        if (willResign) {
+          reason = `Re-signed for ${years} years at $${(value/1000000).toFixed(1)}M per year`;
+        } else {
+          const reasons = [
+            'Signed with another team for more money',
+            'Wanted starter role elsewhere',
+            'Team couldn\'t afford asking price',
+            'Mutual decision to part ways',
+            'Seeking new opportunity'
+          ];
+          reason = reasons[Math.floor(Math.random() * reasons.length)];
+        }
+        
+        resignings.push({
+          playerId: goalie.id,
+          playerName: goalie.name,
+          teamId: team.id,
+          resigned: willResign,
+          contractYears: years,
+          contractValue: value,
+          reason: reason
+        });
+      }
+    });
   });
   
   return {
     ...state,
     resignings,
+    offseasonPhase: 'freeagency'
+  };
+}
+
+function processFreeAgency(state: SeasonState): SeasonState {
+  const market = createFreeAgencyMarket(state);
+  const teamContexts = createTeamFAContexts(state);
+  const freeAgency = runFreeAgency(teamContexts, market);
+  
+  return {
+    ...state,
+    freeAgency,
+    offseasonPhase: 'arbitration'
+  };
+}
+
+function processArbitration(state: SeasonState): SeasonState {
+  if (!state.freeAgency) return state;
+  
+  const market = createFreeAgencyMarket(state);
+  const teamContexts = createTeamFAContexts(state);
+  const remainingRFAs = market.filter(p => 
+    state.freeAgency!.remaining.includes(p.playerId) && p.rfa
+  );
+  
+  const arbitrationAwards = runArbitration(teamContexts, remainingRFAs);
+  
+  return {
+    ...state,
+    arbitrationAwards,
     offseasonPhase: 'complete'
   };
 }
@@ -1578,53 +1962,32 @@ export default function CalendarSimHub({
 
           {/* Resigning Phase */}
           {state.offseasonPhase === 'resigning' && state.resignings && (
-            <div className="p-6 bg-orange-50 rounded-lg border border-orange-200">
-              <h3 className="text-xl font-bold text-orange-800 mb-4">✍️ Free Agency & Re-signings</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold text-orange-700 mb-2">
-                    Players Re-signed ({state.resignings.filter(r => r.resigned).length}):
-                  </h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {state.resignings.filter(r => r.resigned).map(resigning => (
-                      <div key={resigning.playerId} className="p-2 bg-orange-100 rounded">
-                        <div className="font-medium text-orange-900">{resigning.playerName}</div>
-                        <div className="text-sm text-orange-700">
-                          {teamLabel(state, resigning.teamId)} • {resigning.contractYears} years • 
-                          ${(resigning.contractValue / 1000000).toFixed(1)}M
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold text-orange-700 mb-2">
-                    Players Left ({state.resignings.filter(r => !r.resigned).length}):
-                  </h4>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {state.resignings.filter(r => !r.resigned).map(resigning => (
-                      <div key={resigning.playerId} className="p-2 bg-red-100 rounded">
-                        <div className="font-medium text-red-900">{resigning.playerName}</div>
-                        <div className="text-sm text-red-700">
-                          Left {teamLabel(state, resigning.teamId)} • {resigning.reason}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <ResigningInterface 
+              state={state} 
+              setState={setState}
+              myTeamId={myTeamId}
+              onComplete={() => setState(processFreeAgency)}
+            />
+          )}
 
-              <div className="mt-4">
-                <button 
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                  onClick={() => setState(prev => ({ ...prev, offseasonPhase: 'complete' }))}
-                >
-                  Complete Offseason
-                </button>
-              </div>
-            </div>
+          {/* Free Agency Phase */}
+          {state.offseasonPhase === 'freeagency' && state.freeAgency && (
+            <FreeAgencyInterface 
+              state={state} 
+              setState={setState}
+              myTeamId={myTeamId}
+              onComplete={() => setState(processArbitration)}
+            />
+          )}
+
+          {/* Arbitration Phase */}
+          {state.offseasonPhase === 'arbitration' && state.arbitrationAwards && (
+            <ArbitrationInterface 
+              state={state} 
+              setState={setState}
+              myTeamId={myTeamId}
+              onComplete={() => setState(prev => ({ ...prev, offseasonPhase: 'complete' }))}
+            />
           )}
 
           {/* Offseason Complete */}
@@ -1635,7 +1998,7 @@ export default function CalendarSimHub({
                 All offseason activities have been completed. The league is ready for the next season!
               </p>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
                 <div className="p-3 bg-white rounded border border-green-300">
                   <div className="text-2xl font-bold text-green-800">{state.retiredPlayers?.length || 0}</div>
                   <div className="text-sm text-green-600">Retirements</div>
@@ -1651,6 +2014,14 @@ export default function CalendarSimHub({
                 <div className="p-3 bg-white rounded border border-green-300">
                   <div className="text-2xl font-bold text-green-800">{state.resignings?.filter(r => r.resigned).length || 0}</div>
                   <div className="text-sm text-green-600">Re-signings</div>
+                </div>
+                <div className="p-3 bg-white rounded border border-green-300">
+                  <div className="text-2xl font-bold text-green-800">{state.freeAgency?.signings.length || 0}</div>
+                  <div className="text-sm text-green-600">FA Signings</div>
+                </div>
+                <div className="p-3 bg-white rounded border border-green-300">
+                  <div className="text-2xl font-bold text-green-800">{state.arbitrationAwards?.filter(a => a.accepted).length || 0}</div>
+                  <div className="text-sm text-green-600">Arbitrations</div>
                 </div>
               </div>
             </div>
@@ -1721,11 +2092,529 @@ function LiveSimQuick({
 }
 
 // ─── Draft Interface Component ──────────────────────────────────────────────
-function DraftInterface({ 
-  state, 
-  setState, 
-  myTeamId, 
-  onComplete 
+// ─── Resigning Interface ────────────────────────────────────────────────────
+function ResigningInterface({
+  state,
+  setState,
+  myTeamId,
+  onComplete
+}: {
+  state: SeasonState;
+  setState: (updater: (s: SeasonState) => SeasonState) => void;
+  myTeamId: string;
+  onComplete: () => void;
+}) {
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null);
+  const [offerYears, setOfferYears] = useState(3);
+  const [offerValue, setOfferValue] = useState(2.0);
+  
+  const myTeam = state.teams[myTeamId];
+  const myResignings = state.resignings?.filter(r => r.teamId === myTeamId) || [];
+  const needsDecision = myResignings.filter(r => !r.resigned);
+  
+  function makeOffer() {
+    if (!selectedPlayer) return;
+    
+    setState(prev => {
+      const newResignings = [...(prev.resignings || [])];
+      const resigningIndex = newResignings.findIndex(r => r.playerId === selectedPlayer);
+      
+      if (resigningIndex !== -1) {
+        // Player decision based on offer vs market value
+        const player = Object.values(prev.teams).flatMap(t => [...t.skaters, ...t.goalies])
+          .find(p => p.id === selectedPlayer);
+        
+        if (player) {
+          const fairValue = Math.max(0.8, (player.overall - 60) * 0.15);
+          const acceptChance = Math.min(0.9, offerValue / fairValue);
+          const willAccept = Math.random() < acceptChance;
+          
+          newResignings[resigningIndex] = {
+            ...newResignings[resigningIndex],
+            resigned: willAccept,
+            contractYears: offerYears,
+            contractValue: offerValue * 1000000,
+            reason: willAccept 
+              ? `Accepted offer: ${offerYears} years at $${offerValue}M per year`
+              : `Rejected offer - wanted $${(fairValue + 0.5).toFixed(1)}M+`
+          };
+        }
+      }
+      
+      return {
+        ...prev,
+        resignings: newResignings
+      };
+    });
+    
+    setSelectedPlayer(null);
+    setOfferYears(3);
+    setOfferValue(2.0);
+  }
+  
+  return (
+    <div className="p-6 bg-orange-50 rounded-lg border border-orange-200">
+      <h3 className="text-xl font-bold text-orange-800 mb-4">✍️ Contract Re-signings</h3>
+      
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Players Needing Decisions */}
+        <div className="xl:col-span-2">
+          <h4 className="font-semibold text-orange-700 mb-3">
+            Players to Re-sign ({needsDecision.length}):
+          </h4>
+          
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {needsDecision.map(resigning => {
+              const player = Object.values(state.teams).flatMap(t => [...t.skaters, ...t.goalies])
+                .find(p => p.id === resigning.playerId);
+              
+              return (
+                <div key={resigning.playerId} 
+                     className={`p-3 rounded border cursor-pointer transition-colors ${
+                       selectedPlayer === resigning.playerId 
+                         ? 'border-orange-500 bg-orange-100' 
+                         : 'border-orange-200 bg-white hover:bg-orange-50'
+                     }`}
+                     onClick={() => setSelectedPlayer(resigning.playerId)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-orange-900">{resigning.playerName}</div>
+                      <div className="text-sm text-orange-700">
+                        Overall: {player?.overall || 'N/A'} • 
+                        Age: {player?.age || (25 + Math.floor(Math.random() * 15))} • 
+                        Cap Space: ${myTeam?.capSpace?.toFixed(1) || '0.0'}M
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      Suggested: ${Math.max(0.8, ((player?.overall || 75) - 60) * 0.15).toFixed(1)}M
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Contract Offer Panel */}
+        <div>
+          <h4 className="font-semibold text-orange-700 mb-3">Make Offer:</h4>
+          
+          {selectedPlayer ? (
+            <div className="space-y-4 p-4 bg-white rounded border">
+              <div>
+                <label className="block text-sm font-medium mb-1">Contract Length:</label>
+                <select 
+                  value={offerYears} 
+                  onChange={(e) => setOfferYears(Number(e.target.value))}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value={1}>1 Year</option>
+                  <option value={2}>2 Years</option>
+                  <option value={3}>3 Years</option>
+                  <option value={4}>4 Years</option>
+                  <option value={5}>5 Years</option>
+                  <option value={6}>6 Years</option>
+                  <option value={7}>7 Years</option>
+                  <option value={8}>8 Years</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">AAV ($ Millions):</label>
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  min="0.8" 
+                  max="15" 
+                  value={offerValue}
+                  onChange={(e) => setOfferValue(Number(e.target.value))}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                Total: ${(offerYears * offerValue).toFixed(1)}M over {offerYears} years
+              </div>
+              
+              <button 
+                onClick={makeOffer}
+                className="w-full px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+              >
+                Make Offer
+              </button>
+            </div>
+          ) : (
+            <div className="p-4 bg-gray-100 rounded border text-center text-gray-600">
+              Select a player to make an offer
+            </div>
+          )}
+          
+          <div className="mt-6">
+            <button 
+              onClick={onComplete}
+              className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Complete Re-signings →
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Summary */}
+      <div className="mt-6 grid grid-cols-2 gap-4">
+        <div className="p-3 bg-green-100 rounded">
+          <div className="text-lg font-bold text-green-800">
+            {myResignings.filter(r => r.resigned).length}
+          </div>
+          <div className="text-sm text-green-700">Players Re-signed</div>
+        </div>
+        <div className="p-3 bg-red-100 rounded">
+          <div className="text-lg font-bold text-red-800">
+            {myResignings.filter(r => !r.resigned).length}
+          </div>
+          <div className="text-sm text-red-700">Players Lost</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Free Agency Interface ──────────────────────────────────────────────────
+function FreeAgencyInterface({
+  state,
+  setState,
+  myTeamId,
+  onComplete
+}: {
+  state: SeasonState;
+  setState: (updater: (s: SeasonState) => SeasonState) => void;
+  myTeamId: string;
+  onComplete: () => void;
+}) {
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [bidYears, setBidYears] = useState(3);
+  const [bidValue, setBidValue] = useState(2.0);
+  
+  const market = useMemo(() => createFreeAgencyMarket(state), [state]);
+  const myTeam = state.teams[myTeamId];
+  const mySignings = state.freeAgency?.signings.filter(s => s.teamId === myTeamId) || [];
+  
+  function makeBid() {
+    if (!selectedAgent) return;
+    
+    // Simulate player decision
+    const agent = market.find(a => a.playerId === selectedAgent);
+    if (!agent) return;
+    
+    setState(prev => {
+      const fairValue = Math.max(0.8, (agent.overall - 60) * 0.15);
+      const acceptChance = Math.min(0.8, bidValue / (fairValue + 0.5));
+      const willSign = Math.random() < acceptChance;
+      
+      if (willSign && myTeam && myTeam.capSpace >= bidValue) {
+        const newSignings = [...(prev.freeAgency?.signings || [])];
+        newSignings.push({
+          playerId: agent.playerId,
+          playerName: agent.name,
+          teamId: myTeamId,
+          teamName: myTeam.name,
+          aav: bidValue,
+          years: bidYears,
+          clause: 'None',
+          matchedByRightsTeam: false,
+          note: 'Player signed with your team'
+        });
+        
+        // Update team cap space
+        const updatedTeams = { ...prev.teams };
+        updatedTeams[myTeamId] = {
+          ...myTeam,
+          capSpace: myTeam.capSpace - bidValue
+        };
+        
+        return {
+          ...prev,
+          teams: updatedTeams,
+          freeAgency: {
+            ...prev.freeAgency!,
+            signings: newSignings,
+            remaining: prev.freeAgency!.remaining.filter(id => id !== agent.playerId)
+          }
+        };
+      }
+      
+      return prev;
+    });
+    
+    setSelectedAgent(null);
+    setBidYears(3);
+    setBidValue(2.0);
+  }
+  
+  return (
+    <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
+      <h3 className="text-xl font-bold text-blue-800 mb-4">🏒 Free Agency</h3>
+      
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Available Free Agents */}
+        <div className="xl:col-span-2">
+          <h4 className="font-semibold text-blue-700 mb-3">
+            Available Free Agents ({market.length}):
+          </h4>
+          
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {market.slice(0, 30).map(agent => {
+              const isSigned = state.freeAgency?.signings.some(s => s.playerId === agent.playerId);
+              
+              return (
+                <button
+                  key={agent.playerId}
+                  onClick={() => !isSigned ? setSelectedAgent(agent.playerId) : null}
+                  disabled={isSigned}
+                  className={`w-full p-3 text-left rounded border transition-colors ${
+                    selectedAgent === agent.playerId 
+                      ? 'border-blue-500 bg-blue-100' 
+                      : isSigned
+                      ? 'border-gray-200 bg-gray-100 text-gray-500'
+                      : 'border-blue-200 bg-white hover:bg-blue-50'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-medium text-blue-900">{agent.name}</div>
+                      <div className="text-sm text-blue-700">
+                        {agent.position} • Overall: {agent.overall} • Age: {agent.age}
+                        {agent.rfa && <span className="text-red-600 ml-2">(RFA)</span>}
+                      </div>
+                    </div>
+                    <div className="text-right text-xs">
+                      <div>Points: {agent.lastSeasonPoints}</div>
+                      {isSigned && <div className="text-red-600">SIGNED</div>}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Contract Bid Panel */}
+        <div>
+          <h4 className="font-semibold text-blue-700 mb-3">Make Bid:</h4>
+          <div className="mb-3 text-sm text-blue-700">
+            Cap Space: ${myTeam?.capSpace?.toFixed(1) || '0.0'}M
+          </div>
+          
+          {selectedAgent ? (
+            <div className="space-y-4 p-4 bg-white rounded border">
+              <div>
+                <label className="block text-sm font-medium mb-1">Contract Length:</label>
+                <select 
+                  value={bidYears} 
+                  onChange={(e) => setBidYears(Number(e.target.value))}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value={1}>1 Year</option>
+                  <option value={2}>2 Years</option>
+                  <option value={3}>3 Years</option>
+                  <option value={4}>4 Years</option>
+                  <option value={5}>5 Years</option>
+                  <option value={6}>6 Years</option>
+                  <option value={7}>7 Years</option>
+                  <option value={8}>8 Years</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">AAV ($ Millions):</label>
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  min="0.8" 
+                  max="15" 
+                  value={bidValue}
+                  onChange={(e) => setBidValue(Number(e.target.value))}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              
+              <div className="text-sm text-gray-600">
+                Total: ${(bidYears * bidValue).toFixed(1)}M over {bidYears} years
+              </div>
+              
+              <button 
+                onClick={makeBid}
+                disabled={!myTeam || myTeam.capSpace < bidValue}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                Make Bid
+              </button>
+            </div>
+          ) : (
+            <div className="p-4 bg-gray-100 rounded border text-center text-gray-600">
+              Select a free agent to make a bid
+            </div>
+          )}
+          
+          <div className="mt-6">
+            <button 
+              onClick={onComplete}
+              className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Complete Free Agency →
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* My Signings */}
+      {mySignings.length > 0 && (
+        <div className="mt-6">
+          <h4 className="font-semibold text-blue-700 mb-3">Your Signings ({mySignings.length}):</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {mySignings.map(signing => (
+              <div key={signing.playerId} className="p-2 bg-green-100 rounded">
+                <div className="font-medium text-green-900">{signing.playerName}</div>
+                <div className="text-sm text-green-700">
+                  ${signing.aav}M x {signing.years} years
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* League News */}
+      {state.freeAgency && state.freeAgency.news.length > 0 && (
+        <div className="mt-6">
+          <h4 className="font-semibold text-blue-700 mb-3">League News:</h4>
+          <div className="space-y-1 max-h-32 overflow-y-auto">
+            {state.freeAgency.news.slice(0, 10).map((news, index) => (
+              <div key={index} className="text-sm text-blue-700 p-2 bg-white rounded">
+                {news}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Arbitration Interface ──────────────────────────────────────────────────
+function ArbitrationInterface({
+  state,
+  setState,
+  myTeamId,
+  onComplete
+}: {
+  state: SeasonState;
+  setState: (updater: (s: SeasonState) => SeasonState) => void;
+  myTeamId: string;
+  onComplete: () => void;
+}) {
+  const myAwards = state.arbitrationAwards?.filter(a => a.rightsTeamId === myTeamId) || [];
+  
+  function handleAcceptDecline(awardId: string, accept: boolean) {
+    setState(prev => {
+      const newAwards = [...(prev.arbitrationAwards || [])];
+      const awardIndex = newAwards.findIndex(a => a.playerId === awardId);
+      
+      if (awardIndex !== -1) {
+        newAwards[awardIndex] = {
+          ...newAwards[awardIndex],
+          accepted: accept
+        };
+        
+        // Update cap space if accepted
+        const updatedTeams = { ...prev.teams };
+        if (accept && updatedTeams[myTeamId]) {
+          updatedTeams[myTeamId] = {
+            ...updatedTeams[myTeamId],
+            capSpace: updatedTeams[myTeamId].capSpace - newAwards[awardIndex].aav
+          };
+        }
+        
+        return {
+          ...prev,
+          arbitrationAwards: newAwards,
+          teams: updatedTeams
+        };
+      }
+      
+      return prev;
+    });
+  }
+  
+  return (
+    <div className="p-6 bg-purple-50 rounded-lg border border-purple-200">
+      <h3 className="text-xl font-bold text-purple-800 mb-4">⚖️ Salary Arbitration</h3>
+      
+      {myAwards.length > 0 ? (
+        <div className="space-y-4">
+          <p className="text-purple-700 mb-4">
+            The arbitrator has made contract awards for your RFA players. You can accept or decline each award.
+          </p>
+          
+          {myAwards.map(award => (
+            <div key={award.playerId} className="p-4 bg-white rounded border border-purple-200">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="font-semibold text-purple-900">{award.playerName}</div>
+                  <div className="text-purple-700">
+                    Award: ${award.aav}M x {award.years} years
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Status: {award.accepted ? 'Accepted' : 'Pending Decision'}
+                  </div>
+                </div>
+                
+                {!award.accepted && (
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleAcceptDecline(award.playerId, true)}
+                      className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+                    >
+                      Accept
+                    </button>
+                    <button 
+                      onClick={() => handleAcceptDecline(award.playerId, false)}
+                      className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <div className="text-purple-700 mb-4">
+            No arbitration cases for your team this year.
+          </div>
+        </div>
+      )}
+      
+      <div className="mt-6">
+        <button 
+          onClick={onComplete}
+          className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+        >
+          Complete Arbitration →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DraftInterface({
+  state,
+  setState,
+  myTeamId,
+  onComplete
 }: {
   state: SeasonState;
   setState: (updater: (s: SeasonState) => SeasonState) => void;
