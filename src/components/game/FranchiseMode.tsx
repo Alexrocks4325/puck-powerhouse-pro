@@ -108,6 +108,14 @@ export type Skater = {
   pim: number;
   shots: number;
   plusMinus: number;
+  // optional fields
+  ppG?: number;
+  shG?: number;
+  playoffGP?: number;
+  playoffG?: number;
+  playoffA?: number;
+  playoffP?: number;
+  image?: string;
 };
 
 export type Goalie = {
@@ -130,6 +138,7 @@ export type Goalie = {
   saves: number;
   gaa: number;
   svpct: number;
+  image?: string;
 };
 
 export type Player = Skater | Goalie;
@@ -291,7 +300,8 @@ function loadNHLLeague(): Record<ID, Team> {
           reboundControl: Math.max(50, Math.min(99, player.overall + rnd(-3, 5))),
           stamina: rnd(65, 90),
           gp: 0, gs: 0, w: 0, l: 0, otl: 0, so: 0, 
-          shotsAgainst: 0, saves: 0, gaa: 0, svpct: 0
+          shotsAgainst: 0, saves: 0, gaa: 0, svpct: 0,
+          image: player.image
         };
         team.goalies.push(goalie);
       } else {
@@ -304,7 +314,8 @@ function loadNHLLeague(): Record<ID, Team> {
           passing: Math.max(45, Math.min(99, player.overall + rnd(-5, 8))),
           defense: Math.max(45, Math.min(99, player.overall + rnd(-5, 8))),
           stamina: rnd(65, 90),
-          gp: 0, g: 0, a: 0, p: 0, pim: 0, shots: 0, plusMinus: 0
+          gp: 0, g: 0, a: 0, p: 0, pim: 0, shots: 0, plusMinus: 0,
+          image: player.image
         };
         team.skaters.push(skater);
       }
