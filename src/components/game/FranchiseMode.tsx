@@ -17,6 +17,7 @@ import TradeCenter from './TradeCenter';
 import TeamManager from "./TeamManager";
 import MyTeamStatsPanel from "./MyTeamStatsPanel";
 import CalendarSimHub from "./CalendarSimHub";
+import PlayerModal from "./PlayerModal";
 
 // -------------------------- TEAM META --------------------------
 const TEAM_META: Array<{ id: ID; name: string; abbrev: string; conf: Team["conference"]; div: Team["division"]; }> = [
@@ -777,7 +778,7 @@ function LeagueScores({ state, onOpenGame }: { state: SeasonState; onOpenGame: (
   );
 }
 
-function PlayerLeaders({ state }: { state: SeasonState }) {
+function PlayerLeaders({ state, onPlayerClick }: { state: SeasonState; onPlayerClick: (player: Player, teamName: string) => void }) {
   const players: Skater[] = [];
   for (const id of state.teamOrder) for (const s of state.teams[id].skaters) players.push(s);
   const topPts = [...players].sort((a,b)=> b.p - a.p).slice(0, 10);
@@ -789,11 +790,21 @@ function PlayerLeaders({ state }: { state: SeasonState }) {
         <Card key={s.title} className="p-4">
           <h3 className="text-lg font-semibold mb-2 text-foreground">League Leaders — {s.title}</h3>
           <ol className="text-sm space-y-1">
-            {s.list.map((p,i)=> (
-              <li key={p.id} className="flex justify-between">
-                <span className="text-muted-foreground">{i+1}. {p.name}</span>
-                <span className="font-semibold tabular-nums text-foreground">{s.val(p)}</span>
-              </li>
+             {s.list.map((p,i)=> (
+               <li key={p.id} className="flex justify-between">
+                 <button 
+                   className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                   onClick={() => {
+                     const team = Object.values(state.teams).find(t => 
+                       t.skaters.some(sk => sk.id === p.id) || t.goalies.some(g => g.id === p.id)
+                     );
+                     if (team) onPlayerClick(p, team.name);
+                   }}
+                 >
+                   {i+1}. {p.name}
+                 </button>
+                 <span className="font-semibold tabular-nums text-foreground">{s.val(p)}</span>
+               </li>
             ))}
           </ol>
         </Card>
@@ -802,7 +813,7 @@ function PlayerLeaders({ state }: { state: SeasonState }) {
   );
 }
 
-function BoxScoreModal({ state, game, onClose }: { state: SeasonState; game: Game; onClose: ()=>void }) {
+function BoxScoreModal({ state, game, onClose, onPlayerClick }: { state: SeasonState; game: Game; onClose: ()=>void; onPlayerClick: (player: Player, teamName: string) => void }) {
   const box = state.boxScores[game.id];
   const home = state.teams[game.homeId]; const away = state.teams[game.awayId];
   if (!box) return null;
@@ -819,16 +830,26 @@ function BoxScoreModal({ state, game, onClose }: { state: SeasonState; game: Gam
           <div className="bg-muted/50 rounded-xl p-3">
             <h4 className="font-semibold mb-2 text-foreground">Scoring Summary</h4>
             <ul className="space-y-1 text-sm">
-              {box.goals.map((g,i)=>{
-                const team = g.teamId === home.id ? home : away;
-                const s = [...team.skaters, ...team.goalies].find(p=>p.id===g.scorerId)?.name ?? "Unknown";
-                const a1 = g.assist1Id ? [...team.skaters, ...team.goalies].find(p=>p.id===g.assist1Id)?.name : undefined;
-                const a2 = g.assist2Id ? [...team.skaters, ...team.goalies].find(p=>p.id===g.assist2Id)?.name : undefined;
-                return (
-                  <li key={i} className="flex items-center justify-between">
-                    <span className="text-muted-foreground">{`${g.minute.toString().padStart(2,"0")}'`}</span>
-                    <span className="font-medium text-foreground">{team.abbrev} — {s}{a1?` (A: ${a1}${a2?`, ${a2}`:""})`: ""}</span>
-                  </li>
+               {box.goals.map((g,i)=>{
+                 const team = g.teamId === home.id ? home : away;
+                 const player = [...team.skaters, ...team.goalies].find(p=>p.id===g.scorerId);
+                 const s = player?.name ?? "Unknown";
+                 const a1 = g.assist1Id ? [...team.skaters, ...team.goalies].find(p=>p.id===g.assist1Id)?.name : undefined;
+                 const a2 = g.assist2Id ? [...team.skaters, ...team.goalies].find(p=>p.id===g.assist2Id)?.name : undefined;
+                 return (
+                   <li key={i} className="flex items-center justify-between">
+                     <span className="text-muted-foreground">{`${g.minute.toString().padStart(2,"0")}'`}</span>
+                     <span className="font-medium text-foreground">
+                       {team.abbrev} — 
+                       <button 
+                         className="hover:text-primary cursor-pointer ml-1"
+                         onClick={() => player && onPlayerClick(player, team.name)}
+                       >
+                         {s}
+                       </button>
+                       {a1?` (A: ${a1}${a2?`, ${a2}`:""})`: ""}
+                     </span>
+                   </li>
                 );
               })}
             </ul>
@@ -877,7 +898,7 @@ function GameControlBar({ state, onSimToday, onSimAll, onSimToDate }: { state: S
   );
 }
 
-function LiveSimPanel({ state, game, onFinish }: { state: SeasonState; game: Game; onFinish: ()=>void }) {
+function LiveSimPanel({ state, game, onFinish, onPlayerClick }: { state: SeasonState; game: Game; onFinish: ()=>void; onPlayerClick: (player: Player, teamName: string) => void }) {
   const [tacticsHome, setTacticsHome] = useState<Tactics>("Balanced");
   const [tacticsAway, setTacticsAway] = useState<Tactics>("Balanced");
   const [box, setBox] = useState<BoxScore | null>(null);
@@ -928,11 +949,23 @@ function LiveSimPanel({ state, game, onFinish }: { state: SeasonState; game: Gam
           </div>
           <div className="h-48 overflow-auto bg-muted/50 rounded-xl p-2 text-sm">
             {!box && <div className="text-muted-foreground">Press Start to begin simulation...</div>}
-            {box && box.goals.map((g,i)=>{
-              const team = g.teamId === home.id ? home : away;
-              const s = [...team.skaters, ...team.goalies].find(p=>p.id===g.scorerId)?.name ?? "Unknown";
-              return <div key={i} className="py-0.5 text-foreground">{team.abbrev} — {s} @ {g.minute}'</div>;
-            })}
+             {box && box.goals.map((g,i)=>{
+               const team = g.teamId === home.id ? home : away;
+               const player = [...team.skaters, ...team.goalies].find(p=>p.id===g.scorerId);
+               const s = player?.name ?? "Unknown";
+               return (
+                 <div key={i} className="py-0.5 text-foreground">
+                   {team.abbrev} — 
+                   <button 
+                     className="hover:text-primary cursor-pointer"
+                     onClick={() => player && onPlayerClick(player, team.name)}
+                   >
+                     {s}
+                   </button>
+                   @ {g.minute}'
+                 </div>
+               );
+             })}
           </div>
         </div>
         <div className="space-y-3">
@@ -985,11 +1018,23 @@ export default function FranchiseMode() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [view, setView] = useState<"scores"|"standings"|"leaders"|"livesim"|"trades"|"team">("scores");
   const [liveSimGame, setLiveSimGame] = useState<Game | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [selectedPlayerTeam, setSelectedPlayerTeam] = useState<string>("");
 
   const handleTeamSelection = (team: string, coach: string) => {
     setSelectedTeam(team);
     setCoachName(coach);
     setFranchiseStarted(true);
+  };
+
+  const handlePlayerClick = (player: Player, teamName: string) => {
+    setSelectedPlayer(player);
+    setSelectedPlayerTeam(teamName);
+  };
+
+  const closePlayerModal = () => {
+    setSelectedPlayer(null);
+    setSelectedPlayerTeam("");
   };
 
   const openGame = (g: Game) => setSelectedGame(g);
@@ -1059,7 +1104,7 @@ export default function FranchiseMode() {
           </TabsContent>
 
           <TabsContent value="leaders">
-            <PlayerLeaders state={state} />
+            <PlayerLeaders state={state} onPlayerClick={handlePlayerClick} />
           </TabsContent>
 
           <TabsContent value="trades">
@@ -1119,11 +1164,26 @@ export default function FranchiseMode() {
           </TabsContent>
 
           <TabsContent value="team">
-            <TeamManager state={state} setState={setState} userTeamId={selectedTeam} />
+            <TeamManager 
+              state={state} 
+              setState={setState} 
+              userTeamId={selectedTeam}
+              onPlayerClick={(player) => {
+                const team = state.teams[selectedTeam];
+                if (team) handlePlayerClick(player, team.name);
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="mystats">
-            <MyTeamStatsPanel state={state} myTeamId={selectedTeam} />
+            <MyTeamStatsPanel 
+              state={state} 
+              myTeamId={selectedTeam} 
+              onPlayerClick={(player) => {
+                const team = state.teams[selectedTeam];
+                if (team) handlePlayerClick(player, team.name);
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="calendar">
@@ -1137,13 +1197,32 @@ export default function FranchiseMode() {
 
           <TabsContent value="livesim">
             {liveSimGame && (
-              <LiveSimPanel state={state} game={liveSimGame} onFinish={finalizeLiveSim} />
+              <LiveSimPanel 
+                state={state} 
+                game={liveSimGame} 
+                onFinish={finalizeLiveSim}
+                onPlayerClick={handlePlayerClick}
+              />
             )}
           </TabsContent>
         </Tabs>
 
         {selectedGame && selectedGame.played && (
-          <BoxScoreModal state={state} game={selectedGame} onClose={closeGame} />
+          <BoxScoreModal 
+            state={state} 
+            game={selectedGame} 
+            onClose={closeGame}
+            onPlayerClick={handlePlayerClick}
+          />
+        )}
+
+        {selectedPlayer && (
+          <PlayerModal 
+            player={selectedPlayer}
+            teamName={selectedPlayerTeam}
+            onClose={closePlayerModal}
+            seasonYear={state.seasonYear}
+          />
         )}
 
         <Card className="p-4">

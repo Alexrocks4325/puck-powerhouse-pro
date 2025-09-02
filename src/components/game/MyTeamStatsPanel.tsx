@@ -208,11 +208,13 @@ function buildLeagueViewFromState(state: SeasonState): LeagueView {
 export default function MyTeamStatsPanel({
   state,
   myTeamId,
-  lastGame
+  lastGame,
+  onPlayerClick
 }: {
   state: SeasonState;
   myTeamId: ID;
   lastGame?: LastGameBox;
+  onPlayerClick?: (player: Skater | Goalie) => void;
 }) {
   // Build league view on the fly (keeps this component 100% self-contained)
   const league = useMemo(() => buildLeagueViewFromState(state), [state]);
@@ -279,7 +281,17 @@ export default function MyTeamStatsPanel({
             <tbody>
               {skaters.map(s => (
                 <tr key={s.id} className="border-t">
-                  <Td left>{s.name}</Td>
+                  <Td left>
+                    <button 
+                      className="hover:text-primary cursor-pointer transition-colors"
+                      onClick={() => {
+                        const actualPlayer = state.teams[myTeamId]?.skaters.find(p => p.id === s.id);
+                        if (actualPlayer && onPlayerClick) onPlayerClick(actualPlayer);
+                      }}
+                    >
+                      {s.name}
+                    </button>
+                  </Td>
                   <Td>{s.position}</Td>
                   <Td>{s.gp}</Td>
                   <Td>{s.g}</Td>
@@ -314,7 +326,17 @@ export default function MyTeamStatsPanel({
             <tbody>
               {goalies.map(g => (
                 <tr key={g.id} className="border-t">
-                  <Td left>{g.name}</Td>
+                  <Td left>
+                    <button 
+                      className="hover:text-primary cursor-pointer transition-colors"
+                      onClick={() => {
+                        const actualPlayer = state.teams[myTeamId]?.goalies.find(p => p.id === g.id);
+                        if (actualPlayer && onPlayerClick) onPlayerClick(actualPlayer);
+                      }}
+                    >
+                      {g.name}
+                    </button>
+                  </Td>
                   <Td>{g.gp}</Td>
                   <Td>{g.gs}</Td>
                   <Td>{g.w}</Td>

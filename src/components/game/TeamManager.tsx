@@ -136,8 +136,8 @@ function goalieRating(id: ID | null, team: Team) {
 }
 
 // --------------------- COMPONENT ---------------------
-export default function TeamManager({ state, setState, userTeamId }:
-  { state: SeasonState; setState: (s:SeasonState|((p:SeasonState)=>SeasonState))=>void; userTeamId?: ID }) {
+export default function TeamManager({ state, setState, userTeamId, onPlayerClick }:
+  { state: SeasonState; setState: (s:SeasonState|((p:SeasonState)=>SeasonState))=>void; userTeamId?: ID; onPlayerClick?: (player: Skater | Goalie) => void }) {
 
   const teamIds = useMemo(() => state.teamOrder ?? Object.keys(state.teams), [state]);
   const defaultTeam = userTeamId ?? teamIds[0];
@@ -389,7 +389,7 @@ export default function TeamManager({ state, setState, userTeamId }:
               <div className="font-semibold">Bench — Swaps & Substitutions</div>
               <div className="text-sm text-slate-500">Pick two players and click Swap</div>
             </div>
-            <BenchSwapUI team={team} lineup={lineup} onSwap={(a,b)=>swapPlayers(a,b)} />
+            <BenchSwapUI team={team} lineup={lineup} onSwap={(a,b)=>swapPlayers(a,b)} onPlayerClick={onPlayerClick} />
           </div>
 
         </div>
@@ -423,7 +423,7 @@ export default function TeamManager({ state, setState, userTeamId }:
 }
 
 // --------------------- BenchSwapUI ---------------------
-function BenchSwapUI({ team, lineup, onSwap }: { team: Team; lineup: Lineup; onSwap: (a:ID,b:ID)=>void }) {
+function BenchSwapUI({ team, lineup, onSwap, onPlayerClick }: { team: Team; lineup: Lineup; onSwap: (a:ID,b:ID)=>void; onPlayerClick?: (player: Skater | Goalie) => void }) {
   const allPlayers = [...team.skaters, ...team.goalies];
   const starterIds = new Set([...(lineup.forwards.flat()), ...(lineup.defense.flat()), lineup.goalieStart ?? [], lineup.goalieBackup ?? []].filter(Boolean) as ID[]);
   const benchPlayers = allPlayers.filter(p => !starterIds.has((p as any).id));
@@ -439,14 +439,44 @@ function BenchSwapUI({ team, lineup, onSwap }: { team: Team; lineup: Lineup; onS
             {[...starterIds].map(id => {
               const p = allPlayers.find(x => (x as any).id === id);
               if (!p) return null;
-              return <div key={id} className={`py-1 px-1 rounded cursor-pointer ${selectedA===id? "bg-slate-200":""}`} onClick={()=> setSelectedA(id as ID)}>{(p as any).name} {(p as any).position==="G"?"(G)":""}</div>;
+              return (
+                <div 
+                  key={id} 
+                  className={`py-1 px-1 rounded cursor-pointer ${selectedA===id? "bg-slate-200":""}`} 
+                  onClick={(e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                      // Ctrl/Cmd + click opens player modal
+                      if (onPlayerClick && p) onPlayerClick(p);
+                    } else {
+                      setSelectedA(id as ID);
+                    }
+                  }}
+                >
+                  {(p as any).name} {(p as any).position==="G"?"(G)":""}
+                </div>
+              );
             })}
           </div>
         </div>
         <div>
           <div className="font-medium mb-1">Bench</div>
           <div className="max-h-48 overflow-auto border p-1">
-            {benchPlayers.map(p => <div key={(p as any).id} className={`py-1 px-1 rounded cursor-pointer ${selectedB===(p as any).id? "bg-slate-200":""}`} onClick={()=> setSelectedB((p as any).id)}>{(p as any).name} {(p as any).position==="G"?"(G)":""}</div>)}
+            {benchPlayers.map(p => (
+              <div 
+                key={(p as any).id} 
+                className={`py-1 px-1 rounded cursor-pointer ${selectedB===(p as any).id? "bg-slate-200":""}`} 
+                onClick={(e) => {
+                  if (e.ctrlKey || e.metaKey) {
+                    // Ctrl/Cmd + click opens player modal
+                    if (onPlayerClick) onPlayerClick(p);
+                  } else {
+                    setSelectedB((p as any).id);
+                  }
+                }}
+              >
+                {(p as any).name} {(p as any).position==="G"?"(G)":""}
+              </div>
+            ))}
           </div>
         </div>
       </div>
