@@ -1734,11 +1734,13 @@ function DraftInterface({
 }) {
   const [currentPick, setCurrentPick] = useState(1);
   const [selectedProspect, setSelectedProspect] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'available' | 'all' | 'drafted'>('available');
   
   // Generate prospect pool if not exists
   const prospects = useMemo(() => generateProspects(224), []);
   
   const myPicks = state.draftPicks?.filter(p => p.teamId === myTeamId) || [];
+  const draftedPicks = state.draftPicks?.filter(p => p.playerId && p.overall < currentPick) || [];
   const currentPickInfo = state.draftLottery?.find((_, index) => index + 1 === currentPick);
   const isMyPick = currentPickInfo?.teamId === myTeamId;
   
@@ -1762,9 +1764,42 @@ function DraftInterface({
         };
       }
       
+      // Add drafted player to my team
+      const updatedTeams = { ...prev.teams };
+      const myTeam = updatedTeams[myTeamId];
+      if (myTeam) {
+        if (prospect.position === 'G') {
+          myTeam.goalies.push({
+            id: prospect.id,
+            name: prospect.name,
+            position: "G" as const,
+            overall: Math.max(55, prospect.potential - 15 + Math.floor(Math.random() * 10)),
+            reflexes: Math.max(55, prospect.potential - 15 + Math.floor(Math.random() * 10)),
+            positioning: Math.max(50, prospect.potential - 20 + Math.floor(Math.random() * 10)),
+            reboundControl: Math.max(50, prospect.potential - 18 + Math.floor(Math.random() * 10)),
+            stamina: 75,
+            gp: 0, gs: 0, w: 0, l: 0, otl: 0, so: 0,
+            shotsAgainst: 0, saves: 0, gaa: 0, svpct: 0
+          });
+        } else {
+          myTeam.skaters.push({
+            id: prospect.id,
+            name: prospect.name,
+            position: prospect.position as "C" | "LW" | "RW" | "D",
+            overall: Math.max(55, prospect.potential - 15 + Math.floor(Math.random() * 10)),
+            shooting: Math.max(45, prospect.potential - 23 + Math.floor(Math.random() * 10)),
+            passing: Math.max(45, prospect.potential - 21 + Math.floor(Math.random() * 10)),
+            defense: Math.max(45, prospect.potential - 22 + Math.floor(Math.random() * 10)),
+            stamina: 80,
+            gp: 0, g: 0, a: 0, p: 0, pim: 0, shots: 0, plusMinus: 0
+          });
+        }
+      }
+      
       return {
         ...prev,
-        draftPicks: newPicks
+        draftPicks: newPicks,
+        teams: updatedTeams
       };
     });
     
@@ -1772,111 +1807,245 @@ function DraftInterface({
     setSelectedProspect(null);
   }
   
+  function simNextPick() {
+    if (isMyPick) return;
+    
+    setState(prev => {
+      const newPicks = [...(prev.draftPicks || [])];
+      const pickIndex = newPicks.findIndex(p => p.overall === currentPick);
+      const availableProspects = prospects.filter(p => 
+        !prev.draftPicks?.some(dp => dp.playerId === p.id)
+      );
+      
+      if (pickIndex !== -1 && availableProspects.length > 0) {
+        const selectedProspect = availableProspects[0]; // AI picks best available
+        newPicks[pickIndex] = {
+          ...newPicks[pickIndex],
+          playerId: selectedProspect.id,
+          playerName: selectedProspect.name,
+          position: selectedProspect.position,
+          potential: selectedProspect.potential
+        };
+      }
+      
+      return {
+        ...prev,
+        draftPicks: newPicks
+      };
+    });
+    
+    setCurrentPick(prev => prev + 1);
+  }
+  
   function simRestOfDraft() {
     setState(prev => {
-      const completed = processDraft(prev);
-      return completed;
+      let updatedState = { ...prev };
+      
+      // Sim remaining picks
+      for (let pick = currentPick; pick <= 224; pick++) {
+        const availableProspects = prospects.filter(p => 
+          !updatedState.draftPicks?.some(dp => dp.playerId === p.id)
+        );
+        
+        if (availableProspects.length === 0) break;
+        
+        const newPicks = [...(updatedState.draftPicks || [])];
+        const pickIndex = newPicks.findIndex(p => p.overall === pick);
+        
+        if (pickIndex !== -1) {
+          const selectedProspect = availableProspects[Math.floor(Math.random() * Math.min(5, availableProspects.length))];
+          newPicks[pickIndex] = {
+            ...newPicks[pickIndex],
+            playerId: selectedProspect.id,
+            playerName: selectedProspect.name,
+            position: selectedProspect.position,
+            potential: selectedProspect.potential
+          };
+          
+          updatedState = {
+            ...updatedState,
+            draftPicks: newPicks
+          };
+        }
+      }
+      
+      return updatedState;
     });
-    onComplete();
+    
+    setCurrentPick(225); // End of draft
   }
   
   const availableProspects = prospects.filter(p => 
     !state.draftPicks?.some(dp => dp.playerId === p.id)
-  ).slice(0, 20); // Show top 20 available
+  );
+  
+  const displayProspects = viewMode === 'available' 
+    ? availableProspects.slice(0, 50)
+    : viewMode === 'all'
+    ? prospects.slice(0, 100)
+    : [];
   
   return (
     <div className="p-6 bg-green-50 rounded-lg border border-green-200">
       <h3 className="text-xl font-bold text-green-800 mb-4">🎯 NHL Entry Draft</h3>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Current Pick */}
         <div className="space-y-4">
           <div className="p-4 bg-white rounded border">
             <h4 className="font-semibold text-green-700 mb-2">
-              Pick #{currentPick}
+              Pick #{currentPick} {currentPick <= 224 ? `of 224` : '(Complete)'}
             </h4>
-            {currentPickInfo && (
+            {currentPickInfo && currentPick <= 224 && (
               <div className="text-sm">
                 <div>Team: {teamLabel(state, currentPickInfo.teamId)}</div>
-                {isMyPick && <div className="text-green-600 font-medium">YOUR PICK!</div>}
+                {isMyPick && <div className="text-green-600 font-medium text-lg">🔥 YOUR PICK!</div>}
               </div>
             )}
             
-            {isMyPick && (
+            {isMyPick && currentPick <= 224 && (
               <div className="mt-4 space-y-3">
-                <h5 className="font-medium">Available Prospects:</h5>
-                <div className="max-h-64 overflow-y-auto space-y-2">
-                  {availableProspects.map(prospect => (
-                    <button
-                      key={prospect.id}
-                      onClick={() => setSelectedProspect(prospect.id)}
-                      className={`w-full p-3 text-left rounded border ${
-                        selectedProspect === prospect.id 
-                          ? 'border-green-500 bg-green-100' 
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="font-medium">{prospect.name} ({prospect.position})</div>
-                      <div className="text-sm text-gray-600">Potential: {prospect.potential}</div>
-                    </button>
-                  ))}
-                </div>
-                
                 <div className="flex gap-2">
                   <button
                     onClick={makeSelection}
                     disabled={!selectedProspect}
                     className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                   >
-                    Draft Player
+                    Draft Selected Player
                   </button>
                   <button
                     onClick={simRestOfDraft}
                     className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                   >
-                    Sim Rest of Draft
+                    Sim Rest
                   </button>
                 </div>
               </div>
             )}
             
-            {!isMyPick && (
+            {!isMyPick && currentPick <= 224 && (
               <button
-                onClick={() => setCurrentPick(prev => prev + 1)}
+                onClick={simNextPick}
                 className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Next Pick →
+                Sim Next Pick →
+              </button>
+            )}
+            
+            {currentPick > 224 && (
+              <button
+                onClick={onComplete}
+                className="mt-4 w-full px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+              >
+                Complete Draft & Continue →
               </button>
             )}
           </div>
+          
+          {/* My Picks */}
+          <div>
+            <h4 className="font-semibold text-green-700 mb-2">
+              Your Picks ({myPicks.filter(p => p.playerId).length}):
+            </h4>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {myPicks.filter(p => p.playerId).map(pick => (
+                <div key={pick.overall} className="p-2 bg-green-100 rounded border text-sm">
+                  <div className="font-medium">
+                    #{pick.overall} {pick.playerName} ({pick.position})
+                  </div>
+                  <div className="text-xs text-green-700">
+                    Round {pick.round} • Potential: {pick.potential}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
         
-        {/* My Picks */}
-        <div>
-          <h4 className="font-semibold text-green-700 mb-2">
-            Your Picks ({myPicks.length}):
-          </h4>
-          <div className="space-y-2 max-h-80 overflow-y-auto">
-            {myPicks.map(pick => (
-              <div key={pick.overall} className="p-3 bg-green-100 rounded border">
-                <div className="font-medium">
-                  #{pick.overall} {pick.playerName} ({pick.position})
-                </div>
-                <div className="text-sm text-green-700">
-                  Round {pick.round} • Potential: {pick.potential}
-                </div>
-              </div>
-            ))}
+        {/* Prospect Pool */}
+        <div className="xl:col-span-2">
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setViewMode('available')}
+              className={`px-3 py-1 text-sm rounded ${
+                viewMode === 'available' ? 'bg-green-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Available ({availableProspects.length})
+            </button>
+            <button
+              onClick={() => setViewMode('all')}
+              className={`px-3 py-1 text-sm rounded ${
+                viewMode === 'all' ? 'bg-green-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              All Prospects
+            </button>
+            <button
+              onClick={() => setViewMode('drafted')}
+              className={`px-3 py-1 text-sm rounded ${
+                viewMode === 'drafted' ? 'bg-green-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Drafted ({draftedPicks.length})
+            </button>
           </div>
           
-          {currentPick > 224 && (
-            <button
-              onClick={onComplete}
-              className="mt-4 w-full px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
-            >
-              Complete Draft & Continue to Free Agency →
-            </button>
-          )}
+          <div className="bg-white rounded border max-h-96 overflow-y-auto">
+            {viewMode !== 'drafted' && (
+              <div className="space-y-1 p-3">
+                {displayProspects.map((prospect, index) => {
+                  const isDrafted = state.draftPicks?.some(dp => dp.playerId === prospect.id);
+                  return (
+                    <button
+                      key={prospect.id}
+                      onClick={() => isMyPick && !isDrafted ? setSelectedProspect(prospect.id) : null}
+                      disabled={isDrafted || !isMyPick}
+                      className={`w-full p-2 text-left rounded text-sm border transition-colors ${
+                        selectedProspect === prospect.id 
+                          ? 'border-green-500 bg-green-100' 
+                          : isDrafted
+                          ? 'border-gray-200 bg-gray-100 text-gray-500'
+                          : isMyPick
+                          ? 'border-gray-200 hover:bg-gray-50 cursor-pointer'
+                          : 'border-gray-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="font-medium">#{index + 1} {prospect.name}</span>
+                          <span className="text-gray-600 ml-2">({prospect.position})</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-600">Potential: {prospect.potential}</div>
+                          {isDrafted && <div className="text-xs text-red-600">DRAFTED</div>}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            
+            {viewMode === 'drafted' && (
+              <div className="space-y-1 p-3">
+                {draftedPicks.map(pick => (
+                  <div key={pick.overall} className="p-2 rounded border bg-gray-50 text-sm">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="font-medium">#{pick.overall} {pick.playerName}</span>
+                        <span className="text-gray-600 ml-2">({pick.position})</span>
+                      </div>
+                      <div className="text-right text-xs">
+                        <div>{teamLabel(state, pick.teamId)}</div>
+                        <div className="text-gray-600">Potential: {pick.potential}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
