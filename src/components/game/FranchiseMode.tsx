@@ -11,13 +11,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import GameHeader from "./GameHeader";
 import TeamCoachSelection from "./TeamCoachSelection";
-import { Trophy, Users, Calendar, Star, Settings, TrendingUp, Building2, Target, Crown, Play, SkipForward, FastForward } from "lucide-react";
+import { Trophy, Users, Calendar, Star, Settings, TrendingUp, Building2, Target, Crown, Play, SkipForward, FastForward, DollarSign } from "lucide-react";
 import { nhlPlayerDatabase, Player as NHLPlayer } from "@/data/nhlPlayerDatabase";
 import TradeCenter from './TradeCenter';
 import TeamManager from "./TeamManager";
 import MyTeamStatsPanel from "./MyTeamStatsPanel";
 import CalendarSimHub from "./CalendarSimHub";
 import PlayerModal from "./PlayerModal";
+import { 
+  LeagueState, 
+  CapManager, 
+  TradeEngine, 
+  createLeagueState, 
+  fmtMoney, 
+  Contract,
+  Player as CapPlayer,
+  TeamState as CapTeamState,
+  ContractYear,
+  ExternalContractRow,
+  importContracts
+} from "@/lib/salary-cap";
 
 // -------------------------- TEAM META --------------------------
 const TEAM_META: Array<{ id: ID; name: string; abbrev: string; conf: Team["conference"]; div: Team["division"]; }> = [
@@ -207,6 +220,10 @@ export type SeasonState = {
   boxScores: Record<GameId, BoxScore>;
   teams: Record<ID, Team>;
   teamOrder: ID[];
+  // Salary Cap System
+  capLeague: LeagueState;
+  capManager: CapManager;
+  tradeEngine: TradeEngine;
 };
 
 // -------------------------- HELPERS --------------------------
@@ -533,11 +550,82 @@ function simulateQuickGame(home: Team, away: Team): { box: BoxScore; winnerHome:
   return { box, winnerHome: hGoals > aGoals, ot };
 }
 
+// -------------------------- SALARY CAP INTEGRATION --------------------------
+function createContractsForTeams(teams: Record<ID, Team>, seasonYear: string): ExternalContractRow[] {
+  const contracts: ExternalContractRow[] = [];
+  
+  for (const team of Object.values(teams)) {
+    // Create contracts for all players
+    [...team.skaters, ...team.goalies].forEach(player => {
+      // Generate realistic contract based on overall rating
+      const baseSalary = Math.max(750000, Math.round((player.overall - 50) * 120000 + Math.random() * 2000000));
+      const years = Math.max(1, Math.min(8, Math.round(Math.random() * 4) + 1));
+      
+      const seasons: { season: string; baseSalary: number; signingBonus?: number }[] = [];
+      for (let i = 0; i < years; i++) {
+        const year = parseInt(seasonYear.split('-')[0]) + i;
+        seasons.push({
+          season: `${year}-${(year + 1).toString().slice(-2)}`,
+          baseSalary: baseSalary + Math.round((Math.random() - 0.5) * baseSalary * 0.1), // slight year-to-year variation
+          signingBonus: player.overall >= 85 ? Math.round(baseSalary * 0.1) : undefined
+        });
+      }
+      
+      contracts.push({
+        playerName: player.name,
+        playerId: player.id,
+        teamId: team.id,
+        pos: player.position === 'G' ? 'G' : (player.position === 'D' ? 'D' : 'F'),
+        seasons,
+        ntc: player.overall >= 90,
+        nmc: player.overall >= 95,
+        isELC: false
+      });
+    });
+  }
+  
+  return contracts;
+}
+
+function initializeSalaryCap(teams: Record<ID, Team>, seasonYear: string): { capLeague: LeagueState; capManager: CapManager; tradeEngine: TradeEngine } {
+  const capLeague = createLeagueState(seasonYear);
+  
+  // Initialize team states
+  for (const team of Object.values(teams)) {
+    const teamMeta = TEAM_META.find(t => t.id === team.id)!;
+    capLeague.teams[team.id] = {
+      id: team.id,
+      name: team.name,
+      conference: team.conference,
+      division: team.division,
+      activeRoster: [...team.skaters.map(s => s.id), ...team.goalies.map(g => g.id)],
+      irList: [],
+      ltirList: [],
+      nonRoster: [],
+      retained: [],
+      buriedContracts: [],
+      spcCount: team.skaters.length + team.goalies.length
+    };
+  }
+  
+  // Create and import contracts
+  const contractRows = createContractsForTeams(teams, seasonYear);
+  importContracts(contractRows, capLeague);
+  
+  const capManager = new CapManager(capLeague);
+  const tradeEngine = new TradeEngine(capLeague, capManager);
+  
+  return { capLeague, capManager, tradeEngine };
+}
+
 // -------------------------- STATE & UPDATERS --------------------------
 function newSeason(seasonYear = "2025-26"): SeasonState {
   const teams = loadNHLLeague();
   const teamOrder = TEAM_META.map(t => t.id);
   const schedule = generateFullSeasonSchedule(teamOrder, 190);
+  
+  const { capLeague, capManager, tradeEngine } = initializeSalaryCap(teams, seasonYear);
+  
   return {
     seasonYear,
     currentDay: 1,
@@ -546,6 +634,9 @@ function newSeason(seasonYear = "2025-26"): SeasonState {
     boxScores: {},
     teams,
     teamOrder,
+    capLeague,
+    capManager,
+    tradeEngine,
   };
 }
 
@@ -1200,7 +1291,7 @@ export default function FranchiseMode() {
           <TabsContent value="calendar">
             <CalendarSimHub 
               state={state} 
-              setState={setState} 
+              setState={(updater) => setState(updater)} 
               myTeamId={selectedTeam} 
               seasonStartDate="2025-10-01"
             />
