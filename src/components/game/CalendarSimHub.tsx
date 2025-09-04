@@ -2749,6 +2749,61 @@ function DraftInterface({
     setCurrentPick(prev => prev + 1);
   }
   
+  function simToMyNextPick() {
+    let nextMyPick = null;
+    for (let pick = currentPick + 1; pick <= 224; pick++) {
+      const pickInfo = state.draftLottery?.[pick - 1];
+      if (pickInfo?.teamId === myTeamId) {
+        nextMyPick = pick;
+        break;
+      }
+    }
+    
+    if (!nextMyPick) {
+      // No more picks for me, sim to end
+      simRestOfDraft();
+      return;
+    }
+    
+    setState(prev => {
+      let updatedState = { ...prev };
+      
+      // Sim picks until my next pick
+      for (let pick = currentPick; pick < nextMyPick; pick++) {
+        if (pick === currentPick && isMyPick) continue; // Skip if current pick is mine
+        
+        const availableProspects = prospects.filter(p => 
+          !updatedState.draftPicks?.some(dp => dp.playerId === p.id)
+        );
+        
+        if (availableProspects.length === 0) break;
+        
+        const newPicks = [...(updatedState.draftPicks || [])];
+        const pickIndex = newPicks.findIndex(p => p.overall === pick);
+        
+        if (pickIndex !== -1) {
+          const selectedProspect = availableProspects[Math.floor(Math.random() * Math.min(5, availableProspects.length))];
+          newPicks[pickIndex] = {
+            ...newPicks[pickIndex],
+            playerId: selectedProspect.id,
+            playerName: selectedProspect.name,
+            position: selectedProspect.position,
+            potential: selectedProspect.potential
+          };
+          
+          updatedState = {
+            ...updatedState,
+            draftPicks: newPicks
+          };
+        }
+      }
+      
+      return updatedState;
+    });
+    
+    setCurrentPick(nextMyPick);
+  }
+
   function simRestOfDraft() {
     setState(prev => {
       let updatedState = { ...prev };
@@ -2817,7 +2872,7 @@ function DraftInterface({
             
             {isMyPick && currentPick <= 224 && (
               <div className="mt-4 space-y-3">
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   <button
                     onClick={makeSelection}
                     disabled={!selectedProspect}
@@ -2825,23 +2880,47 @@ function DraftInterface({
                   >
                     Draft Selected Player
                   </button>
-                  <button
-                    onClick={simRestOfDraft}
-                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                  >
-                    Sim Rest
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={simToMyNextPick}
+                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm flex-1"
+                    >
+                      Sim to My Next Pick
+                    </button>
+                    <button
+                      onClick={simRestOfDraft}
+                      className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm flex-1"
+                    >
+                      Sim Entire Draft
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
             
             {!isMyPick && currentPick <= 224 && (
-              <button
-                onClick={simNextPick}
-                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Sim Next Pick →
-              </button>
+              <div className="mt-3 space-y-2">
+                <button
+                  onClick={simNextPick}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Sim Next Pick →
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={simToMyNextPick}
+                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm flex-1"
+                  >
+                    Sim to My Pick
+                  </button>
+                  <button
+                    onClick={simRestOfDraft}
+                    className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm flex-1"
+                  >
+                    Sim Entire Draft
+                  </button>
+                </div>
+              </div>
             )}
             
             {currentPick > 224 && (
