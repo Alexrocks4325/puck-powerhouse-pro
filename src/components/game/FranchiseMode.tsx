@@ -1138,18 +1138,13 @@ export default function FranchiseMode() {
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [coachName, setCoachName] = useState<string>("");
   const [franchiseStarted, setFranchiseStarted] = useState<boolean>(false);
-  const [draftState, setDraftState] = useState<DraftState | null>(null);
-  const [freeAgencyState, setFreeAgencyState] = useState<FreeAgencyState | null>(null);
   
   const { state, setState, reset, simToday, simAll, simToDate, simOne } = useSeason();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [view, setView] = useState<"scores"|"standings"|"leaders"|"livesim"|"trades"|"team"|"salary-cap"|"draft"|"free-agency">("scores");
+  const [view, setView] = useState<"scores"|"standings"|"leaders"|"livesim"|"trades"|"team"|"salary-cap"|"calendar"|"mystats">("scores");
   const [liveSimGame, setLiveSimGame] = useState<Game | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [selectedPlayerTeam, setSelectedPlayerTeam] = useState<string>("");
-
-  const draftEngine = useMemo(() => new DraftEngine(state.capLeague), [state.capLeague]);
-  const freeAgencyEngine = useMemo(() => new FreeAgencyEngine(state.capLeague), [state.capLeague]);
 
   const handleTeamSelection = (team: string, coach: string) => {
     setSelectedTeam(team);
@@ -1214,7 +1209,7 @@ export default function FranchiseMode() {
         <GameControlBar state={state} onSimToday={simToday} onSimAll={simAll} onSimToDate={simToDate} />
 
         <Tabs value={view} onValueChange={(v) => setView(v as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-10">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="scores">Scores</TabsTrigger>
             <TabsTrigger value="standings">Standings</TabsTrigger>
@@ -1223,8 +1218,6 @@ export default function FranchiseMode() {
             <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="mystats">My Stats</TabsTrigger>
             <TabsTrigger value="salary-cap">Salary Cap</TabsTrigger>
-            <TabsTrigger value="draft">NHL Draft</TabsTrigger>
-            <TabsTrigger value="free-agency">Free Agency</TabsTrigger>
             <TabsTrigger value="livesim" disabled={!liveSimGame}>Live Sim</TabsTrigger>
           </TabsList>
 
@@ -1329,80 +1322,6 @@ export default function FranchiseMode() {
               state={state} 
               myTeamId={selectedTeam} 
             />
-          </TabsContent>
-
-          <TabsContent value="draft">
-            {!draftState ? (
-              <Card className="rounded-2xl">
-                <div className="p-6 text-center space-y-4">
-                  <h3 className="text-xl font-semibold">NHL Draft</h3>
-                  <p className="opacity-70">Start the annual NHL Entry Draft</p>
-                  <Button 
-                    onClick={() => setDraftState(draftEngine.createDraft("2026", selectedTeam))}
-                    className="rounded-2xl"
-                  >
-                    Begin 2026 NHL Draft
-                  </Button>
-                </div>
-              </Card>
-            ) : (
-              <DraftRoom
-                league={state.capLeague}
-                draftState={draftState}
-                draftEngine={draftEngine}
-                onMakePick={(prospectId) => {
-                  draftEngine.makePick(draftState, prospectId);
-                  setDraftState({...draftState});
-                }}
-                onSimToMyPick={() => {
-                  draftEngine.advanceToUserPick(draftState);
-                  setDraftState({...draftState});
-                }}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="free-agency">
-            {!freeAgencyState ? (
-              <Card className="rounded-2xl">
-                <div className="p-6 text-center space-y-4">
-                  <h3 className="text-xl font-semibold">Free Agency</h3>
-                  <p className="opacity-70">Begin the free agency period</p>
-                  <Button 
-                    onClick={() => setFreeAgencyState(startFreeAgency(state.capLeague, "2025-26"))}
-                    className="rounded-2xl"
-                  >
-                    Start Free Agency
-                  </Button>
-                </div>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                <FreeAgencySimControls
-                  league={state.capLeague}
-                  state={freeAgencyState}
-                  engine={freeAgencyEngine}
-                />
-                <FreeAgencyHub
-                  league={state.capLeague}
-                  state={freeAgencyState}
-                  engine={freeAgencyEngine}
-                  myTeamId={selectedTeam}
-                  onSignUFA={(playerId, years, aav, teamId) => 
-                    freeAgencyEngine.signUFA(freeAgencyState, teamId, playerId, years, aav)
-                  }
-                  onTenderQO={(playerIds) => 
-                    freeAgencyEngine.tenderQualifyingOffers(freeAgencyState, selectedTeam, playerIds)
-                  }
-                  onOfferSheet={(playerId, years, aav, fromTeamId) => 
-                    freeAgencyEngine.fileOfferSheet(freeAgencyState, fromTeamId, playerId, years, aav)
-                  }
-                  onMatchOffer={(playerId, match) => 
-                    freeAgencyEngine.resolveOfferSheet(freeAgencyState, playerId, match)
-                  }
-                />
-              </div>
-            )}
           </TabsContent>
 
           <TabsContent value="calendar">
