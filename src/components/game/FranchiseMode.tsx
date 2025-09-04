@@ -1248,8 +1248,13 @@ export default function FranchiseMode() {
                     w: team.w, l: team.l, otl: team.otl, gf: team.gf, ga: team.ga, pts: team.pts, shotsFor: team.shotsFor, shotsAgainst: team.shotsAgainst
                   }
                 ])),
-                teamOrder: state.teamOrder
+                teamOrder: state.teamOrder,
+                // Include salary cap system properties
+                capLeague: state.capLeague,
+                capManager: state.capManager,
+                tradeEngine: state.tradeEngine
               }}
+              myTeamId={selectedTeam}
               setState={(newState) => {
                 if (typeof newState === 'function') {
                   setState(prevState => {
