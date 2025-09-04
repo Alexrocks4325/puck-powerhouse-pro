@@ -18,6 +18,7 @@ import TeamManager from "./TeamManager";
 import MyTeamStatsPanel from "./MyTeamStatsPanel";
 import CalendarSimHub from "./CalendarSimHub";
 import PlayerModal from "./PlayerModal";
+import MyTeamCapOverview from "./MyTeamCapOverview";
 import { 
   LeagueState, 
   CapManager, 
@@ -1211,6 +1212,7 @@ export default function FranchiseMode() {
             <TabsTrigger value="trades">Trades</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="mystats">My Stats</TabsTrigger>
+            <TabsTrigger value="salary-cap">Salary Cap</TabsTrigger>
             <TabsTrigger value="livesim" disabled={!liveSimGame}>Live Sim</TabsTrigger>
           </TabsList>
 
@@ -1307,6 +1309,13 @@ export default function FranchiseMode() {
                 const team = state.teams[selectedTeam];
                 if (team) handlePlayerClick(player, team.name);
               }}
+            />
+          </TabsContent>
+
+          <TabsContent value="salary-cap">
+            <MyTeamCapOverview 
+              state={state} 
+              myTeamId={selectedTeam} 
             />
           </TabsContent>
 
