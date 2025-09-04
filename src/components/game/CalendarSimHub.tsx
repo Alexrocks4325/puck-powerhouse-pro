@@ -11,6 +11,11 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { RetirementEngine, type Retiree, computeAwardsScore } from "../../utils/retirement";
 import { playerAges } from '../../utils/playerAgeUpdater';
+import { 
+  LeagueState, 
+  CapManager, 
+  TradeEngine
+} from "@/lib/salary-cap";
 
 type ID = string;
 
@@ -67,6 +72,10 @@ export type SeasonState = {
   boxScores: Record<string, BoxScore>;
   teams: Record<ID, Team>;
   teamOrder: ID[];
+  // Salary Cap System
+  capLeague: LeagueState;
+  capManager: CapManager;
+  tradeEngine: TradeEngine;
   isRegularSeasonComplete?: boolean;
   playoffSeries?: PlayoffSeries[];
   currentPlayoffRound?: number;
@@ -1310,6 +1319,15 @@ function applyResultImmutable(prev: SeasonState, gameId: string, homeId: ID, awa
   return { next, box };
 }
 
+// Helper to clone season state properly including salary cap system
+function cloneSeasonState(state: SeasonState): SeasonState {
+  const cloned = structuredClone(state);
+  // Recreate cap manager and trade engine with cloned state
+  cloned.capManager = new CapManager(cloned.capLeague);
+  cloned.tradeEngine = new TradeEngine(cloned.capLeague, cloned.capManager);
+  return cloned;
+}
+
 // ─── Component: Season Calendar with fixed updates ───────────────────────────
 export default function CalendarSimHub({
   state, setState, myTeamId, seasonStartDate
@@ -1836,7 +1854,11 @@ export default function CalendarSimHub({
                     <div className="mt-4 pt-4 border-t border-yellow-300">
                       <button 
                         className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium"
-                        onClick={() => setState(prev => ({ ...prev, offseasonPhase: 'retirement' }))}
+                        onClick={() => setState(prev => {
+                          const cloned = cloneSeasonState(prev);
+                          cloned.offseasonPhase = 'retirement';
+                          return cloned;
+                        })}
                       >
                         Begin Offseason →
                       </button>
@@ -2009,7 +2031,11 @@ export default function CalendarSimHub({
               state={state} 
               setState={setState}
               myTeamId={myTeamId}
-              onComplete={() => setState(prev => ({ ...prev, offseasonPhase: 'complete' }))}
+              onComplete={() => setState(prev => {
+                const cloned = cloneSeasonState(prev);
+                cloned.offseasonPhase = 'complete';
+                return cloned;
+              })}
             />
           )}
 

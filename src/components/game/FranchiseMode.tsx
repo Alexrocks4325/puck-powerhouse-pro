@@ -777,15 +777,32 @@ function liveSim(state: SeasonState, game: Game, setBox: (b: BoxScore)=>void, ge
   setBox({...box});
 }
 
+// Helper to clone season state properly including salary cap system
+function cloneSeasonState(state: SeasonState): SeasonState {
+  const cloned = structuredClone(state);
+  // Recreate cap manager and trade engine with cloned state
+  cloned.capManager = new CapManager(cloned.capLeague);
+  cloned.tradeEngine = new TradeEngine(cloned.capLeague, cloned.capManager);
+  return cloned;
+}
+
 // -------------------------- HOOK: useSeason --------------------------
 function useSeason() {
   const [state, setState] = useState<SeasonState>(() => newSeason());
   const reset = () => setState(newSeason());
-  const simToday = () => setState(prev => { const s = structuredClone(prev) as SeasonState; simDay(s); return s; });
-  const simAll = () => setState(prev => { const s = structuredClone(prev) as SeasonState; simToEnd(s); return s; });
-  const simToDate = (day: number) => setState(prev => { const s = structuredClone(prev) as SeasonState; while (s.currentDay <= day) simDay(s); return s; });
-  const simOne = (id: GameId) => setState(prev => { const s = structuredClone(prev) as SeasonState; simGame(s, id); return s; });
-  return { state, setState, reset, simToday, simAll, simToDate, simOne } as const;
+  const simToday = () => setState(prev => { const s = cloneSeasonState(prev); simDay(s); return s; });
+  const simAll = () => setState(prev => { const s = cloneSeasonState(prev); simToEnd(s); return s; });
+  const simToDate = (day: number) => setState(prev => { const s = cloneSeasonState(prev); while (s.currentDay <= day) simDay(s); return s; });
+  const simOne = (id: GameId) => setState(prev => { const s = cloneSeasonState(prev); simGame(s, id); return s; });
+  
+  const setStateWrapper = (updater: (s: SeasonState) => SeasonState) => {
+    setState(prev => {
+      const updated = updater(prev);
+      return cloneSeasonState(updated);
+    });
+  };
+  
+  return { state, setState: setStateWrapper, reset, simToday, simAll, simToDate, simOne } as const;
 }
 
 // -------------------------- UI COMPONENTS --------------------------
