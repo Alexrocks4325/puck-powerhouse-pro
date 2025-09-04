@@ -23,9 +23,10 @@ type Props = {
   draftEngine: DraftEngine;
   onMakePick: (prospectId: UID) => void;
   onSimToMyPick: () => void;
+  onAutoCompleteRound?: () => void;
 };
 
-export default function DraftRoom({ league, draftState, draftEngine, onMakePick, onSimToMyPick }: Props) {
+export default function DraftRoom({ league, draftState, draftEngine, onMakePick, onSimToMyPick, onAutoCompleteRound }: Props) {
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState<"ALL" | "F" | "D" | "G">("ALL");
 
@@ -54,6 +55,11 @@ export default function DraftRoom({ league, draftState, draftEngine, onMakePick,
         {!isMyPick && (
           <Button onClick={onSimToMyPick} className="w-full rounded-2xl">
             Sim to My Pick
+          </Button>
+        )}
+        {currentPick && currentPick.round >= 3 && onAutoCompleteRound && (
+          <Button onClick={onAutoCompleteRound} variant="secondary" className="w-full rounded-2xl">
+            Auto-Complete Remaining Rounds
           </Button>
         )}
       </div>
@@ -108,6 +114,11 @@ function DraftStatus({ currentPick, league, isMyPick }: { currentPick?: DraftPic
           <div className="flex justify-between">
             <span className="opacity-70">Pick #{currentPick.pick}</span>
             <Badge>Round {currentPick.round}</Badge>
+          </div>
+          
+          <div className="flex justify-between">
+            <span className="opacity-70">Round Progress:</span>
+            <span className="text-sm">{((currentPick.pick - 1) % 32) + 1} of 32</span>
           </div>
           
           <div className="text-lg font-medium">{team?.name || "Unknown"}</div>

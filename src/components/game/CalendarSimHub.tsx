@@ -3145,16 +3145,58 @@ function DraftPhaseInterface({
         draftState={draftState}
         draftEngine={draftEngine}
         onMakePick={(prospectId) => {
-          draftEngine.makePick(draftState, prospectId);
-          setDraftState({...draftState});
-          
-          if (!draftState.isActive) {
-            setTimeout(onComplete, 1000);
+          const success = draftEngine.makePick(draftState, prospectId);
+          if (success) {
+            // Create a new state object to trigger re-render
+            const newDraftState = {
+              ...draftState,
+              currentPick: draftState.currentPick,
+              picks: [...draftState.picks],
+              prospects: [...draftState.prospects],
+              isActive: draftState.isActive
+            };
+            setDraftState(newDraftState);
+            
+            // Auto-advance to next user pick for early rounds
+            setTimeout(() => {
+              draftEngine.advanceToUserPick(draftState);
+              setDraftState({
+                ...draftState,
+                currentPick: draftState.currentPick,
+                picks: [...draftState.picks],
+                prospects: [...draftState.prospects],
+                isActive: draftState.isActive
+              });
+              
+              if (!draftState.isActive) {
+                setTimeout(onComplete, 1000);
+              }
+            }, 500);
           }
         }}
         onSimToMyPick={() => {
           draftEngine.advanceToUserPick(draftState);
-          setDraftState({...draftState});
+          setDraftState({
+            ...draftState,
+            currentPick: draftState.currentPick,
+            picks: [...draftState.picks],
+            prospects: [...draftState.prospects],
+            isActive: draftState.isActive
+          });
+        }}
+        onAutoCompleteRound={() => {
+          draftEngine.autoCompleteLateDraft(draftState, 3);
+          setDraftState({
+            ...draftState,
+            currentPick: draftState.currentPick,
+            picks: [...draftState.picks],
+            prospects: [...draftState.prospects],
+            isActive: draftState.isActive
+          });
+          
+          if (!draftState.isActive) {
+            setTimeout(onComplete, 1000);
+          }
         }}
       />
     </div>

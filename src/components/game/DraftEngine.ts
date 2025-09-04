@@ -166,12 +166,20 @@ export class DraftEngine {
    * Make a draft pick (user or AI)
    */
   makePick(draftState: DraftState, prospectId: UID): boolean {
-    if (draftState.currentPick >= draftState.picks.length) return false;
+    if (draftState.currentPick >= draftState.picks.length) {
+      console.log("Draft complete - no more picks available");
+      return false;
+    }
     
     const currentPick = draftState.picks[draftState.currentPick];
     const prospect = draftState.prospects.find(p => p.id === prospectId && !p.picked);
     
-    if (!prospect) return false;
+    if (!prospect) {
+      console.log("Prospect not found or already picked:", prospectId);
+      return false;
+    }
+
+    console.log(`Pick #${currentPick.pick}: ${prospect.name} (${prospect.position}) selected by ${currentPick.currentTeamId}`);
 
     // Create player and add to league
     const player = this.createPlayerFromProspect(prospect, currentPick.currentTeamId);
@@ -187,6 +195,8 @@ export class DraftEngine {
 
     // Advance to next pick
     draftState.currentPick++;
+    
+    console.log(`Next pick: #${draftState.currentPick + 1} of ${draftState.picks.length}`);
 
     return true;
   }
@@ -242,6 +252,27 @@ export class DraftEngine {
       }
       
       this.simulateAIPick(draftState);
+    }
+
+    if (draftState.currentPick >= draftState.picks.length) {
+      draftState.isActive = false;
+    }
+  }
+
+  /**
+   * Auto-draft remaining picks for late rounds (rounds 4-7)
+   */
+  autoCompleteLateDraft(draftState: DraftState, fromRound: number = 4): void {
+    while (draftState.currentPick < draftState.picks.length) {
+      const currentPick = draftState.picks[draftState.currentPick];
+      
+      // If it's a late round, auto-draft for user too
+      if (currentPick.round >= fromRound || currentPick.currentTeamId !== draftState.userTeamId) {
+        this.simulateAIPick(draftState);
+      } else if (currentPick.currentTeamId === draftState.userTeamId) {
+        // Still let user pick in early rounds
+        break;
+      }
     }
 
     if (draftState.currentPick >= draftState.picks.length) {
