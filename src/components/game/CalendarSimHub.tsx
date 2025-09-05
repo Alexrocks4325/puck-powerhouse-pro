@@ -88,7 +88,7 @@ export type SeasonState = {
   playoffSeries?: PlayoffSeries[];
   currentPlayoffRound?: number;
   // Offseason phases
-  offseasonPhase?: 'retirement' | 'hof' | 'lottery' | 'draft' | 'resigning' | 'freeagency' | 'arbitration' | 'development' | 'complete';
+  offseasonPhase?: 'retirement' | 'hof' | 'lottery' | 'draft' | 'resigning' | 'freeagency' | 'arbitration' | 'development';
   retiredPlayers?: RetiredPlayer[];
   hofInductees?: HofInductee[];
   draftLottery?: DraftLotteryResult[];
@@ -2106,10 +2106,34 @@ export default function CalendarSimHub({
           {state.offseasonPhase === 'development' && state.playerDevelopment && (
             <div className="space-y-6">
               <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 className="text-xl font-bold text-blue-800 mb-4">🔄 Player Development</h3>
+                <h3 className="text-xl font-bold text-blue-800 mb-4">🔄 Offseason Team Management</h3>
                 <p className="text-blue-700 mb-4">
-                  Review player progression based on their performance this season. Players may improve or decline based on age, usage, and potential.
+                  All offseason activities completed! You can now manage your team indefinitely - review player development, make trades, and prepare for next season.
                 </p>
+                
+                {state.playerDevelopment?.progressionChanges && (
+                  <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-blue-800 mb-2">📊 Offseason Summary</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-sm">
+                      <div>
+                        <div className="text-lg font-bold text-blue-800">{state.retiredPlayers?.length || 0}</div>
+                        <div className="text-blue-600">Retirements</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-blue-800">{state.draftPicks?.length || 0}</div>
+                        <div className="text-blue-600">Draft Picks</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-blue-800">{state.freeAgency?.signings.length || 0}</div>
+                        <div className="text-blue-600">FA Signings</div>
+                      </div>
+                      <div>
+                        <div className="text-lg font-bold text-blue-800">{state.playerDevelopment.progressionChanges.length}</div>
+                        <div className="text-blue-600">Player Changes</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <PlayerProgressionPanel
@@ -2181,7 +2205,7 @@ export default function CalendarSimHub({
                       ...cloned.playerDevelopment!,
                       progressionChanges: changes
                     };
-                    cloned.offseasonPhase = 'complete';
+                    // Stay in development phase to allow continued team management
                     return cloned;
                   });
                 }}
@@ -2189,46 +2213,6 @@ export default function CalendarSimHub({
             </div>
           )}
 
-          {/* Offseason Complete */}
-          {state.offseasonPhase === 'complete' && (
-            <div className="p-6 bg-green-100 rounded-lg border border-green-400">
-              <h3 className="text-xl font-bold text-green-800 mb-4">✅ Offseason Complete</h3>
-              <p className="text-green-700 mb-4">
-                All offseason activities have been completed. The league is ready for the next season!
-              </p>
-              
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
-                <div className="p-3 bg-white rounded border border-green-300">
-                  <div className="text-2xl font-bold text-green-800">{state.retiredPlayers?.length || 0}</div>
-                  <div className="text-sm text-green-600">Retirements</div>
-                </div>
-                <div className="p-3 bg-white rounded border border-green-300">
-                  <div className="text-2xl font-bold text-green-800">{state.hofInductees?.length || 0}</div>
-                  <div className="text-sm text-green-600">HOF Inductees</div>
-                </div>
-                <div className="p-3 bg-white rounded border border-green-300">
-                  <div className="text-2xl font-bold text-green-800">{state.draftPicks?.length || 0}</div>
-                  <div className="text-sm text-green-600">Draft Picks</div>
-                </div>
-                <div className="p-3 bg-white rounded border border-green-300">
-                  <div className="text-2xl font-bold text-green-800">{state.resignings?.filter(r => r.resigned).length || 0}</div>
-                  <div className="text-sm text-green-600">Re-signings</div>
-                </div>
-                <div className="p-3 bg-white rounded border border-green-300">
-                  <div className="text-2xl font-bold text-green-800">{state.freeAgency?.signings.length || 0}</div>
-                  <div className="text-sm text-green-600">FA Signings</div>
-                </div>
-                <div className="p-3 bg-white rounded border border-green-300">
-                  <div className="text-2xl font-bold text-green-800">{state.playerDevelopment?.progressionChanges?.length || 0}</div>
-                  <div className="text-sm text-green-600">Player Changes</div>
-                </div>
-                <div className="p-3 bg-white rounded border border-green-300">
-                  <div className="text-2xl font-bold text-green-800">{state.arbitrationAwards?.filter(a => a.accepted).length || 0}</div>
-                  <div className="text-sm text-green-600">Arbitrations</div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
