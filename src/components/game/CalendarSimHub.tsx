@@ -11,6 +11,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { RetirementEngine, type Retiree, computeAwardsScore } from "../../utils/retirement";
 import { playerAges } from '../../utils/playerAgeUpdater';
+import { Button } from "@/components/ui/button";
 import { 
   LeagueState, 
   CapManager, 
@@ -21,6 +22,8 @@ import FreeAgencyHub from "./FreeAgencyHub";
 import FreeAgencySimControls from "./FreeAgencySimControls";
 import { DraftEngine, DraftState } from "./DraftEngine";
 import { FreeAgencyEngine, FreeAgencyState, startFreeAgency } from "./FreeAgencyEngine";
+import PlayerProgressionPanel from "../dev/PlayerProgressionPanel";
+import { updatePlayerDevelopmentForSeason, SeasonStats } from "@/lib/playerDevelopment";
 
 type ID = string;
 
@@ -85,7 +88,7 @@ export type SeasonState = {
   playoffSeries?: PlayoffSeries[];
   currentPlayoffRound?: number;
   // Offseason phases
-  offseasonPhase?: 'retirement' | 'hof' | 'lottery' | 'draft' | 'resigning' | 'freeagency' | 'arbitration' | 'complete';
+  offseasonPhase?: 'retirement' | 'hof' | 'lottery' | 'draft' | 'resigning' | 'freeagency' | 'arbitration' | 'development' | 'complete';
   retiredPlayers?: RetiredPlayer[];
   hofInductees?: HofInductee[];
   draftLottery?: DraftLotteryResult[];
@@ -93,6 +96,10 @@ export type SeasonState = {
   resignings?: ResigningResult[];
   freeAgency?: FAOutcome;
   arbitrationAwards?: ArbitrationAward[];
+  playerDevelopment?: {
+    seasonStats: Record<string, any>;
+    progressionChanges?: any[];
+  };
 };
 
 export type RetiredPlayer = {
@@ -1162,7 +1169,52 @@ function processArbitration(state: SeasonState): SeasonState {
   return {
     ...state,
     arbitrationAwards,
-    offseasonPhase: 'complete'
+    offseasonPhase: 'development'
+  };
+}
+
+function processDevelopment(state: SeasonState): SeasonState {
+  // Build season stats from all players for development calculation
+  const allPlayers = Object.values(state.teams).flatMap(team => [...team.skaters, ...team.goalies]);
+  const seasonStats: Record<string, SeasonStats> = {};
+  
+  // Convert current player stats to development format
+  allPlayers.forEach(player => {
+    if (player.position === "G") {
+      seasonStats[player.id] = {
+        goalie: {
+          gp: player.gp || 0,
+          wins: player.w || 0,
+          losses: player.l || 0,
+          gaa: player.gaa || 3.0,
+          svPct: player.svpct || 0.900,
+          shutouts: player.so || 0,
+          toiPerGame: 60 // assume full games for goalies
+        }
+      };
+    } else {
+      seasonStats[player.id] = {
+        skater: {
+          gp: player.gp || 0,
+          goals: player.g || 0,
+          assists: player.a || 0,
+          points: player.p || 0,
+          plusMinus: player.plusMinus || 0,
+          pim: player.pim || 0,
+          shots: player.shots || 0,
+          toiPerGame: 18 // average ice time
+        }
+      };
+    }
+  });
+
+  return {
+    ...state,
+    playerDevelopment: {
+      seasonStats,
+      progressionChanges: undefined
+    },
+    offseasonPhase: 'development'
   };
 }
 
@@ -2044,10 +2096,97 @@ export default function CalendarSimHub({
               myTeamId={myTeamId}
               onComplete={() => setState(prev => {
                 const cloned = cloneSeasonState(prev);
-                cloned.offseasonPhase = 'complete';
-                return cloned;
+                const processed = processDevelopment(cloned);
+                return processed;
               })}
             />
+          )}
+
+          {/* Player Development Phase */}
+          {state.offseasonPhase === 'development' && state.playerDevelopment && (
+            <div className="space-y-6">
+              <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="text-xl font-bold text-blue-800 mb-4">🔄 Player Development</h3>
+                <p className="text-blue-700 mb-4">
+                  Review player progression based on their performance this season. Players may improve or decline based on age, usage, and potential.
+                </p>
+              </div>
+              
+              <PlayerProgressionPanel
+                players={Object.values(state.teams).flatMap(team => 
+                  [...team.skaters.map(s => ({...s, isSkater: true})), ...team.goalies.map(g => ({...g, isSkater: false}))].map(player => {
+                    const isSkater = 'isSkater' in player && player.isSkater;
+                    return {
+                      id: player.id,
+                      name: player.name,
+                      age: player.age || 25,
+                      position: player.position === "G" ? "G" : player.position === "D" ? "D" : "F",
+                      overall: player.overall,
+                      potential: Math.min(99, player.overall + Math.floor(Math.random() * 20)), // Generate potential if not exists
+                      potentialTier: player.overall >= 85 ? "ELITE" : player.overall >= 75 ? "HIGH" : player.overall >= 65 ? "MED" : "LOW",
+                      // Add missing attributes with reasonable defaults for skaters
+                      shooting: isSkater ? (player as Skater).shooting || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      passing: isSkater ? (player as Skater).passing || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      skating: isSkater ? (player as any).skating || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      defense: isSkater ? (player as Skater).defense || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      physical: isSkater ? (player as any).physical || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      iq: isSkater ? (player as any).iq || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      // Goalie attributes
+                      reflexes: !isSkater ? (player as Goalie).reflexes || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      glove: !isSkater ? (player as any).glove || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      blocker: !isSkater ? (player as any).blocker || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      positioning: !isSkater ? (player as Goalie).positioning || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      rebound: !isSkater ? (player as any).rebound || player.overall - Math.floor(Math.random() * 10) : undefined,
+                      puckplay: !isSkater ? (player as any).puckplay || player.overall - Math.floor(Math.random() * 10) : undefined
+                    };
+                  })
+                )}
+                statsById={state.playerDevelopment.seasonStats}
+                context={{ eraScoringFactor: 1.0, difficulty: "SIM" }}
+                onApply={(updatedPlayers, changes) => {
+                  setState(prev => {
+                    const cloned = cloneSeasonState(prev);
+                    
+                    // Update all players with their new stats
+                    updatedPlayers.forEach(updatedPlayer => {
+                      Object.values(cloned.teams).forEach(team => {
+                        // Update skaters
+                        team.skaters = team.skaters.map(skater => 
+                          skater.id === updatedPlayer.id ? {
+                            ...skater,
+                            overall: updatedPlayer.overall,
+                            age: (skater.age || 25) + 1, // Age up by 1 year
+                            shooting: updatedPlayer.shooting !== undefined ? updatedPlayer.shooting : skater.shooting,
+                            passing: updatedPlayer.passing !== undefined ? updatedPlayer.passing : skater.passing,
+                            defense: updatedPlayer.defense !== undefined ? updatedPlayer.defense : skater.defense
+                          } : skater
+                        );
+                        
+                        // Update goalies  
+                        team.goalies = team.goalies.map(goalie =>
+                          goalie.id === updatedPlayer.id ? {
+                            ...goalie,
+                            overall: updatedPlayer.overall,
+                            age: (goalie.age || 25) + 1, // Age up by 1 year
+                            reflexes: updatedPlayer.reflexes || goalie.reflexes,
+                            positioning: updatedPlayer.positioning || goalie.positioning,
+                            reboundControl: updatedPlayer.rebound || goalie.reboundControl
+                          } : goalie
+                        );
+                      });
+                    });
+                    
+                    // Store progression changes and complete development
+                    cloned.playerDevelopment = {
+                      ...cloned.playerDevelopment!,
+                      progressionChanges: changes
+                    };
+                    cloned.offseasonPhase = 'complete';
+                    return cloned;
+                  });
+                }}
+              />
+            </div>
           )}
 
           {/* Offseason Complete */}
@@ -2078,6 +2217,10 @@ export default function CalendarSimHub({
                 <div className="p-3 bg-white rounded border border-green-300">
                   <div className="text-2xl font-bold text-green-800">{state.freeAgency?.signings.length || 0}</div>
                   <div className="text-sm text-green-600">FA Signings</div>
+                </div>
+                <div className="p-3 bg-white rounded border border-green-300">
+                  <div className="text-2xl font-bold text-green-800">{state.playerDevelopment?.progressionChanges?.length || 0}</div>
+                  <div className="text-sm text-green-600">Player Changes</div>
                 </div>
                 <div className="p-3 bg-white rounded border border-green-300">
                   <div className="text-2xl font-bold text-green-800">{state.arbitrationAwards?.filter(a => a.accepted).length || 0}</div>
