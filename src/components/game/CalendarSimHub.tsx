@@ -1131,14 +1131,20 @@ function processResigning(state: SeasonState): SeasonState {
 }
 
 function processFreeAgency(state: SeasonState): SeasonState {
-  const market = createFreeAgencyMarket(state);
-  const teamContexts = createTeamFAContexts(state);
-  const freeAgency = runFreeAgency(teamContexts, market);
+  // Create a simple free agency market from unsigned players
+  const allPlayers = Object.values(state.teams).flatMap(team => [...team.skaters, ...team.goalies]);
+  const unsignedPlayers = allPlayers.filter(player => 
+    !player.contractYears || player.contractYears === 0
+  );
   
   return {
     ...state,
-    freeAgency,
-    offseasonPhase: 'arbitration'
+    freeAgency: {
+      signings: [],
+      news: [],
+      remaining: unsignedPlayers.map(p => p.id)
+    },
+    offseasonPhase: 'freeagency'
   };
 }
 
