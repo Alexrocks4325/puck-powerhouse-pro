@@ -33,7 +33,7 @@ interface LiveEventsModeProps {
     packs: number;
   };
   setPlayerData: (data: any) => void;
-  onNavigate: (screen: 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues') => void;
+  onNavigate: (screen: 'menu' | 'tutorial' | 'ultimate' | 'team' | 'season' | 'leagues' | 'live-events' | 'franchise') => void;
 }
 
 const LiveEventsMode = ({ playerData, setPlayerData, onNavigate }: LiveEventsModeProps) => {

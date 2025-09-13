@@ -14,7 +14,7 @@ interface TeamManagementProps {
     packs: number;
   };
   setPlayerData: (data: any) => void;
-  onNavigate: (screen: 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues') => void;
+  onNavigate: (screen: 'menu' | 'tutorial' | 'ultimate' | 'team' | 'season' | 'leagues' | 'live-events' | 'franchise') => void;
 }
 
 const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagementProps) => {
@@ -177,7 +177,7 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
 
           <Card 
             className="game-card p-4 text-center cursor-pointer hover:scale-105 transition-transform" 
-            onClick={() => onNavigate('packs')}
+            onClick={() => onNavigate('ultimate')}
           >
             <Package className="w-8 h-8 mx-auto mb-2 text-gold" />
             <span className="text-sm font-semibold">Open Packs</span>
@@ -186,7 +186,7 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
 
           <Card 
             className="game-card p-4 text-center cursor-pointer hover:scale-105 transition-transform"
-            onClick={() => onNavigate('tasks')}
+            onClick={() => onNavigate('ultimate')}
           >
             <Target className="w-8 h-8 mx-auto mb-2 text-green-500" />
             <span className="text-sm font-semibold">Tasks</span>
@@ -496,7 +496,7 @@ const TeamManagement = ({ playerData, setPlayerData, onNavigate }: TeamManagemen
                   <p className="text-muted-foreground mb-4">Your collection is empty</p>
                   <Button 
                     className="btn-primary"
-                    onClick={() => onNavigate('packs')}
+                    onClick={() => onNavigate('ultimate')}
                   >
                     Open Your First Pack
                   </Button>

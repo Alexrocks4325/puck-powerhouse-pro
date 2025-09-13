@@ -25,7 +25,7 @@ interface EnhancedSeasonModeProps {
     packs: number;
   };
   setPlayerData: (data: any) => void;
-  onNavigate: (screen: 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues') => void;
+  onNavigate: (screen: 'menu' | 'tutorial' | 'ultimate' | 'team' | 'season' | 'leagues' | 'live-events' | 'franchise') => void;
 }
 
 export default function EnhancedSeasonMode({ playerData, setPlayerData, onNavigate }: EnhancedSeasonModeProps) {

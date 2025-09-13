@@ -5,27 +5,21 @@ import GameHeader from "@/components/game/GameHeader";
 import IntroductionScreen from "@/components/game/IntroductionScreen";
 import TeamCoachSelection from "@/components/game/TeamCoachSelection";
 import Tutorial from "@/components/game/Tutorial";
-import PackOpening from "@/components/game/PackOpening";
+import UltimateMode from "@/components/game/UltimateMode";
 import TeamManagement from "@/components/game/TeamManagement";
 import EnhancedSeasonMode from "@/components/game/EnhancedSeasonMode";
-import TasksAndChallenges from "@/components/game/TasksAndChallenges";
 import LeaguesMode from "@/components/game/LeaguesMode";
 import LiveEventsMode from "@/components/game/LiveEventsMode";
-import PackManager from "@/components/game/PackManager";
-import CoinShop from "@/components/game/CoinShop";
-import RosterCollection from "@/components/game/RosterCollection";
-import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package, Library, Building2 } from "lucide-react";
 import FranchiseMode from "@/components/game/FranchiseMode";
+import { Trophy, Star, Coins, Users, Target, Award, Calendar, Package, Library, Building2 } from "lucide-react";
 import nhlLogo from "@/assets/nhl-ultimate-logo.png";
 
 import { addExperience, showLevelUpNotification, EXPERIENCE_REWARDS } from "@/components/game/ProgressionSystem";
 
 const Index = () => {
-  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'collection' | 'franchise'>('intro');
-  const [showPackManager, setShowPackManager] = useState(false);
-  const [showCoinShop, setShowCoinShop] = useState(false);
+  const [gameState, setGameState] = useState<'intro' | 'selection' | 'menu' | 'tutorial' | 'ultimate' | 'team' | 'season' | 'leagues' | 'live-events' | 'franchise'>('intro');
 
-  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'packs' | 'team' | 'season' | 'tasks' | 'leagues' | 'live-events' | 'collection' | 'franchise') => {
+  const handleNavigate = (screen: 'intro' | 'selection' | 'menu' | 'tutorial' | 'ultimate' | 'team' | 'season' | 'leagues' | 'live-events' | 'franchise') => {
     setGameState(screen);
   };
 
@@ -48,13 +42,9 @@ const Index = () => {
     const { newPlayerData, leveledUp, rewards } = addExperience(playerData, amount, reason);
     setPlayerData(newPlayerData);
     
-    if (leveledUp && rewards) {
+    if (leveledUp) {
       showLevelUpNotification(newPlayerData.level, rewards);
     }
-  };
-
-  const handleGameWin = () => {
-    handleExperienceGain(EXPERIENCE_REWARDS.GAME_WIN, 'Game Win');
   };
 
   const handleTaskComplete = () => {
@@ -96,7 +86,7 @@ const Index = () => {
       coins: prev.coins + 500, // Tutorial bonus
       packs: prev.packs + 2, // Starter packs
     }));
-    setGameState('packs');
+    setGameState('ultimate');
   };
 
   // Route to appropriate component
@@ -112,35 +102,14 @@ const Index = () => {
     return <Tutorial onComplete={handleTutorialComplete} />;
   }
 
-  if (gameState === 'packs') {
+  if (gameState === 'ultimate') {
     return (
-      <div className="min-h-screen ice-surface">
-        <GameHeader 
-          playerData={playerData}
-          showBackButton 
-          onBack={() => handleNavigate('menu')}
-          title="Pack Store"
-          onCoinsClick={() => setShowCoinShop(true)}
-          onPacksClick={() => setShowPackManager(true)}
-        />
-        <PackOpening 
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-          onNavigate={handleNavigate}
-        />
-        <PackManager 
-          isOpen={showPackManager}
-          onClose={() => setShowPackManager(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-        <CoinShop 
-          isOpen={showCoinShop}
-          onClose={() => setShowCoinShop(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-      </div>
+      <UltimateMode
+        playerData={playerData}
+        setPlayerData={setPlayerData}
+        onNavigate={handleNavigate}
+        initialTab="packs"
+      />
     );
   }
 
@@ -152,25 +121,11 @@ const Index = () => {
           showBackButton 
           onBack={() => handleNavigate('menu')}
           title="Team Management"
-          onCoinsClick={() => setShowCoinShop(true)}
-          onPacksClick={() => setShowPackManager(true)}
         />
         <TeamManagement 
           playerData={playerData}
           setPlayerData={setPlayerData}
           onNavigate={handleNavigate}
-        />
-        <PackManager 
-          isOpen={showPackManager}
-          onClose={() => setShowPackManager(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-        <CoinShop 
-          isOpen={showCoinShop}
-          onClose={() => setShowCoinShop(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
         />
       </div>
     );
@@ -178,41 +133,17 @@ const Index = () => {
 
   if (gameState === 'season') {
     return (
-      <EnhancedSeasonMode 
-        playerData={playerData}
-        setPlayerData={setPlayerData}
-        onNavigate={handleNavigate}
-      />
-    );
-  }
-
-  if (gameState === 'tasks') {
-    return (
       <div className="min-h-screen ice-surface">
         <GameHeader 
           playerData={playerData}
           showBackButton 
           onBack={() => handleNavigate('menu')}
-          title="Tasks & Challenges"
-          onCoinsClick={() => setShowCoinShop(true)}
-          onPacksClick={() => setShowPackManager(true)}
+          title="Season Mode"
         />
-        <TasksAndChallenges 
+        <EnhancedSeasonMode 
           playerData={playerData}
           setPlayerData={setPlayerData}
           onNavigate={handleNavigate}
-        />
-        <PackManager 
-          isOpen={showPackManager}
-          onClose={() => setShowPackManager(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-        <CoinShop 
-          isOpen={showCoinShop}
-          onClose={() => setShowCoinShop(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
         />
       </div>
     );
@@ -225,26 +156,12 @@ const Index = () => {
           playerData={playerData}
           showBackButton 
           onBack={() => handleNavigate('menu')}
-          title="Leagues"
-          onCoinsClick={() => setShowCoinShop(true)}
-          onPacksClick={() => setShowPackManager(true)}
+          title="Global Leagues"
         />
         <LeaguesMode 
           playerData={playerData}
           setPlayerData={setPlayerData}
           onNavigate={handleNavigate}
-        />
-        <PackManager 
-          isOpen={showPackManager}
-          onClose={() => setShowPackManager(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-        <CoinShop 
-          isOpen={showCoinShop}
-          onClose={() => setShowCoinShop(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
         />
       </div>
     );
@@ -252,96 +169,23 @@ const Index = () => {
 
   if (gameState === 'live-events') {
     return (
-      <div className="min-h-screen ice-surface">
-        <GameHeader 
-          playerData={playerData}
-          showBackButton 
-          onBack={() => handleNavigate('menu')}
-          title="Live Events"
-          onCoinsClick={() => setShowCoinShop(true)}
-          onPacksClick={() => setShowPackManager(true)}
-        />
-        <LiveEventsMode 
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-          onNavigate={handleNavigate}
-        />
-        <PackManager 
-          isOpen={showPackManager}
-          onClose={() => setShowPackManager(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-        <CoinShop 
-          isOpen={showCoinShop}
-          onClose={() => setShowCoinShop(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-      </div>
-    );
-  }
-
-  if (gameState === 'collection') {
-    return (
-      <div className="min-h-screen ice-surface">
-        <GameHeader 
-          playerData={playerData}
-          showBackButton 
-          onBack={() => handleNavigate('menu')}
-          title="Roster Collection"
-          onCoinsClick={() => setShowCoinShop(true)}
-          onPacksClick={() => setShowPackManager(true)}
-        />
-        <RosterCollection 
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-          onNavigate={handleNavigate}
-        />
-        <PackManager 
-          isOpen={showPackManager}
-          onClose={() => setShowPackManager(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-        <CoinShop 
-          isOpen={showCoinShop}
-          onClose={() => setShowCoinShop(false)}
-          playerData={playerData}
-          setPlayerData={setPlayerData}
-        />
-      </div>
+      <LiveEventsMode 
+        playerData={playerData}
+        setPlayerData={setPlayerData}
+        onNavigate={handleNavigate}
+      />
     );
   }
 
   if (gameState === 'franchise') {
-    return (
-      <FranchiseMode />
-    );
+    return <FranchiseMode />;
   }
 
   // Main Menu
   return (
-    <div className="min-h-screen ice-surface">
+    <div className="min-h-screen nhl-gradient-bg relative overflow-hidden">
       <GameHeader 
-        playerData={playerData} 
-        title="NHL Ultimate" 
-        onCoinsClick={() => setShowCoinShop(true)}
-        onPacksClick={() => setShowPackManager(true)}
-      />
-      
-      <PackManager 
-        isOpen={showPackManager}
-        onClose={() => setShowPackManager(false)}
         playerData={playerData}
-        setPlayerData={setPlayerData}
-      />
-      
-      <CoinShop 
-        isOpen={showCoinShop}
-        onClose={() => setShowCoinShop(false)}
-        playerData={playerData}
-        setPlayerData={setPlayerData}
       />
       
       {/* Hero Section */}
@@ -455,41 +299,19 @@ const Index = () => {
               if (!playerData.completedTutorial) {
                 handleStartGame();
               } else {
-                setGameState('packs');
+                setGameState('ultimate');
               }
             }}
           >
             <Package className="w-12 h-12 mx-auto mb-4 text-gold" />
-            <h3 className="text-xl font-bold mb-2">Pack Opening</h3>
+            <h3 className="text-xl font-bold mb-2">Ultimate Mode</h3>
             <p className="text-muted-foreground mb-4">
-              Open packs to discover new players with unique chemistry synergies
+              Open packs, complete challenges, and manage your player collection all in one place
             </p>
             <div className="flex justify-center space-x-2">
               <Star className="w-4 h-4 text-gold" />
               <Star className="w-4 h-4 text-gold" />
-              <Star className="w-4 h-4 text-muted-foreground" />
-            </div>
-          </Card>
-
-          <Card 
-            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
-            onClick={() => {
-              if (!playerData.completedTutorial) {
-                handleStartGame();
-              } else {
-                setGameState('tasks');
-              }
-            }}
-          >
-            <Target className="w-12 h-12 mx-auto mb-4 text-green-500" />
-            <h3 className="text-xl font-bold mb-2">Tasks & Challenges</h3>
-            <p className="text-muted-foreground mb-4">
-              Complete daily and weekly challenges for exclusive rewards and bonuses
-            </p>
-            <div className="flex justify-center space-x-2">
-              <Star className="w-4 h-4 text-green-500" />
-              <Star className="w-4 h-4 text-green-500" />
-              <Star className="w-4 h-4 text-green-500" />
+              <Star className="w-4 h-4 text-gold" />
             </div>
           </Card>
 
@@ -534,28 +356,6 @@ const Index = () => {
               <Star className="w-4 h-4 text-ice-blue" />
               <Star className="w-4 h-4 text-ice-blue" />
               <Star className="w-4 h-4 text-ice-blue" />
-            </div>
-          </Card>
-
-          <Card 
-            className="game-card p-6 text-center cursor-pointer hover:scale-105 transition-transform"
-            onClick={() => {
-              if (!playerData.completedTutorial) {
-                handleStartGame();
-              } else {
-                setGameState('collection');
-              }
-            }}
-          >
-            <Library className="w-12 h-12 mx-auto mb-4 text-orange-500" />
-            <h3 className="text-xl font-bold mb-2">Roster Collection</h3>
-            <p className="text-muted-foreground mb-4">
-              View complete NHL rosters and track your collection progress by team and rarity
-            </p>
-            <div className="flex justify-center space-x-2">
-              <Star className="w-4 h-4 text-orange-500" />
-              <Star className="w-4 h-4 text-orange-500" />
-              <Star className="w-4 h-4 text-orange-500" />
             </div>
           </Card>
 
