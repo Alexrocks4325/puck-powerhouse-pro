@@ -2,6 +2,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 import defaultPlayerImg from "@/assets/players/default-player.jpg";
+import connorMcDavidImg from "@/assets/players/connor-mcdavid-realistic.jpg";
+import leonDraisaitlImg from "@/assets/players/leon-draisaitl-realistic.jpg";
+import sidneyCrosbyImg from "@/assets/players/sidney-crosby-realistic.jpg";
+import nathanMacKinnonImg from "@/assets/players/nathan-mackinnon-realistic.jpg";
+import austonMatthewsImg from "@/assets/players/auston-matthews-realistic.jpg";
+import connorBedardImg from "@/assets/players/connor-bedard-realistic.jpg";
 
 interface Player {
   id: number;
@@ -75,6 +81,19 @@ const PlayerCard = ({ player, size = 'medium', onClick }: PlayerCardProps) => {
 
   // Get player image using NHL profile ID or fallback
   const getPlayerImage = (player: Player): string => {
+    // Check for imported asset paths first (our realistic images)
+    if (player.image?.includes('@/assets/players/')) {
+      const imageMap: Record<string, string> = {
+        '@/assets/players/connor-mcdavid-realistic.jpg': connorMcDavidImg,
+        '@/assets/players/leon-draisaitl-realistic.jpg': leonDraisaitlImg,
+        '@/assets/players/sidney-crosby-realistic.jpg': sidneyCrosbyImg,
+        '@/assets/players/nathan-mackinnon-realistic.jpg': nathanMacKinnonImg,
+        '@/assets/players/auston-matthews-realistic.jpg': austonMatthewsImg,
+        '@/assets/players/connor-bedard-realistic.jpg': connorBedardImg,
+      };
+      return imageMap[player.image] || defaultPlayerImg;
+    }
+    
     // If player has a specific image path with NHL ID, use it directly
     if (player.image) {
       return player.image;

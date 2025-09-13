@@ -114,7 +114,7 @@ export const nhlPlayerDatabase: Player[] = [
   // PITTSBURGH PENGUINS
   { id: 85, name: "Noel Acciari", team: "PIT", position: "C", overall: 74, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/PIT/8478569.png" },
   { id: 86, name: "Justin Brazeau", team: "PIT", position: "C", overall: 73, rarity: "bronze", chemistry: ["Power Forward"], image: "https://assets.nhle.com/mugs/nhl/20252026/PIT/8479638.png" },
-  { id: 87, name: "Sidney Crosby", team: "PIT", position: "C", overall: 94, rarity: "legend", chemistry: ["Leader", "Clutch", "Playmaker"], image: "https://assets.nhle.com/mugs/nhl/20252026/PIT/8471675.png" },
+  { id: 87, name: "Sidney Crosby", team: "PIT", position: "C", overall: 94, rarity: "legend", chemistry: ["Leader", "Clutch", "Playmaker"], image: "@/assets/players/sidney-crosby-realistic.jpg" },
   { id: 88, name: "Connor Dewar", team: "PIT", position: "C", overall: 74, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/PIT/8480980.png" },
   { id: 89, name: "Kevin Hayes", team: "PIT", position: "RW", overall: 77, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/PIT/8475763.png" },
   { id: 90, name: "Danton Heinen", team: "PIT", position: "LW", overall: 75, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/PIT/8478046.png" },
@@ -205,7 +205,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 167, name: "Jack Drury", team: "COL", position: "C", overall: 74, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/COL/8480835.png" },
   { id: 168, name: "Gabriel Landeskog", team: "COL", position: "LW", overall: 83, rarity: "silver", chemistry: ["Leader", "Power Forward"], image: "https://assets.nhle.com/mugs/nhl/20252026/COL/8476455.png" },
   { id: 169, name: "Artturi Lehkonen", team: "COL", position: "LW", overall: 80, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/COL/8477476.png" },
-  { id: 170, name: "Nathan MacKinnon", team: "COL", position: "C", overall: 97, rarity: "legend", chemistry: ["Speedster", "Clutch", "Power Forward"], image: "https://assets.nhle.com/mugs/nhl/20252026/COL/8477492.png" },
+  { id: 170, name: "Nathan MacKinnon", team: "COL", position: "C", overall: 97, rarity: "legend", chemistry: ["Speedster", "Clutch", "Power Forward"], image: "@/assets/players/nathan-mackinnon-realistic.jpg" },
   { id: 171, name: "Martin Necas", team: "COL", position: "C", overall: 82, rarity: "silver", chemistry: ["Playmaker"], image: "https://assets.nhle.com/mugs/nhl/20252026/COL/8480039.png" },
   { id: 172, name: "Brock Nelson", team: "COL", position: "C", overall: 81, rarity: "silver", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/COL/8475754.png" },
   { id: 173, name: "Valeri Nichushkin", team: "COL", position: "RW", overall: 84, rarity: "silver", chemistry: ["Power Forward"], image: "https://assets.nhle.com/mugs/nhl/20252026/COL/8477501.png" },
@@ -220,7 +220,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 182, name: "Scott Wedgewood", team: "COL", position: "G", overall: 76, rarity: "bronze", chemistry: ["Backup"], image: "https://assets.nhle.com/mugs/nhl/20252026/COL/8475809.png" },
 
   // CHICAGO BLACKHAWKS
-  { id: 183, name: "Connor Bedard", team: "CHI", position: "C", overall: 83, rarity: "silver", chemistry: ["Young Gun", "Playmaker"], image: "https://assets.nhle.com/mugs/nhl/20252026/CHI/8484144.png" },
+  { id: 183, name: "Connor Bedard", team: "CHI", position: "C", overall: 83, rarity: "silver", chemistry: ["Young Gun", "Playmaker"], image: "@/assets/players/connor-bedard-realistic.jpg" },
   { id: 184, name: "Tyler Bertuzzi", team: "CHI", position: "LW", overall: 80, rarity: "bronze", chemistry: ["Power Forward"], image: "https://assets.nhle.com/mugs/nhl/20252026/CHI/8477479.png" },
   { id: 185, name: "Andre Burakovsky", team: "CHI", position: "LW", overall: 79, rarity: "bronze", chemistry: ["Speedster"], image: "https://assets.nhle.com/mugs/nhl/20252026/CHI/8477444.png" },
   { id: 186, name: "Jason Dickinson", team: "CHI", position: "C", overall: 75, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/CHI/8477450.png" },
@@ -566,7 +566,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 496, name: "Scott Laughton", team: "TOR", position: "LW", overall: 77, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/TOR/8476872.png" },
   { id: 497, name: "Steven Lorentz", team: "TOR", position: "C", overall: 74, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/TOR/8478904.png" },
   { id: 498, name: "Matias Maccelli", team: "TOR", position: "LW", overall: 76, rarity: "bronze", chemistry: ["Young Gun"], image: "https://assets.nhle.com/mugs/nhl/20252026/TOR/8481711.png" },
-  { id: 499, name: "Auston Matthews", team: "TOR", position: "C", overall: 96, rarity: "legend", chemistry: ["Sniper", "Leader"], image: "https://assets.nhle.com/mugs/nhl/20252026/TOR/8479318.png" },
+  { id: 499, name: "Auston Matthews", team: "TOR", position: "C", overall: 96, rarity: "legend", chemistry: ["Sniper", "Leader"], image: "@/assets/players/auston-matthews-realistic.jpg" },
   { id: 500, name: "Bobby McMann", team: "TOR", position: "C", overall: 75, rarity: "bronze", chemistry: ["Young Gun"], image: "https://assets.nhle.com/mugs/nhl/20252026/TOR/8482259.png" },
   { id: 501, name: "William Nylander", team: "TOR", position: "RW", overall: 88, rarity: "gold", chemistry: ["Sniper", "Speedster"], image: "https://assets.nhle.com/mugs/nhl/20252026/TOR/8477939.png" },
   { id: 502, name: "Nicholas Robertson", team: "TOR", position: "LW", overall: 76, rarity: "bronze", chemistry: ["Young Gun"], image: "https://assets.nhle.com/mugs/nhl/20252026/TOR/8481582.png" },
@@ -695,7 +695,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 615, name: "Sam Montembeault", team: "MTL", position: "G", overall: 77, rarity: "bronze", chemistry: ["Steady"], image: "https://assets.nhle.com/mugs/nhl/20252026/MTL/8478470.png" },
 
   // EDMONTON OILERS
-  { id: 616, name: "Leon Draisaitl", team: "EDM", position: "C", overall: 95, rarity: "legend", chemistry: ["Sniper", "Playmaker"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8477934.png" },
+  { id: 616, name: "Leon Draisaitl", team: "EDM", position: "C", overall: 95, rarity: "legend", chemistry: ["Sniper", "Playmaker"], image: "@/assets/players/leon-draisaitl-realistic.jpg" },
   { id: 617, name: "Trent Frederic", team: "EDM", position: "C", overall: 75, rarity: "bronze", chemistry: ["Physical"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8479365.png" },
   { id: 618, name: "James Hamblin", team: "EDM", position: "LW", overall: 73, rarity: "bronze", chemistry: ["Young Gun"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8480468.png" },
   { id: 619, name: "Adam Henrique", team: "EDM", position: "C", overall: 79, rarity: "bronze", chemistry: ["Veteran"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8474641.png" },
@@ -705,7 +705,7 @@ export const nhlPlayerDatabase: Player[] = [
   { id: 623, name: "Kasperi Kapanen", team: "EDM", position: "RW", overall: 76, rarity: "bronze", chemistry: ["Speedster"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8477953.png" },
   { id: 624, name: "Curtis Lazar", team: "EDM", position: "C", overall: 74, rarity: "bronze", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8477508.png" },
   { id: 625, name: "Andrew Mangiapane", team: "EDM", position: "LW", overall: 79, rarity: "bronze", chemistry: ["Sniper"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8478233.png" },
-  { id: 626, name: "Connor McDavid", team: "EDM", position: "C", overall: 99, rarity: "legend", chemistry: ["Speedster", "Playmaker", "Leader"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8478402.png" },
+  { id: 626, name: "Connor McDavid", team: "EDM", position: "C", overall: 99, rarity: "legend", chemistry: ["Speedster", "Playmaker", "Leader"], image: "@/assets/players/connor-mcdavid-realistic.jpg" },
   { id: 627, name: "Ryan Nugent-Hopkins", team: "EDM", position: "C", overall: 84, rarity: "silver", chemistry: ["Two-Way"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8476454.png" },
   { id: 628, name: "Vasily Podkolzin", team: "EDM", position: "RW", overall: 76, rarity: "bronze", chemistry: ["Young Gun"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8481617.png" },
   { id: 629, name: "Matt Savoie", team: "EDM", position: "RW", overall: 76, rarity: "bronze", chemistry: ["Young Gun"], image: "https://assets.nhle.com/mugs/nhl/20252026/EDM/8483512.png" },

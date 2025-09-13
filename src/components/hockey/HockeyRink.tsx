@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import hockeyRinkBg from '@/assets/hockey-rink-background.jpg';
+import hockeyPuckImg from '@/assets/hockey-puck-motion.jpg';
 
 interface PlayerPosition {
   id: string;
@@ -91,9 +93,17 @@ export const HockeyRink = ({ onRinkTap, isGameActive, homeLineup, awayLineup, ga
 
   return (
     <div 
-      className="relative w-full max-w-4xl h-96 bg-gradient-to-b from-ice-blue/30 to-ice-blue/50 rounded-2xl border-4 border-ice-blue cursor-pointer transition-all duration-300 hover:shadow-xl overflow-hidden"
+      className="relative w-full max-w-4xl h-96 rounded-2xl border-4 border-ice-blue cursor-pointer transition-all duration-300 hover:shadow-xl overflow-hidden"
       onClick={onRinkTap}
+      style={{
+        backgroundImage: `url(${hockeyRinkBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
     >
+      {/* Overlay for better visibility */}
+      <div className="absolute inset-0 bg-gradient-to-b from-ice-blue/20 via-transparent to-ice-blue/20"></div>
       {/* Center Line */}
       <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-power-red transform -translate-x-1/2" />
       
@@ -133,24 +143,41 @@ export const HockeyRink = ({ onRinkTap, isGameActive, homeLineup, awayLineup, ga
         <span className="text-xs font-bold text-away-team">AWAY BENCH</span>
       </div>
 
-      {/* Puck */}
+      {/* Enhanced Puck */}
       <motion.div
-        className="absolute w-2 h-2 bg-muted-foreground rounded-full border border-foreground"
+        className="absolute w-4 h-4 rounded-full border-2 border-black shadow-lg"
         style={{
           left: `${puckPosition.x}%`,
           top: `${puckPosition.y}%`,
           transform: 'translate(-50%, -50%)',
+          backgroundImage: `url(${hockeyPuckImg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
         }}
         animate={{
-          x: [0, 2, -2, 0],
-          y: [0, -1, 1, 0],
+          x: [0, 3, -3, 0],
+          y: [0, -2, 2, 0],
+          scale: isGameActive ? [1, 1.1, 1] : 1
         }}
         transition={{
-          duration: 0.5,
+          duration: 0.6,
           repeat: isGameActive ? Infinity : 0,
           ease: "easeInOut"
         }}
-      />
+      >
+        {/* Puck glow effect */}
+        <motion.div 
+          className="absolute inset-0 rounded-full bg-white/30"
+          animate={{
+            opacity: isGameActive ? [0.3, 0.7, 0.3] : 0.3
+          }}
+          transition={{
+            duration: 1,
+            repeat: isGameActive ? Infinity : 0,
+            ease: "easeInOut"
+          }}
+        />
+      </motion.div>
 
       {/* Players */}
       {playerPositions.map((player) => (
